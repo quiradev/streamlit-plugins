@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 from io import open
 import sys, os
 
@@ -16,7 +16,7 @@ setup(
     long_description_content_type="text/markdown",
     author_email='v.quilonr@gmail.com',
     author='Victor Quilon Ranera',
-    packages=['streamlit_plugins'],
+    packages=find_packages(),
     # install_requires=[
     #     'pywin32 >= 1.0 ; platform_system=="Windows"',
     #     'pasteboard == 0.3.3 ; platform_system=="Darwin"',
