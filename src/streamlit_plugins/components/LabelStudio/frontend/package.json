@@ -1,0 +1,50 @@
+{
+  "name": "streamlit_labelstudio",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@heartexlabs/label-studio": "^1.4.0",
+    "@types/jest": "^24.0.0",
+    "@types/node": "^12.0.0",
+    "concurrently": "^8.0.1",
+    "nodemon": "^2.0.22",
+    "react-scripts": "^4.0.3",
+    "streamlit-component-lib": "^1.4.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/react": "^13.1.1",
+    "@testing-library/user-event": "^14.1.1",
+    "typescript": "^4.6.3"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "dev": "nodemon -L index.js",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "watch": "tsc -p tsconfig.json -watch | nodemon --debug --inspect 0.0.0.0:9229 index.js"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "homepage": ".",
+  "nodemonConfig": {
+    "watch": [
+      "src"
+    ],
+    "ext": "js,json,hbs,html,css,tsx,jsx,ts"
+  }
+}
