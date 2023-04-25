@@ -7,12 +7,11 @@ from typing import List
 
 import streamlit as st
 # from .. import STLabelStudioNER, LSTaskNER, ResultLSNER, st_labelstudio, LabelStudioUser
-from components.LabelStudio import STLabelStudioNER, LSTaskNER, ResultLSNER, st_labelstudio, LabelStudioUser
 # from streamlit_labelstudio import st_labelstudio
 
+from streamlit_plugins.components.LabelStudio import STLabelStudioNER, LSTaskNER, ResultLSNER, st_labelstudio, LabelStudioUser
 # make it look nice from the start
 st.set_page_config(layout='wide', initial_sidebar_state='collapsed')
-
 
 
 class TaskState(Enum):
@@ -21,7 +20,7 @@ class TaskState(Enum):
 
 
 if __name__ == '__main__':
-    with open("data.json", "r") as reader:
+    with open("data.json", "r", encoding="utf8") as reader:
         data = json.load(reader)
         task_id = data.get("task_id", 1)
         task = [
@@ -56,7 +55,7 @@ if __name__ == '__main__':
     next_task = col2.button(label="->")
 
     if next_task or prev_task:
-        with open("data.json", "w") as writer:
+        with open("data.json", "w", encoding="utf8") as writer:
             if next_task:
                 task_id += 1
             if prev_task:
@@ -66,81 +65,10 @@ if __name__ == '__main__':
             writer.write(json.dumps(data, indent=2))
 
     labels = ['PER', 'ORG', 'NAME', 'SURNAME']
-    interfaces = [
-        "panel",  # Enable navigaion panel for the current task with buttons: undo, redo and reset.
-        "submit",  # Show a button to submit or update the current annotation.
-        "update",  # Show a button to update the current task after submitting.
-        "skip",  # Show a button to skip the current task.
-        "controls"  # Enable panel with controls (submit, update, skip).
-        "infobar",  # A show button for information.
-        "topbar",  # A labeling interface that lists the top-level items in the Label Studio UI.
-        "instruction",  # A button for the instructions.
-        "side-column",  # Show a column on the left or right side of the Label Studio UI.
-        "annotations:history",  # A show button for annotation history.
-        "annotations:tabs",  # A show button for annotation tabs.
-        "annotations:menu",  # A show button for the annotation menu.
-        "annotations:current",  # A show button for the current annotation.
-        "annotations:add-new",  # A show button to add new annotations.
-        "annotations:delete",  # A show button to delete the current annotation.
-        "annotations:view-all",  # A show button to view all annotations.
-        "predictions:tabs",  # Show predictions tabs.
-        "predictions:menu",  # Show predictions menu.
-        "auto-annotation",  # Show auto annotations.
-        "edit-history"  # Show edit history.
-    ]
-    user = {
-        'pk': 1,
-        'firstName': "James",
-        'lastName': "Dean"
-    }
+
     st.header("Label Studio")
-    config_img = """
-                      <View>
-                        <View style="padding: 25px; box-shadow: 2px 2px 8px #AAA;">
-                          <Image name="img" value="$image" width="100%" maxWidth="100%" brightnessControl="true" contrastControl="true" zoomControl="true" rotateControl="true"></Image>
-                        </View>
-                        <RectangleLabels name="tag" toName="img">
-                          <Label value="Hello"></Label>
-                          <Label value="Moon"></Label>
-                        </RectangleLabels>
-                      </View>
-                    """
-    config_txt = """
-                    <View>
-                      <Labels name="label" toName="text">
-                        <Label value="PER" background="red"/>
-                        <Label value="ORG" background="darkorange"/>
-                        <Label value="LOC" background="orange"/>
-                        <Label value="MISC" background="green"/>
-                      </Labels>
-                      <Text name="text" value="$text"/>
-                    </View>
-                """
 
-    interfaces = [
-        "panel",  # Enable navigaion panel for the current task with buttons: undo, redo and reset.
-        "submit",  # Show a button to submit or update the current annotation.
-        "update",  # Show a button to update the current task after submitting.
-        "skip",  # Show a button to skip the current task.
-        "controls"  # Enable panel with controls (submit, update, skip).
-        "infobar",  # A show button for information.
-        "topbar",  # A labeling interface that lists the top-level items in the Label Studio UI.
-        "instruction",  # A button for the instructions.
-        "side-column",  # Show a column on the left or right side of the Label Studio UI.
-        "annotations:history",  # A show button for annotation history.
-        "annotations:tabs",  # A show button for annotation tabs.
-        "annotations:menu",  # A show button for the annotation menu.
-        "annotations:current",  # A show button for the current annotation.
-        "annotations:add-new",  # A show button to add new annotations.
-        "annotations:delete",  # A show button to delete the current annotation.
-        "annotations:view-all",  # A show button to view all annotations.
-        "predictions:tabs",  # Show predictions tabs.
-        "predictions:menu",  # Show predictions menu.
-        "auto-annotation",  # Show auto annotations.
-        "edit-history"  # Show edit history.
-    ]
-
-    st_label_ner = STLabelStudioNER(task, ['PER', 'ORG', 'NAME', 'SURNAME'])
+    st_label_ner = STLabelStudioNER(task, labels)
 
     results = {}
     res = st_label_ner.run_task(task)
