@@ -1,0 +1,55 @@
+{
+  "name": "nav_bar",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "apache-arrow": "^0.17.0",
+    "concurrently": "^8.0.1",
+    "nodemon": "^2.0.22",
+    "react": "^16.14.0",
+    "react-bootstrap-icons": "^1.5.0",
+    "react-dom": "^16.14.0",
+    "react-scripts": "^4.0.3",
+    "streamlit-component-lib": "^1.4.0",
+    "streamlit-component-lib-react-hooks": "^1.0.3"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.3.2",
+    "@testing-library/user-event": "^7.1.2",
+    "@types/hoist-non-react-statics": "^3.3.1",
+    "@types/jest": "^24.0.0",
+    "@types/node": "^12.0.0",
+    "@types/react": "^16.9.0",
+    "@types/react-dom": "^16.9.0",
+    "typescript": "^4.6.3"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "server": "nodemon index.js",
+    "dev": "concurrently \"npm run server \" \"npm run start\" "
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "homepage": ".",
+  "nodemonConfig": {
+    "watch": ["src"],
+    "ext": "js,json,hbs,html,css,tsx,jsx,ts"
+  }
+}
