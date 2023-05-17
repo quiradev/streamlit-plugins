@@ -1,0 +1,1 @@
+recursive-include stramlit_plugins/components/*/frontend/build *
