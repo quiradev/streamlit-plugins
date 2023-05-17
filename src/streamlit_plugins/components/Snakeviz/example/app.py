@@ -14,6 +14,7 @@ from functools import wraps, partial
 
 from streamlit_plugins.components.Snakeviz import st_snakeviz
 
+
 # make it look nice from the start
 st.set_page_config(layout='wide', initial_sidebar_state='collapsed')
 
