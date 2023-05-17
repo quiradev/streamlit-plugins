@@ -1,12 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import NavBar from "./NavBar";
-import StreamlitProvider from "./NavBarProvider";
+import Snakeviz from "./Snakeviz";
+import StreamlitProvider from "./Provider";
 
 ReactDOM.render(
   <React.StrictMode>
     <StreamlitProvider>
-        <NavBar />
+        <Snakeviz />
     </StreamlitProvider>
   </React.StrictMode>,
   document.getElementById("root")

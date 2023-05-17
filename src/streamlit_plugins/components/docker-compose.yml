@@ -88,6 +88,46 @@ services:
       - ./LabelStudio/frontend/src:/frontend/src
       - ./LabelStudio/frontend/build:/frontend/build
 
+  snakeviz_dev:
+    image: streamlit-component-snakeviz
+    build: Snakeviz/frontend
+    ports:
+      - "3000:3000"
+      - "9229:9229"
+    command: tail -f /dev/null
+    volumes:
+      - ./Snakeviz/frontend/.env:/frontend/.env
+      - ./Snakeviz/frontend/package.json:/frontend/package.json
+      - ./Snakeviz/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./Snakeviz/frontend/public:/frontend/public
+      - ./Snakeviz/frontend/src:/frontend/src
+      - ./Snakeviz/frontend/build:/frontend/build
+
+  snakeviz_frontend:
+    image: streamlit-component-snakeviz
+    build: Snakeviz/frontend
+    ports:
+      - "3000:3000"
+    command: npm run start
+    volumes:
+      - ./Snakeviz/frontend/.env:/frontend/.env
+      - ./Snakeviz/frontend/package.json:/frontend/package.json
+      - ./Snakeviz/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./Snakeviz/frontend/public:/frontend/public
+      - ./Snakeviz/frontend/src:/frontend/src
+      - ./Snakeviz/frontend/build:/frontend/build
+
+  snakeviz_build:
+    image: streamlit-component-snakeviz
+    build: Snakeviz/frontend
+    command: npm run build
+    volumes:
+      - ./Snakeviz/frontend/.env:/frontend/.env
+      - ./Snakeviz/frontend/package.json:/frontend/package.json
+      - ./Snakeviz/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./Snakeviz/frontend/public:/frontend/public
+      - ./Snakeviz/frontend/src:/frontend/src
+      - ./Snakeviz/frontend/build:/frontend/build
 
 networks:
   streamlit-components-network:

@@ -1,155 +1,201 @@
+import cProfile
+import json
 import os
-import streamlit as st
-import math
+import os.path
+import re
+from pstats import Stats, SortKey
+from typing import Union, List, Dict
+
 import streamlit.components.v1 as components
 
-# _RELEASE = os.getenv("RELEASE", "").upper() != "DEV"
-_RELEASE = True
+try:
+    from urllib.parse import quote
+except ImportError:
+    from urllib import quote
+
+_RELEASE = os.getenv("RELEASE", "").upper() != "DEV"
+# _RELEASE = True
 
 if _RELEASE:
     absolute_path = os.path.dirname(os.path.abspath(__file__))
     build_path = os.path.join(absolute_path, "frontend", "build")
-    _component_func = components.declare_component("nav_bar", path=build_path)
+    _component_func = components.declare_component("st_snakeviz", path=build_path)
 else:
-    _component_func = components.declare_component("nav_bar", url="http://localhost:3000")
+    _component_func = components.declare_component("st_snakeviz", url="http://localhost:3000")
+
+#
+# PINNED_NAV_STYLE = f"""
+#                     <style>
+#                     iframe[title="{_component_func.name}"] {{
+#                         position: fixed;
+#                         z-index: 1000;
+#                         box-sizing: content-box;
+#                         top: calc(2.875rem - 0.5rem);
+#                         border: 2px solid #ff4b56;
+#                         border: 1px solid #9e9e9e;
+#                         border-radius: 5px;
+#                     }}
+#                     </style>
+#                 """
 
 
-PINNED_NAV_STYLE = f"""
-                    <style>
-                    .reportview-container .sidebar-content {{
-                        padding-top: 0rem;
-                    }}
-                    .reportview-container .main .block-container {{
-                        padding-top: 0rem;
-                        padding-right: 4rem;
-                        padding-left: 4rem;
-                        padding-bottom: 4rem;
-                    }}
-                    .stApp > header {{
-                        border-bottom: 1px solid #9e9e9e;
-                    }}
-                    iframe[title="{_component_func.name}"] {{
-                        position: fixed;
-                        z-index: 1000;
-                        box-sizing: content-box;
-                        top: calc(2.875rem - 0.5rem);
-                        border: 2px solid #ff4b56;
-                        border: 1px solid #9e9e9e;
-                        border-radius: 5px;
-                    }}
-                    </style>
-                """
+import os.path
+from itertools import chain
 
-STICKY_NAV_STYLE = f"""
-                    <style>
-                    div[data-stale="false"] > iframe[title="{_component_func.name}"] {{
-                        position: fixed;
-                        z-index: 99;
-                        box-sizing: border-box;
-                        top: 0;
-                    }}
-                    </style>
-                """
 
-HIDE_ST_STYLE = """
-                    <style>
-                    div[data-testid="stToolbar"] {
-                    display: none;
-                    position: none;
-                    }
-
-                    div[data-testid="stDecoration"] {
-                    display: none;
-                    position: none;
-                    }
-
-                    div[data-testid="stStatusWidget"] {
-                    display: none;
-                    position: none;
-                    }
-
-                    #MainMenu {
-                    display: none;
-                    }
-                    header {
-                    display: none;
-                    }
-
-                    </style>
-                """
-
-def nav_bar(menu_definition, first_select=0, key="NavBarComponent", home_name=None, login_name=None,
-            override_theme=None, sticky_nav=True, force_value=None, use_animation=True,
-            hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False):
-    first_select = math.floor(first_select / 10)
-
-    if type(home_name) is str:
-        home_data = {'id': "app_home", 'label': home_name, 'icon': "fa fa-home", 'ttip': home_name}
-    else:
-        home_data = home_name
-        if home_name is not None:
-            if home_name.get('icon', None) is None:
-                home_data['icon'] = "fa fa-home"
-
-    if type(login_name) is str:
-        login_data = {'id': "app_login", 'label': login_name, 'icon': "fa fa-user-circle", 'ttip': login_name}
-    else:
-        login_data = login_name
-        if login_name is not None:
-            if login_name.get('icon', None) is None:
-                login_data['icon'] = "fa fa-user-circle"
-
-    if option_menu:
-        max_len = 0
-        for mitem in menu_definition:
-            label_len = len(mitem.get('label', ''))
-            if label_len > max_len:
-                max_len = label_len
-
-        for i, mitem in enumerate(menu_definition):
-            menu_definition[i]['label'] = f"{mitem.get('label', ''):^{max_len + 10}}"
-
-    for i, mitem in enumerate(menu_definition):
-        menu_definition[i]['label'] = menu_definition[i].get('label', f'Label_{i}')
-        menu_definition[i]['id'] = menu_definition[i].get('id', f"app_{menu_definition[i]['label']}")
-        if 'submenu' in menu_definition[i]:
-            for _i, _msubitem in enumerate(menu_definition[i]['submenu']):
-                menu_definition[i]['submenu'][_i]['label'] = menu_definition[i]['submenu'][_i].get('label', f'{i}_Label_{_i}')
-                menu_definition[i]['submenu'][_i]['id'] = menu_definition[i]['submenu'][_i].get('id', f"app_{menu_definition[i]['submenu'][_i]['label']}")
-
-    component_value = _component_func(
-        menu_definition=menu_definition, first_select=first_select, key=key, home=home_data, fvalue=force_value,
-        login=login_data, override_theme=override_theme, use_animation=use_animation
+def xhtml_escape(value: Union[str, bytes]):
+    _xhtml_escape_re = re.compile(r'''[&<>"']''')
+    _xhtml_escape_dict = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+    }
+    return _xhtml_escape_re.sub(
+        lambda match: _xhtml_escape_dict[match.group(0)], value if isinstance(value, str) else value.decode('utf8')
     )
 
-    if sticky_nav:
-        if sticky_mode == 'pinned':
-            st.markdown(PINNED_NAV_STYLE, unsafe_allow_html=True)
+
+def table_rows(stats: Stats) -> List[List[Union[List[str], str, int]]]:
+    """
+    Generate a list of stats info lists for the snakeviz stats table.
+    Each list will be a series of strings of:
+    calls tot_time tot_time_per_call cum_time cum_time_per_call file_line_func
+    """
+    rows = []
+
+    for k, v in stats.stats.items():
+        flf = xhtml_escape('{0}:{1}({2})'.format(
+            os.path.basename(k[0]), k[1], k[2]))
+        name = '{0}:{1}({2})'.format(*k)
+
+        if v[0] == v[1]:
+            calls = str(v[0])
         else:
-            st.markdown(STICKY_NAV_STYLE, unsafe_allow_html=True)
+            calls = '{1}/{0}'.format(v[0], v[1])
 
-    if hide_streamlit_markers:
-        st.markdown(HIDE_ST_STYLE, unsafe_allow_html=True)
+        fmt = '{0:.4g}'.format
 
-    if component_value is None:
-        if first_select > len(menu_definition):
-            if login_name is not None:
-                return login_name
-            else:
-                menu_item = menu_definition[-1]
+        tot_time = fmt(v[2])
+        cum_time = fmt(v[3])
+        tot_time_per = fmt(v[2] / v[0]) if v[0] > 0 else 0
+        cum_time_per = fmt(v[3] / v[0]) if v[0] > 0 else 0
 
-        elif home_name is None:
-            menu_item = menu_definition[first_select]
+        rows.append(
+            [
+                [calls, v[1]],
+                tot_time,
+                tot_time_per,
+                cum_time,
+                cum_time_per,
+                flf,
+                name
+            ]
+        )
 
-        else:
-            if first_select == 0:
-                return home_data.get('id')
-            else:
-                menu_item = menu_definition[(first_select - 1)]
+    return rows
 
-        if 'id' in menu_item:
-            return menu_item.get('id')
-        else:
-            return menu_item.get('label')
-    else:
-        return component_value
+
+def json_stats(stats: Stats) -> Dict[str, dict]:
+    """
+    Convert the all_callees data structure to something compatible with
+    JSON. Mostly this means all keys need to be strings.
+    """
+    keyfmt = '{0}:{1}({2})'.format
+
+    def _replace_keys(d):
+        return dict((keyfmt(*k), v) for k, v in d.items())
+
+    stats.calc_callees()
+
+    nstats = {}
+
+    for k, v in stats.all_callees.items():
+        nk = keyfmt(*k)
+        nstats[nk] = {}
+        nstats[nk]['children'] = dict((keyfmt(*ck), list(cv)) for ck, cv in v.items())
+        nstats[nk]['stats'] = list(stats.stats[k][:4])
+        nstats[nk]['callers'] = dict((keyfmt(*ck), list(cv)) for ck, cv in stats.stats[k][-1].items())
+        nstats[nk]['display_name'] = keyfmt(os.path.basename(k[0]), k[1], k[2])
+
+    # remove anything that both never called anything and was never called
+    # by anything.
+    # this is profiler cruft.
+    no_calls = set(k for k, v in nstats.items() if not v['children'])
+    called = set(chain.from_iterable(d['children'].keys() for d in nstats.values()))
+    cruft = no_calls - called
+
+    for c in cruft:
+        del nstats[c]
+
+    return nstats
+
+
+def generate_profile(profile_function, *args, **kwargs) -> Stats:
+    profiler = cProfile.Profile()
+    profiler.enable()
+
+    profile_function(*args, **kwargs)
+
+    profiler.disable()
+
+    # EXTRAER CARACTERISTICAS
+    stats = Stats(profiler)
+    stats.sort_stats(SortKey.TIME)
+    stats.print_stats()
+    return stats
+
+    # Analizar los datos con otras herramientas. Pej; snakeviz
+    # stats.dump_stats(f"temp.prof")
+
+
+def st_snakeviz(profile_name, profile_function, *args, **kwargs):
+    stats = generate_profile(profile_function, *args, **kwargs)
+    _component_func(
+        profile_name=profile_name, table_rows=table_rows(stats), callees=json_stats(stats)
+    )
+
+
+# class VizHandler:
+#     def get(self, profile_name):
+#         abspath = os.path.abspath(profile_name)
+#         if os.path.isdir(abspath):
+#             self._list_dir(abspath)
+#         else:
+#             try:
+#                 s = Stats(profile_name)
+#             except:
+#                 raise RuntimeError('Could not read %s.' % profile_name)
+#             self.render(
+#                 'viz.html', profile_name=profile_name,
+#                 table_rows=table_rows(s), callees=json_stats(s)
+#             )
+#
+#     def _list_dir(self, path):
+#         """
+#         Show a directory listing.
+#
+#         """
+#         entries = os.listdir(path)
+#         dir_entries = [[[
+#             '..',
+#             quote(os.path.normpath(os.path.join(path, '..')), safe='')
+#         ]]]
+#         for name in entries:
+#             if name.startswith('.'):
+#                 # skip invisible files/directories
+#                 continue
+#             fullname = os.path.join(path, name)
+#             displayname = linkname = name
+#             # Append / for directories or @ for symbolic links
+#             if os.path.isdir(fullname):
+#                 displayname += '/'
+#             if os.path.islink(fullname):
+#                 displayname += '@'
+#             dir_entries.append(
+#                 [[displayname, quote(os.path.join(path, linkname), safe='')]])
+#
+#         self.render(
+#             'dir.html', dir_name=path, dir_entries=json.dumps(dir_entries)
+#         )

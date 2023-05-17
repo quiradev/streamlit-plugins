@@ -1,25 +1,7 @@
-
 import { Streamlit, Theme, RenderData } from "streamlit-component-lib";
 import React, { ReactNode, useState } from "react";
 import { useRenderData } from "./Provider";
 
-import useImportScript from './hooks';
-
-import DataTable from 'datatables.net';
-
-// var $ = require( "jquery" );
-// $.extend(true, $.fn.dataTable.defaults, {
-//   paging: true,
-//   lengthChange: false,
-//   searching: false,
-//   processing: true,
-//   ordering: false,
-//   info: false,
-//   responsive: false,
-//   autoWidth: false,
-//   pageLength: 5,
-//   dom: '<"top"f>rtlip'
-// });
 
 type TableRows = Array<Array<Array<string | number | Array<string>>>>;
 type Callees = Record<string, Record<string, any>>;
@@ -36,36 +18,8 @@ interface NavBarRenderData extends RenderData {
   theme?: Theme;
 }
 
-declare global {
-    interface Window {
-      stats: Callees;
-      initial_setup: () => void;
-      initial_call_stack: () => void;
-      initial_draw: () => void;
-
-      sv_root_func_name: string;
-      sv_draw_vis: (name: string) => void;
-      sv_call_stack: string[];
-      sv_update_call_stack_list: () => void;
-      init_d3_listeners: () => void;
-    }
-    interface Document {
-      definedListeners: boolean;
-      clickInside: boolean;
-    }
-}
-
-
-
 const Snakeviz: React.VFC = () => {
   const renderData: NavBarRenderData | undefined = useRenderData();
-
-//   useImportScript("/vendor/d3.v3.min.js")
-//   useImportScript("/vendor/jquery.dataTables.min.js")
-//   useImportScript("/vendor/lodash.min.js")
-//   useImportScript("/vendor/immutable.min.js")
-//   useImportScript("/static/snakeviz.js")
-//   useImportScript("/static/drawsvg.js")
 
   if (renderData == null) {
     return <div style={{ color: "red" }}>No hay renderData definida.</div>;
@@ -86,8 +40,6 @@ const Snakeviz: React.VFC = () => {
     );
   }
 
-  document.body.className = theme.base;
-
   // setMenuDefinition(renderData.args.menu_definition);
 
   const args: PythonArgs = renderData.args;
@@ -95,7 +47,7 @@ const Snakeviz: React.VFC = () => {
   let callees: Callees = args.callees;
   let profile_name: string = args.profile_name;
 
-  window.stats = window.stats || callees;
+  window.stats = callees;
 
   /* Functions definition */
   const delayed_resize = (wait_time: number): NodeJS.Timeout =>
@@ -114,24 +66,48 @@ const Snakeviz: React.VFC = () => {
     requestAnimationFrame(step_resize);
   };
 
-  const snakeviz = () => {
+  const snakeviz = (): JSX.Element => {
     return (
-      <div id="snakeviz-content">
+      <div>
         <h1 id="snakeviz-text">
           <a href="https://jiffyclub.github.io/snakeviz/">SnakeViz</a>
         </h1>
 
-        <div id="sv-error-div" className="sv-error-msg">
-          <p>
-            An error occurred processing your profile.
-            You can try a lower depth, a larger cutoff,
-            or try profiling a smaller portion of your code.
-            If you continue to have problems you can
-            <a href="https://github.com/jiffyclub/snakeviz/issues">
-              contact us on GitHub</a>.
-          </p>
-          <div id="sv-error-close-div" className="sv-error-close">Close</div>
-        </div>
+        <span id="resetbuttons">
+          <div className="button-div">
+            <button id="resetbutton-root" disabled="True">Reset Root</button>
+          </div>
+          <div className="button-div">
+            <button id="resetbutton-zoom" disabled="True">Reset Zoom</button>
+          </div>
+        </span>
+
+        <label id='sv-style-label'>Style:&nbsp;
+          <select name="sv-style" id="sv-style-select">
+            <option value="icicle" selected>Icicle</option>
+            <option value="sunburst">Sunburst</option>
+          </select>
+        </label>
+
+        <label id='sv-depth-label'>Depth:&nbsp;
+          <select name="sv-depth" id="sv-depth-select">
+            {
+              [3, 5, 10, 15, 20].map((i: int, index: number) => (
+                <option value={i} selected={i === 10}>{i}</option>
+              )
+            )}
+          </select>
+        </label>
+
+        <label id='sv-cutoff-label'>Cutoff:
+          <select name="sv-cutoff" id="sv-cutoff-select">
+            <option value="0.001" selected>1 &frasl; 1000</option>
+            <option value="0.01">1 &frasl; 100</option>
+            <option value="0">None</option>
+          </select>
+        </label>
+
+        <div id="sv-info-div"></div>
 
         <div id="sv-call-stack">
           <div id="working-spinner" className="spinner">
@@ -145,53 +121,24 @@ const Snakeviz: React.VFC = () => {
           <div id="sv-call-stack-list"></div>
         </div>
 
-        <div id="sv-diagram">
-          <div id="sv-controls-content">
-            <span id="resetbuttons">
-              <div className="button-div">
-                <button id="resetbutton-root" disabled={true}>Reset Root</button>
-              </div>
-              <div className="button-div">
-                <button id="resetbutton-zoom" disabled={true}>Reset Zoom</button>
-              </div>
-            </span>
+        <div id="sv-error-div" className="sv-error-msg">
+          <p>
+            An error occurred processing your profile.
+            You can try a lower depth, a larger cutoff,
+            or try profiling a smaller portion of your code.
+            If you continue to have problems you can
+            <a href="https://github.com/jiffyclub/snakeviz/issues">
+              contact us on GitHub</a>.
+          </p>
+          <div id="sv-error-close-div" className="sv-error-close">Close</div>
+        </div>
 
-            <label id='sv-style-label'>Style:&nbsp;
-              <select name="sv-style" id="sv-style-select">
-                <option value="icicle" selected>Icicle</option>
-                <option value="sunburst">Sunburst</option>
-              </select>
-            </label>
-
-            <label id='sv-depth-label'>Depth:&nbsp;
-              <select name="sv-depth" id="sv-depth-select">
-                {
-                  [3, 5, 10, 15, 20].map((i: number, index: number) => (
-                    <option value={i} selected={i === 10}>{i}</option>
-                  )
-                )}
-              </select>
-            </label>
-
-            <label id='sv-cutoff-label'>Cutoff:
-              <select name="sv-cutoff" id="sv-cutoff-select">
-                <option value="0.001" selected>1 &frasl; 1000</option>
-                <option value="0.01">1 &frasl; 100</option>
-                <option value="0">None</option>
-              </select>
-            </label>
-
-            <div id="sv-info-div"></div>
-          </div>
-
-          <div id="sv-chart-content" style={{ textAlign: "center" }}>
-            <div id="chart"></div>
-          </div>
-
+        <div style={{ "text-align": "center" }}>
+          <div id="chart"></div>
         </div>
 
         <div id="table_div">
-          <table cellPadding={0} cellSpacing={0} className="display" id="pstats-table">
+          <table cellpadding="0" cellspacing="0" border="0" className="display" id="pstats-table">
             <thead>
               <tr>
                 <th title="Total number of calls to the function. If there are two numbers, that means the function recursed and the first is the total number of calls and the second is the number of primitive (non-recursive) calls.">ncalls</th>
@@ -234,47 +181,51 @@ const Snakeviz: React.VFC = () => {
     // var table_data = {% raw table_rows %};
 
     $(document).ready(function() {
-      var table = new DataTable('#pstats-table', {
+      var table = $('#pstats-table').dataTable({
         'data': table_data,
         'columns': [
           // Note: columns are also defined in #pstats-table in HTML above,
           // this list must line up with that.
-          {'type': 'num', 'searchable': false,
+          {'type': 'num', 'searchable': 'false',
            'data': {
             '_': function (row: any) {return row[0][0];},
             'sort': function (row: any) {return row[0][1]}
            }},
-          {'type': 'num', 'searchable': false},
-          {'type': 'num', 'searchable': false},
-          {'type': 'num', 'searchable': false},
-          {'type': 'num', 'searchable': false},
+          {'type': 'num', 'searchable': 'false'},
+          {'type': 'num', 'searchable': 'false'},
+          {'type': 'num', 'searchable': 'false'},
+          {'type': 'num', 'searchable': 'false'},
           {}
         ],
         'order': [1, 'desc'],
-         scrollY: '400px',
-         scrollCollapse: true,
-         paging: false
-      });
-      $('#pstats-table tbody').on('click', 'tr', function(this: any) {
+        'paging': false
+      }).api();
+      $('#pstats-table tbody').on('click', 'tr', function() {
         var name = table.row(this).data()[6];
-        window.sv_root_func_name = name;
-        window.sv_draw_vis(name);
-        window.sv_call_stack = [name];
-        window.sv_update_call_stack_list();
+        sv_root_func_name = name;
+        sv_draw_vis(name);
+        sv_call_stack = [name];
+        sv_update_call_stack_list();
         $('#resetbutton-zoom').prop('disabled', true);
         $('#resetbutton-root').prop('disabled', false);
-      }).on('mouseenter', 'tr', function (this: any) {
+      }).on('mouseenter', 'tr', function () {
         $(this).children('td').addClass('data-table-hover');
-      }).on('mouseleave', 'tr', function (this: any) {
+      }).on('mouseleave', 'tr', function () {
         $(this).children('td').removeClass('data-table-hover');
       });
 
-      window.init_d3_listeners();
+      var profile_data = callees;
+      sv_json_cache = {};
+      sv_worker = sv_make_worker();
+      sv_root_func_name = sv_find_root(profile_data);
+      sv_root_func_name__cached = sv_root_func_name;
+      sv_call_stack = [sv_root_func_name];
+      sv_total_time = profile_data[sv_root_func_name]['stats'][3];
 
-      window.initial_setup();
-      window.initial_call_stack();
-      window.initial_draw();
+      sv_update_call_stack_list();
+      sv_call_stack_btn_for_show();
 
+      sv_draw_vis(sv_root_func_name);
     });
 
     // Initialize data
@@ -299,7 +250,6 @@ const Snakeviz: React.VFC = () => {
       loseFocus();
       initListeners();
   }
-  delayed_resize(500);
   return snakeviz();
 };
 

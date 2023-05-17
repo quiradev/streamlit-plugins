@@ -1,57 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Streamlit Component NavBar</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <meta name="theme-color" content="#000000"/>
-    <meta name="description" content="Streamlit Component NavBar"/>
-    <link href="./static/snakeviz.css" rel="stylesheet">
-    <!-- DataTables CSS -->
-<!--    <link href="./static/vendor/jquery.dataTables.min.css" rel="stylesheet">-->
-    <link href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" rel="stylesheet">
-
-    <!-- Vendor JS -->
-<!--    <script src="./static/vendor/jquery-3.2.1.min.js"></script>-->
-<!--    <script src="./static/vendor/jquery.dataTables.min.js"></script>-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<!--    <script src="./static/vendor/d3.v3.min.js"></script>-->
-<!--    <script src="./static/vendor/lodash.min.js"></script>-->
-<!--    <script src="./static/vendor/immutable.min.js"></script>-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/immutable/4.3.0/immutable.min.js"></script>
-    <!-- Load SnakeViz JS Files -->
-    <script src='./static/snakeviz.js'></script>
-    <script src='./static/drawsvg.js'></script>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a extra_streamlit_components.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-    <!-- javascript
-      ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-
-
-    <!-- SnakeViz JS -->
-    <script>
-
-    </script>
-
-    <!-- Web worker code for generating D3 JSON in a separate thread -->
-    <script id="hierarchy-worker" type="javascript/worker">
-        // This will all go into a web worker that will be used to generate
+<!doctype html><html lang="en"><head><title>Streamlit Component NavBar</title><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#000000"/><meta name="description" content="Streamlit Component NavBar"/><link href="./static/snakeviz.css" rel="stylesheet"><link href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" rel="stylesheet"><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script><script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/immutable/4.3.0/immutable.min.js"></script><script src="./static/snakeviz.js"></script><script src="./static/drawsvg.js"></script></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div><script></script><script id="hierarchy-worker" type="javascript/worker">// This will all go into a web worker that will be used to generate
         // the visualization JSON while leaving the rest of the app responsive.
         //
         // We put this here instead of in a separate JS file so that the worker
@@ -163,37 +110,4 @@
             sv_build_hierarchy(stats, node_name, depth, max_depth, cutoff, node_time, parent_name)
             )
           );
-        };
-    </script>
-
-    <!-- Do initial setup stuff -->
-    <script>
-      // Initialize data
-      $(document).ready(_.defer(function () {
-          window.initial_setup = () => {
-            // var profile_data = {% raw callees %};
-            var profile_data = window.stats;
-            sv_json_cache = {};
-            sv_worker = sv_make_worker();
-            sv_root_func_name = sv_find_root(profile_data);
-            sv_root_func_name__cached = sv_root_func_name;
-            sv_call_stack = [sv_root_func_name];
-            sv_total_time = profile_data[sv_root_func_name]['stats'][3];
-          }
-      }));
-      // Initialize the call stack button
-      $(document).ready(_.defer(function () {
-        window.initial_call_stack = () => {
-            sv_update_call_stack_list();
-            sv_call_stack_btn_for_show();
-        }
-      }));
-      // Draw the visualization
-      $(document).ready(_.defer(function () {
-        window.initial_draw = () => {
-            sv_draw_vis(sv_root_func_name);
-      };
-      }));
-    </script>
-  </body>
-</html>
+        };</script><script>$(document).ready(_.defer((function(){window.initial_setup=()=>{var _=window.stats;sv_json_cache={},sv_worker=sv_make_worker(),sv_root_func_name=sv_find_root(_),sv_root_func_name__cached=sv_root_func_name,sv_call_stack=[sv_root_func_name],sv_total_time=_[sv_root_func_name].stats[3]}}))),$(document).ready(_.defer((function(){window.initial_call_stack=()=>{sv_update_call_stack_list(),sv_call_stack_btn_for_show()}}))),$(document).ready(_.defer((function(){window.initial_draw=()=>{sv_draw_vis(sv_root_func_name)}})))</script><script>!function(e){function r(r){for(var n,a,l=r[0],f=r[1],i=r[2],c=0,s=[];c<l.length;c++)a=l[c],Object.prototype.hasOwnProperty.call(o,a)&&o[a]&&s.push(o[a][0]),o[a]=0;for(n in f)Object.prototype.hasOwnProperty.call(f,n)&&(e[n]=f[n]);for(p&&p(r);s.length;)s.shift()();return u.push.apply(u,i||[]),t()}function t(){for(var e,r=0;r<u.length;r++){for(var t=u[r],n=!0,l=1;l<t.length;l++){var f=t[l];0!==o[f]&&(n=!1)}n&&(u.splice(r--,1),e=a(a.s=t[0]))}return e}var n={},o={1:0},u=[];function a(r){if(n[r])return n[r].exports;var t=n[r]={i:r,l:!1,exports:{}};return e[r].call(t.exports,t,t.exports,a),t.l=!0,t.exports}a.m=e,a.c=n,a.d=function(e,r,t){a.o(e,r)||Object.defineProperty(e,r,{enumerable:!0,get:t})},a.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},a.t=function(e,r){if(1&r&&(e=a(e)),8&r)return e;if(4&r&&"object"==typeof e&&e&&e.__esModule)return e;var t=Object.create(null);if(a.r(t),Object.defineProperty(t,"default",{enumerable:!0,value:e}),2&r&&"string"!=typeof e)for(var n in e)a.d(t,n,function(r){return e[r]}.bind(null,n));return t},a.n=function(e){var r=e&&e.__esModule?function(){return e.default}:function(){return e};return a.d(r,"a",r),r},a.o=function(e,r){return Object.prototype.hasOwnProperty.call(e,r)},a.p="./";var l=this.webpackJsonpnav_bar=this.webpackJsonpnav_bar||[],f=l.push.bind(l);l.push=r,l=l.slice();for(var i=0;i<l.length;i++)r(l[i]);var p=f;t()}([])</script><script src="./static/js/2.9cedfdc4.chunk.js"></script><script src="./static/js/main.1dfd8582.chunk.js"></script></body></html>
