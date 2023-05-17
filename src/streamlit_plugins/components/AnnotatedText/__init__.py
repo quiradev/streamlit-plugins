@@ -11,8 +11,6 @@ import streamlit as st
 from htbuilder import H, HtmlElement, styles
 from htbuilder.units import unit
 
-# from cognitionlit.section.utils import generate_hsla_colors
-
 
 @st.cache_data
 def hsla_to_hex(hue, saturation, lightness, alpha):

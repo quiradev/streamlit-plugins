@@ -1,4 +1,4 @@
-from cognitionlit.plugins.multilit.app_template import MultiHeadApp
+from streamlit_plugins.framework.multilit.app_template import MultiHeadApp
 
 
 class Templateapp(MultiHeadApp):

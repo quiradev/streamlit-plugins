@@ -3,8 +3,8 @@ from typing import Dict
 
 import streamlit as st
 
-from cognitionlit.plugins.components.Navbar import nav_bar
-from cognitionlit.plugins.multilit.wrapper_class import Templateapp
+from streamlit_plugins.components.Navbar import nav_bar
+from streamlit_plugins.framework.multilit.wrapper_class import Templateapp
 from .loading_app import LoadingApp
 
 

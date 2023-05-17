@@ -2,8 +2,8 @@ import traceback
 
 import streamlit as st
 
-from cognitionlit.plugins.multilit.app_template import MultiHeadApp
-from cognitionlit.plugins.components.Loader.loader import LoadersLib, Loader
+from streamlit_plugins.framework.multilit.app_template import MultiHeadApp
+from streamlit_plugins.components.Loader.loader import LoadersLib, Loader
 
 
 class LoadingApp(MultiHeadApp):
