@@ -3,7 +3,7 @@ import os.path
 
 import streamlit as st
 
-from components.Navbar import nav_bar
+from streamlit_plugins.components.Navbar import nav_bar
 
 # make it look nice from the start
 st.set_page_config(layout='wide', initial_sidebar_state='collapsed')
