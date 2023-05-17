@@ -1,1 +1,1 @@
-recursive-include stramlit_plugins/components/*/frontend/build *
+recursive-include streamlit_plugins/components/*/frontend/build *
