@@ -22,6 +22,7 @@ setup(
     #     'pasteboard == 0.3.3 ; platform_system=="Darwin"',
     # ],
     # extras_require=extras,
+    include_package_data=True,
     classifiers=[
         'Intended Audience :: Developers',
         'Programming Language :: Python',
