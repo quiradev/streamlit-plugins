@@ -17,10 +17,11 @@ setup(
     author_email='v.quilonr@gmail.com',
     author='Victor Quilon Ranera',
     packages=find_packages(),
-    # install_requires=[
-    #     'pywin32 >= 1.0 ; platform_system=="Windows"',
-    #     'pasteboard == 0.3.3 ; platform_system=="Darwin"',
-    # ],
+    install_requires=[
+        "compress-pickle ~= 2.1.0"
+        # 'pywin32 >= 1.0 ; platform_system=="Windows"',
+        # 'pasteboard == 0.3.3 ; platform_system=="Darwin"',
+    ],
     # extras_require=extras,
     include_package_data=True,
     classifiers=[
