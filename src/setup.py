@@ -18,7 +18,8 @@ setup(
     author='Victor Quilon Ranera',
     packages=find_packages(),
     install_requires=[
-        "compress-pickle ~= 2.1.0"
+        "compress-pickle ~= 2.1.0",
+        "bokeh ~= 3.2.0",
         # 'pywin32 >= 1.0 ; platform_system=="Windows"',
         # 'pasteboard == 0.3.3 ; platform_system=="Darwin"',
     ],
