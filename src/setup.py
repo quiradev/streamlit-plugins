@@ -19,7 +19,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "compress-pickle ~= 2.1.0",
-        "bokeh ~= 3.2.0",
+        "bokeh ~= 3.1.1",
         # 'pywin32 >= 1.0 ; platform_system=="Windows"',
         # 'pasteboard == 0.3.3 ; platform_system=="Darwin"',
     ],
