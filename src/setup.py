@@ -5,6 +5,10 @@ import sys, os
 with open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+# Se leen los requirements de requirements.txt
+with open(os.path.join(os.path.dirname(__file__), 'requirements.txt'), encoding='utf-8') as f:
+    requirements = f.read().splitlines()
+
 
 setup(
     name='streamlit-plugins',
@@ -18,8 +22,7 @@ setup(
     author='Victor Quilon Ranera',
     packages=find_packages(),
     install_requires=[
-        "compress-pickle ~= 2.1.0",
-        "bokeh ~= 3.2.0",
+        *requirements,
         # 'pywin32 >= 1.0 ; platform_system=="Windows"',
         # 'pasteboard == 0.3.3 ; platform_system=="Darwin"',
     ],
@@ -33,6 +36,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
     # entry_points={
     #     'console_scripts': ['pyclip = pyclip.cli:main']

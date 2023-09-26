@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from numpy.lib.arraysetops import isin
+
 import streamlit as st
 
 SHOWCASE2_GLOBAL_STYLES = """

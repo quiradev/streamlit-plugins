@@ -1,0 +1,113 @@
+<!doctype html><html lang="en"><head><title>Streamlit Component NavBar</title><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#000000"/><meta name="description" content="Streamlit Component NavBar"/><link href="./static/snakeviz.css" rel="stylesheet"><link href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" rel="stylesheet"><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script><script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/immutable/4.3.0/immutable.min.js"></script><script src="./static/snakeviz.js"></script><script src="./static/drawsvg.js"></script></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div><script></script><script id="hierarchy-worker" type="javascript/worker">// This will all go into a web worker that will be used to generate
+        // the visualization JSON while leaving the rest of the app responsive.
+        //
+        // We put this here instead of in a separate JS file so that the worker
+        // can be stopped and restarted without loading the code from the server,
+        // and so that the stats data can be embedded in the worker.
+
+        // var stats = {% raw callees %};
+        function sv_build_hierarchy(stats, node_name, depth, max_depth, cutoff, node_time, parent_name, call_stack) {
+
+          // track visited functions so we can avoid infinitely displaying
+          // instances of recursion
+          if (_.isUndefined(call_stack)) {
+            var call_stack = Immutable.Set([node_name])
+          } else {
+            var call_stack = call_stack.add(node_name);
+          };
+
+          var data = {
+            name: node_name,
+            display_name: stats[node_name]['display_name'],
+            time: node_time,
+            cumulative: stats[node_name]['stats'][3],
+            parent_name: parent_name
+          };
+
+          if (depth < max_depth && !_.isEmpty(stats[node_name]['children'])) {
+            child_names = {};
+            for (var child_name in stats[node_name]['children']) {
+              // Cut off children that have already been visited (recursion)
+              if (!call_stack.contains(child_name)) {
+                child_names[child_name] = stats[node_name]['children'][child_name];
+              }
+            }
+
+            // Normalize the child times.
+            // Unfortunately, stats[child_name]['callers'][node_name][3] doesn't
+            // give us the time that child spend under node in this instance, but
+            // in all instances across the call tree. Yikes!
+            // This may lead to unexpected behavior, e.g., the child times add up
+            // to more than the node time. A normalization is necessary.
+            var child_times = {};
+            var total_children_time = 0.0;
+            for (var child_name in child_names) {
+              child_times[child_name] = stats[child_name]['callers'][node_name][3];
+              total_children_time += child_times[child_name];
+            }
+            if (total_children_time > node_time) {
+              for (var child_name in child_names) {
+                child_times[child_name] *= (node_time / total_children_time);
+              }
+            }
+
+            data['children'] = [];
+            // recurse
+            for (var child_name in child_names) {
+              if (child_times[child_name]/node_time > cutoff) {
+                data['children'].push(
+                  sv_build_hierarchy(
+                    stats, child_name, depth+1, max_depth, cutoff,
+                    child_times[child_name], node_name, call_stack
+                    ));
+              }
+            }
+
+            // D3, the plotting framework, only accounts for times in the leaf
+            // nodes. Hence, if the node_time exceeds the total time in its
+            // children, we need to add another child node to account for the the
+            // time spent in node itself.
+            if (total_children_time < node_time) {
+              data['children'].push({
+                name: node_name,
+                display_name: data['display_name'],
+                parent_name: data['parent_name'],
+                cumulative: stats[node_name]['stats'][3],
+                time: node_time - total_children_time
+              });
+            }
+          }
+
+          return data;
+        }
+
+        self.onmessage = function (event) {
+          // Try loading JS from CDN in case snakeviz server is off
+          try {
+            importScripts(
+              "https://cdnjs.cloudflare.com/ajax/libs/immutable/4.3.0/immutable.min.js",
+              "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js");
+          }
+          // If the user is offline try loading from the SnakeViz server
+          catch (e) {
+            try {
+              importScripts(
+                event.data['url'] + "./vendor/immutable.min.js",
+                event.data['url'] + "./vendor/lodash.min.js");
+            }
+            catch (e) {
+              throw 'Could not load JS libraries in worker.';
+            }
+          }
+          let stats = event.data['stats'];
+          var depth = 0;
+          var max_depth = event.data['depth'];
+          var cutoff = event.data['cutoff'];
+          var node_name = event.data['name'];
+          var parent_name = event.data['parent_name'];
+          var node_time = stats[node_name]['stats'][3];
+          self.postMessage(JSON.stringify(
+            sv_build_hierarchy(stats, node_name, depth, max_depth, cutoff, node_time, parent_name)
+            )
+          );
+        };</script><script>$(document).ready(_.defer((function(){window.initial_setup=()=>{var _=window.stats;sv_json_cache={},sv_worker=sv_make_worker(),sv_root_func_name=sv_find_root(_),sv_root_func_name__cached=sv_root_func_name,sv_call_stack=[sv_root_func_name],sv_total_time=_[sv_root_func_name].stats[3]}}))),$(document).ready(_.defer((function(){window.initial_call_stack=()=>{sv_update_call_stack_list(),sv_call_stack_btn_for_show()}}))),$(document).ready(_.defer((function(){window.initial_draw=()=>{sv_draw_vis(sv_root_func_name)}})))</script><script>!function(e){function r(r){for(var n,a,l=r[0],f=r[1],i=r[2],c=0,s=[];c<l.length;c++)a=l[c],Object.prototype.hasOwnProperty.call(o,a)&&o[a]&&s.push(o[a][0]),o[a]=0;for(n in f)Object.prototype.hasOwnProperty.call(f,n)&&(e[n]=f[n]);for(p&&p(r);s.length;)s.shift()();return u.push.apply(u,i||[]),t()}function t(){for(var e,r=0;r<u.length;r++){for(var t=u[r],n=!0,l=1;l<t.length;l++){var f=t[l];0!==o[f]&&(n=!1)}n&&(u.splice(r--,1),e=a(a.s=t[0]))}return e}var n={},o={1:0},u=[];function a(r){if(n[r])return n[r].exports;var t=n[r]={i:r,l:!1,exports:{}};return e[r].call(t.exports,t,t.exports,a),t.l=!0,t.exports}a.m=e,a.c=n,a.d=function(e,r,t){a.o(e,r)||Object.defineProperty(e,r,{enumerable:!0,get:t})},a.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},a.t=function(e,r){if(1&r&&(e=a(e)),8&r)return e;if(4&r&&"object"==typeof e&&e&&e.__esModule)return e;var t=Object.create(null);if(a.r(t),Object.defineProperty(t,"default",{enumerable:!0,value:e}),2&r&&"string"!=typeof e)for(var n in e)a.d(t,n,function(r){return e[r]}.bind(null,n));return t},a.n=function(e){var r=e&&e.__esModule?function(){return e.default}:function(){return e};return a.d(r,"a",r),r},a.o=function(e,r){return Object.prototype.hasOwnProperty.call(e,r)},a.p="./";var l=this.webpackJsonpnav_bar=this.webpackJsonpnav_bar||[],f=l.push.bind(l);l.push=r,l=l.slice();for(var i=0;i<l.length;i++)r(l[i]);var p=f;t()}([])</script><script src="./static/js/2.9cedfdc4.chunk.js"></script><script src="./static/js/main.1dfd8582.chunk.js"></script></body></html>
