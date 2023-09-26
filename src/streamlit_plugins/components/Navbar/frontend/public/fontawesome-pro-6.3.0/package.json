@@ -1,0 +1,20 @@
+{
+  "name": "@r3dz0n3/fontawesome-pro",
+  "version": "6.3.0",
+  "description": "Source link https://soft98.ir/graphic/font/2602-fontawesome.html",
+  "main": "js/fontawesome.js",
+  "style": "css/fontawesome.css",
+  "scripts": {
+    "postinstall": "node attribution.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/r3dz0n3-plysafe/fontawesome-pro-6.3.0-web"
+  },
+  "author": "r3dz0n3",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/r3dz0n3-plysafe/fontawesome-pro-6.3.0-web/issues"
+  },
+  "homepage": "https://github.com/r3dz0n3-plysafe/fontawesome-pro-6.3.0-web#readme"
+}

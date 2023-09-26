@@ -1,0 +1,156 @@
+body {
+    /* backdrop-filter: blur(4px) !important; */
+    background-color: var(--menu_background);
+    color: var(--text-color);
+}
+
+.text-color {
+    color: var(--text-color);
+}
+
+.hori-selector .left, .hori-selector .right{
+    display: none;
+}
+
+.dropdown-toggle:after {
+    display: inline-block;
+    margin-left: .255em;
+    vertical-align: .255em;
+    content: ">";
+    border: none;
+}
+#complexnavbarSupportedContent .nav-item > a:not(:only-child):after {
+    font-family: monospace;
+}
+
+#complexnavbarSupportedContent li.nav-item:has(ul.show) {
+    background: var(--option_active_translucent);
+}
+
+#complexnavbarSupportedContent li.nav-item:has(ul.show) > a:after {
+    -webkit-transform: rotate(90deg);
+     transform: rotate(90deg)
+}
+
+#complexnavbarSupportedContent .nav-item:not(:has(ul.show)) > a:after {
+    transform: none !important;
+}
+
+.navbar-nav>li>.dropdown-menu {
+    position: absolute;
+    width: 100%;
+    left: 0;
+    top: 100%;
+    background-color: var(--secondary-background-color);
+    color: var(--txc_active)!important;
+    border: none;
+    /*border-radius: 15px; */
+    border-radius: 0;
+}
+
+.dropdown-menu > li {
+    transition: none;
+}
+
+.dropdown-menu > li > a {
+    transition: none;
+}
+
+.navbar-toggler {
+    margin: 0.182rem 0.5rem;
+    padding: 0.75rem;
+    font-size: 1rem;
+    background-color: transparent;
+    border: none;
+    line-height: 1;
+    border-radius: 0.25rem;
+    outline: none !important;
+}
+
+.navbar-nav {
+    align-items: center;
+}
+
+.navbar-toggler:hover {
+    background: var(--secondary-background-color);
+}
+.navbar-toggler:focus {
+    box-shadow: var(--option_active_translucent) 0px 0px 0px 0.2rem
+}
+
+.navbar-toggler:focus-visible {
+    box-shadow: var(--secondary-background-color) 0px 0px 0px 0.2rem
+}
+
+.navbar-toggler > i {
+    scale: 1.5 1;
+}
+
+.hori-selector {
+    transition: none;
+}
+
+.navbar-mainbg {
+    padding-top: 0.5rem !important;
+}
+
+#complexnavbarSupportedContent li {
+    position: initial;
+}
+
+#complexnavbarSupportedContent li.active {
+    position: relative;
+}
+
+#complexnavbarSupportedContent ul.navbar-nav li.nav-item a {
+    background-color: transparent;
+    color: var(--txc_inactive);
+    border-radius: 0px;
+}
+
+#complexnavbarSupportedContent ul.navbar-nav li.nav-item.active > a {
+   background: var(--option_active_translucent);
+   border-bottom: 4px solid var(--option_active);
+}
+
+
+#complexnavbarSupportedContent ul.navbar-nav li.nav-item:hover,
+#complexnavbarSupportedContent ul.navbar-nav li.nav-item > a:active,
+#complexnavbarSupportedContent ul.navbar-nav li.nav-item > a:focus,
+#complexnavbarSupportedContent ul.navbar-nav li.nav-item > a:focus-visible,
+#complexnavbarSupportedContent ul.navbar-nav li.nav-item ul.dropdown-menu > li:hover,
+#complexnavbarSupportedContent ul.navbar-nav li.nav-item ul.dropdown-menu > li > a:active,
+#complexnavbarSupportedContent ul.navbar-nav li.nav-item ul.dropdown-menu > li > a:focus,
+#complexnavbarSupportedContent ul.navbar-nav li.nav-item ul.dropdown-menu > li > a:focus-visible {
+  background: var(--option_active_translucent);
+  color: var(--txc_active);
+}
+
+#complexnavbarSupportedContent li.nav-item > a {
+   border-bottom: 4px solid transparent;
+}
+
+#complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active) > a {
+    background: var(--option_active_translucent);
+    border-bottom: 4px solid var(--option_active);
+}
+
+#complexnavbarSupportedContent li.nav-item li > a {
+    border-left: 4px solid transparent;
+}
+
+#complexnavbarSupportedContent li.nav-item li.active > a {
+    background: var(--option_active_translucent);
+    border-left: 4px solid var(--option_active);
+}
+
+@media (max-width: 991px){
+    #complexnavbarSupportedContent ul.navbar-nav li.nav-item.active > a,
+    #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active) > a {
+       border-left: 4px solid var(--option_active);
+       border-bottom: none;
+    }
+    .navbar-nav {
+        align-items: unset;
+    }
+}
