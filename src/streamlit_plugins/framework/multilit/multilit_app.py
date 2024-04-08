@@ -552,7 +552,7 @@ class MultiApp(object):
     def _do_url_params(self):
         if self._allow_url_nav:
 
-            query_params = st.experimental_get_query_params()
+            query_params = st.query_params
             if 'selected' in query_params:
                 # and (query_params['selected'])[0] != self.session_state.previous_app:
                 if (query_params['selected'])[0] != 'None' and (query_params['selected'])[
@@ -610,7 +610,7 @@ class MultiApp(object):
         This method is the entry point for the MultiApp, just like a single Streamlit app, you simply setup the additional apps and then call this method to begin.
         """
         # process url navigation parameters
-        # self._do_url_params()
+        self._do_url_params()
 
         if self._banners is not None:
             if isinstance(self._banners, str):
