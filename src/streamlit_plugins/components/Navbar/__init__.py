@@ -5,6 +5,7 @@ import streamlit.components.v1 as components
 
 # _RELEASE = os.getenv("RELEASE", "").upper() != "DEV"
 _RELEASE = True
+# _RELEASE = False
 
 if _RELEASE:
     absolute_path = os.path.dirname(os.path.abspath(__file__))
@@ -80,7 +81,7 @@ HIDE_ST_STYLE = """
 
 def nav_bar(menu_definition, first_select=0, key="NavBarComponent", home_name=None, login_name=None,
             override_theme=None, sticky_nav=True, force_value=None, use_animation=True,
-            hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False):
+            hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False, override_app_selected_id=""):
     first_select = math.floor(first_select / 10)
 
     if type(home_name) is str:
@@ -119,7 +120,8 @@ def nav_bar(menu_definition, first_select=0, key="NavBarComponent", home_name=No
 
     component_value = _component_func(
         menu_definition=menu_definition, first_select=first_select, key=key, home=home_data, fvalue=force_value,
-        login=login_data, override_theme=override_theme, use_animation=use_animation
+        login=login_data, override_theme=override_theme, use_animation=use_animation,
+        override_app_selected_id=override_app_selected_id
     )
 
     if sticky_nav:
@@ -132,24 +134,27 @@ def nav_bar(menu_definition, first_select=0, key="NavBarComponent", home_name=No
         st.markdown(HIDE_ST_STYLE, unsafe_allow_html=True)
 
     if component_value is None:
-        if first_select > len(menu_definition):
-            if login_name is not None:
-                return login_name
-            else:
-                menu_item = menu_definition[-1]
-
-        elif home_name is None:
-            menu_item = menu_definition[first_select]
-
+        if override_app_selected_id:
+            return override_app_selected_id
         else:
-            if first_select == 0:
-                return home_data.get('id')
-            else:
-                menu_item = menu_definition[(first_select - 1)]
+            if first_select > len(menu_definition):
+                if login_name is not None:
+                    return login_name
+                else:
+                    menu_item = menu_definition[-1]
 
-        if 'id' in menu_item:
-            return menu_item.get('id')
-        else:
-            return menu_item.get('label')
+            elif home_name is None:
+                menu_item = menu_definition[first_select]
+
+            else:
+                if first_select == 0:
+                    return home_data.get('id')
+                else:
+                    menu_item = menu_definition[(first_select - 1)]
+
+            if 'id' in menu_item:
+                return menu_item.get('id')
+            else:
+                return menu_item.get('label')
     else:
         return component_value

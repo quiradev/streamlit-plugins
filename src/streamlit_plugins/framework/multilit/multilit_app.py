@@ -5,6 +5,7 @@ import streamlit as st
 
 from streamlit_plugins.components.Navbar import nav_bar
 from streamlit_plugins.framework.multilit.wrapper_class import Templateapp
+from .app_template import MultiHeadApp
 from .loading_app import LoadingApp
 
 
@@ -196,6 +197,15 @@ class MultiApp(object):
     # def _decode_hyauth(self,token):
     #     return jwt.decode(token, self._multilit_url_hash, algorithms=["HS256"])
 
+    def change_app_button(self, app_id: str, label: str):
+        if st.button(label):
+            if app_id not in self._apps and app_id != self._home_id:
+                raise ValueError(f"App id {app_id} not found in the list of apps")
+
+            # self.session_state.selected_app = app_id
+            self.session_state.other_nav_app = app_id
+            st.rerun()
+
     def add_loader_app(self, loader_app):
         """
         To improve the transition between MultiHeadApps, a loader app is used to quickly clear the window during loading, you can supply a custom loader app, if your include an app that loads a long time to initalise, that is when this app will be seen by the user.
@@ -213,7 +223,7 @@ class MultiApp(object):
             self._loader_app = None
             self._user_loader = False
 
-    def add_app(self, title, app, id: str = None, icon: str = None, is_login=False, is_home=False, logout_label: str = None, is_unsecure=False):
+    def add_app(self, title, app: MultiHeadApp, id: str = None, icon: str = None, is_login=False, is_home=False, logout_label: str = None, is_unsecure=False):
         """
         Adds a new application to this MultiApp
         Parameters
@@ -233,6 +243,8 @@ class MultiApp(object):
         """
 
         app_id = f"app_{id or len(self._apps) + 1}"
+
+        app._id = app_id
 
         if not is_login and not is_home:
             section_id = self._active_section or app_id
@@ -301,7 +313,6 @@ class MultiApp(object):
         self._active_section_icon = icon
 
         return SectionWithStatement(title, _exit_fn)
-
 
     def _run_selected(self):
         try:
@@ -428,7 +439,7 @@ class MultiApp(object):
         if callable(self._logout_callback):
             self._logout_callback()
 
-        st.experimental_rerun()
+        st.rerun()
 
     def _run_navbar(self, menu_data):
         login_nav = None
@@ -443,10 +454,17 @@ class MultiApp(object):
                 'id': self._home_id, 'label': self._home_label[0], 'icon': self._home_label[1], 'ttip': 'Home'
             }
 
+        # menu_index = [self._home_id] + [d['id'] for d in menu_data] + [self._logout_id]
+
+        app_selected = ""
+        if self.session_state.other_nav_app:
+            app_selected = self.session_state.other_nav_app
+
         self.session_state.selected_app = nav_bar(
             menu_definition=menu_data, key="mainMultilitMenuComplex", home_name=home_nav,
             override_theme=self._navbar_theme, login_name=login_nav,
-            use_animation=self._navbar_animation, hide_streamlit_markers=self._hide_streamlit_markers
+            use_animation=self._navbar_animation, hide_streamlit_markers=self._hide_streamlit_markers,
+            override_app_selected_id=app_selected
         )
 
         # if nav_selected is not None:
@@ -555,10 +573,9 @@ class MultiApp(object):
             query_params = st.query_params
             if 'selected' in query_params:
                 # and (query_params['selected'])[0] != self.session_state.previous_app:
-                if (query_params['selected'])[0] != 'None' and (query_params['selected'])[
-                    0] != self.session_state.selected_app:
-                    self.session_state.other_nav_app = (
-                        query_params['selected'])[0]
+                if query_params['selected'] != 'None' and query_params['selected'] != self.session_state.selected_app:
+                    self.session_state.other_nav_app = query_params['selected']
+                    del query_params['selected']
 
     def enable_guest_access(self, guest_access_level=1, guest_username='guest'):
         """

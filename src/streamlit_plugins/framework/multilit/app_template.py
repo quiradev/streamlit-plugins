@@ -20,6 +20,12 @@ class MultiHeadApp(ABC):
 
     """
 
+    def __init__(self):
+        self._id = None
+
+    def get_id(self):
+        return self._id
+
     # Must implement this method as the entry point for the application.
     @abstractmethod
     def run(self):
@@ -99,7 +105,7 @@ class MultiHeadApp(ABC):
             st.bokeh_chart(div)
         else:
             self.session_state.other_nav_app = redirect_target_app
-            st.experimental_rerun()
+            st.rerun()
 
     def download_button(self, object_to_download, download_filename, button_text, use_compression=False,
                         parent_container=None, pickle_it=False, css_formatting=None, **kwargs):

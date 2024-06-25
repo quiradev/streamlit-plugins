@@ -29,6 +29,7 @@ interface PythonArgs {
   login: MenuItem;
   first_select: number;
   override_theme: OverrideTheme;
+  override_app_selected_id: string;
   key?: string;
   fvalue?: boolean;
 }
@@ -71,6 +72,7 @@ const NavBar: React.VFC = () => {
 
   const args: PythonArgs = renderData.args;
   let menu_definition: MenuItem[] = args.menu_definition;
+  let override_app_selected_id: string = args.override_app_selected_id || "";
 
   /* Functions definition */
   const delayed_resize = (wait_time: number): NodeJS.Timeout =>
@@ -222,11 +224,19 @@ const NavBar: React.VFC = () => {
     let isActive: boolean = false;
     if (!selected_app_id) {
       if (kid === first_select) {
-        isActive = true;
+        // isActive = true;
         setSelectedAppId(item.id);
       }
     }
-    if (selected_app_id === item.id) isActive = true;
+    if (item.id === override_app_selected_id && selected_app_id !== override_app_selected_id) {
+      // isActive = true;
+      setSelectedAppId(override_app_selected_id);
+    }
+
+    if (selected_app_id === item.id) {
+      isActive = true;
+      Streamlit.setComponentValue(selected_app_id);
+    }
     if (Array.isArray(item.submenu)) {
       return (
         <li

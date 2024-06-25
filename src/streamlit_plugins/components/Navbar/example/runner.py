@@ -15,4 +15,4 @@ if __name__ == '__main__':
     _config.set_option("server.port", 8502)
     args = []
 
-    bootstrap.run(real_script, '', args, flag_options={})
+    bootstrap.run(real_script, False, args, flag_options={})
