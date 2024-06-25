@@ -251,7 +251,7 @@ class MultiApp(object):
             self._complex_nav[section_id].append(app_id)
 
         # don't add special apps to list
-        if self._use_navbar and not is_login and not is_home:
+        if not is_login and not is_home:
             self._navbar_pointers[app_id] = [title, icon]
 
         if is_unsecure:
