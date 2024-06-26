@@ -1,3 +1,4 @@
+import traceback
 from collections import defaultdict
 from typing import Dict
 
@@ -345,7 +346,9 @@ class MultiApp(object):
 
         except Exception as e:
             st.error(f'😭 Error triggered from app: **{self._navbar_pointers[self.session_state.selected_app][0]}**')
-            st.error('Details: {}'.format(e))
+            trace_err = traceback.format_exc()
+            st.error(f'Details:\n{trace_err}')
+            traceback.print_exc()
 
     def _clear_session_values(self):
         for key in st.session_state:
