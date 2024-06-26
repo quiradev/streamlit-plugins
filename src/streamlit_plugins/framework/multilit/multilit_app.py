@@ -196,15 +196,17 @@ class MultiApp(object):
 
     # def _decode_hyauth(self,token):
     #     return jwt.decode(token, self._multilit_url_hash, algorithms=["HS256"])
+    
+    def change_app(self, app_id: str):
+        if app_id not in self._apps and app_id != self._home_id:
+            raise ValueError(f"App id {app_id} not found in the list of apps")
 
+        self.session_state.selected_app = app_id
+        st.rerun()
+    
     def change_app_button(self, app_id: str, label: str):
         if st.button(label):
-            if app_id not in self._apps and app_id != self._home_id:
-                raise ValueError(f"App id {app_id} not found in the list of apps")
-
-            # self.session_state.selected_app = app_id
-            self.session_state.other_nav_app = app_id
-            st.rerun()
+            self.change_app(app_id)
 
     def add_loader_app(self, loader_app):
         """
