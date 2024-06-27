@@ -33,7 +33,7 @@ PINNED_NAV_STYLE = f"""
                         position: fixed;
                         z-index: 1000;
                         box-sizing: content-box;
-                        top: calc(2.875rem - 0.5rem);
+                        top: calc(3.75rem - 0.75rem);
                         border: 2px solid #ff4b56;
                         border: 1px solid #9e9e9e;
                         border-radius: 5px;

@@ -356,9 +356,13 @@ class MultiApp(object):
             if self.session_state.selected_app == self._logout_id:
                 app_label = self._logout_label[0]
 
-            st.error(f'😭 Error triggered from app: **{app_label}**')
             trace_err = traceback.format_exc()
-            st.error(f'Details:\n{trace_err}')
+            st.error(
+                f'😭 Error triggered from app: **{app_label}**\n\n'
+                f'Details:\n'
+                f'```{trace_err}```',
+                icon="🚨"
+            )
             logger.error(trace_err)
 
     def _clear_session_values(self):
@@ -480,7 +484,8 @@ class MultiApp(object):
             menu_definition=menu_data, key="mainMultilitMenuComplex", home_name=home_nav,
             override_theme=self._navbar_theme, login_name=login_nav,
             use_animation=self._navbar_animation, hide_streamlit_markers=self._hide_streamlit_markers,
-            override_app_selected_id=app_selected
+            override_app_selected_id=app_selected,
+            sticky_nav=self._navbar_sticky, sticky_mode=self._navbar_mode
         )
 
         # if nav_selected is not None:
