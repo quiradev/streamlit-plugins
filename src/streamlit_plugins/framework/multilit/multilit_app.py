@@ -1,3 +1,4 @@
+import logging
 import traceback
 from collections import defaultdict
 from typing import Dict
@@ -8,6 +9,8 @@ from streamlit_plugins.components.Navbar import nav_bar
 from streamlit_plugins.framework.multilit.wrapper_class import Templateapp
 from .app_template import MultiHeadApp
 from .loading_app import LoadingApp
+
+logger = logging.getLogger(__name__)
 
 
 class SectionWithStatement:
@@ -345,10 +348,18 @@ class MultiApp(object):
                 app.run()
 
         except Exception as e:
-            st.error(f'😭 Error triggered from app: **{self._navbar_pointers[self.session_state.selected_app][0]}**')
+            app_label = self.session_state.selected_app
+            if self.session_state.selected_app in self._navbar_pointers:
+                app_label = self._navbar_pointers[self.session_state.selected_app][0]
+            if self.session_state.selected_app == self._home_id:
+                app_label = self._home_label[0]
+            if self.session_state.selected_app == self._logout_id:
+                app_label = self._logout_label[0]
+
+            st.error(f'😭 Error triggered from app: **{app_label}**')
             trace_err = traceback.format_exc()
             st.error(f'Details:\n{trace_err}')
-            traceback.print_exc()
+            logger.error(trace_err)
 
     def _clear_session_values(self):
         for key in st.session_state:
