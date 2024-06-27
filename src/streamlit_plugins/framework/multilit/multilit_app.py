@@ -205,7 +205,7 @@ class MultiApp(object):
         if app_id not in self._apps and app_id != self._home_id:
             raise ValueError(f"App id {app_id} not found in the list of apps")
 
-        self.session_state.selected_app = app_id
+        self.session_state.other_nav_app = app_id
         st.rerun()
     
     def change_app_button(self, app_id: str, label: str):
