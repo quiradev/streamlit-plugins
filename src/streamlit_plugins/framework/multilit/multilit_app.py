@@ -200,14 +200,14 @@ class MultiApp(object):
 
     # def _decode_hyauth(self,token):
     #     return jwt.decode(token, self._multilit_url_hash, algorithms=["HS256"])
-    
+
     def change_app(self, app_id: str):
         if app_id not in self._apps and app_id != self._home_id:
             raise ValueError(f"App id {app_id} not found in the list of apps")
 
         self.session_state.other_nav_app = app_id
         st.rerun()
-    
+
     def change_app_button(self, app_id: str, label: str):
         if st.button(label):
             self.change_app(app_id)
@@ -229,7 +229,8 @@ class MultiApp(object):
             self._loader_app = None
             self._user_loader = False
 
-    def add_app(self, title, app: MultiHeadApp, id: str = None, icon: str = None, is_login=False, is_home=False, logout_label: str = None, is_unsecure=False):
+    def add_app(self, title, app: MultiHeadApp, id: str = None, icon: str = None, is_login=False, is_home=False,
+                logout_label: str = None, is_unsecure=False):
         """
         Adds a new application to this MultiApp
         Parameters
@@ -321,14 +322,16 @@ class MultiApp(object):
         return SectionWithStatement(title, _exit_fn)
 
     def _run_selected(self):
+        app = None
+        app_id = None
         try:
-            app = None
             if self.session_state.selected_app is None:
                 self.session_state.other_nav_app = None
                 self.session_state.previous_app = None
                 self.session_state.selected_app = self._home_id
 
                 app = self._home_app
+                app_id = self._home_id
 
             else:
 
@@ -339,31 +342,34 @@ class MultiApp(object):
 
                 if self.session_state.selected_app == self._home_id:
                     app = self._home_app
+                    app_id = self._home_id
                 else:
                     app = self._apps[self.session_state.selected_app]
+                    app_id = self.session_state.selected_app
 
             if self._user_loader:
                 self._loader_app.run(app)
             else:
                 app.run()
 
-        except Exception as e:
-            app_label = self.session_state.selected_app
-            if self.session_state.selected_app in self._navbar_pointers:
-                app_label = self._navbar_pointers[self.session_state.selected_app][0]
-            if self.session_state.selected_app == self._home_id:
+        except BaseException as e:
+            trace_err = traceback.format_exc()
+            logger.error(trace_err)
+            app_label = app_id
+            if app_id in self._navbar_pointers:
+                app_label = self._navbar_pointers[app_id][0]
+            if app_id == self._home_id:
                 app_label = self._home_label[0]
-            if self.session_state.selected_app == self._logout_id:
+            if app_id == self._logout_id:
                 app_label = self._logout_label[0]
 
-            trace_err = traceback.format_exc()
             st.error(
                 f'😭 Error triggered from app: **{app_label}**\n\n'
                 f'Details:\n'
                 f'```{trace_err}```',
                 icon="🚨"
             )
-            logger.error(trace_err)
+            raise e
 
     def _clear_session_values(self):
         for key in st.session_state:
@@ -498,20 +504,6 @@ class MultiApp(object):
     def _build_nav_menu(self):
         number_of_sections = int(self._login_app is not None) + len(self._complex_nav.keys())
 
-        if self._nav_horizontal:
-            if hasattr(self._nav_container, 'columns'):
-                nav_slots = self._nav_container.columns(number_of_sections)
-            elif self._nav_container.__name__ in ['columns']:
-                nav_slots = self._nav_container(number_of_sections)
-            else:
-                nav_slots = self._nav_container
-        else:
-            if self._nav_container.__name__ in ['columns']:
-                # columns within columns currently not supported
-                nav_slots = st
-            else:
-                nav_slots = self._nav_container
-
         if self._use_navbar:
             menu_data = []
             for i, nav_section_id in enumerate(self._complex_nav):
@@ -555,6 +547,20 @@ class MultiApp(object):
                     self._run_navbar(menu_data)
 
         else:
+            if self._nav_horizontal:
+                if hasattr(self._nav_container, 'columns'):
+                    nav_slots = self._nav_container.columns(number_of_sections)
+                elif self._nav_container.__name__ in ['columns']:
+                    nav_slots = self._nav_container(number_of_sections)
+                else:
+                    nav_slots = self._nav_container
+            else:
+                if self._nav_container.__name__ in ['columns']:
+                    # columns within columns currently not supported
+                    nav_slots = st
+                else:
+                    nav_slots = self._nav_container
+
             for i, nav_section_id in enumerate(self._complex_nav):
                 if nav_section_id not in [self._home_id, self._logout_id]:
                     if self._nav_horizontal:
