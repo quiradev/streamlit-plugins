@@ -4,6 +4,7 @@ from collections import defaultdict
 from typing import Dict
 
 import streamlit as st
+from streamlit.runtime.scriptrunner import RerunException, StopException
 
 from streamlit_plugins.components.Navbar import nav_bar
 from streamlit_plugins.framework.multilit.wrapper_class import Templateapp
@@ -353,7 +354,16 @@ class MultiApp(object):
                 app.run()
 
         except BaseException as e:
-            trace_err = traceback.format_exc()
+            if isinstance(e, RerunException):
+                raise e
+
+            if isinstance(e, StopException):
+                while e:
+                    e = e.__context__
+
+            trace_err = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+            # trace_err = traceback.format_exc()
+
             logger.error(trace_err)
             app_label = app_id
             if app_id in self._navbar_pointers:
@@ -362,6 +372,8 @@ class MultiApp(object):
                 app_label = self._home_label[0]
             if app_id == self._logout_id:
                 app_label = self._logout_label[0]
+
+            # TODO: Averiguar como parar un stop y poder enviar el error a la interfaz de streamlit
 
             st.error(
                 f'😭 Error triggered from app: **{app_label}**\n\n'
