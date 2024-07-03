@@ -1,5 +1,12 @@
+import sys
+
+try:
+    if '_pydevd_frame_eval.pydevd_frame_eval_cython_wrapper' not in sys.modules:
+        import _pydevd_frame_eval.pydevd_frame_eval_cython_wrapper
+except ImportError:
+    pass
+
 import datetime
-import os.path
 
 import streamlit as st
 

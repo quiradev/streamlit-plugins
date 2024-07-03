@@ -81,8 +81,11 @@ HIDE_ST_STYLE = """
 
 def nav_bar(menu_definition, first_select=0, key="NavBarComponent", home_name=None, login_name=None,
             override_theme=None, sticky_nav=True, force_value=None, use_animation=True,
-            hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False, override_app_selected_id=""):
-    first_select = math.floor(first_select / 10)
+            hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False, override_app_selected_id=None):
+    # if key not in st.session_state:
+    #     st.session_state[key] = None
+
+    # first_select = math.floor(first_select / 10)
 
     if type(home_name) is str:
         home_data = {'id': "app_home", 'label': home_name, 'icon': "fa fa-home", 'ttip': home_name}
@@ -118,10 +121,19 @@ def nav_bar(menu_definition, first_select=0, key="NavBarComponent", home_name=No
                 menu_definition[i]['submenu'][_i]['label'] = menu_definition[i]['submenu'][_i].get('label', f'{i}_Label_{_i}')
                 menu_definition[i]['submenu'][_i]['id'] = menu_definition[i]['submenu'][_i].get('id', f"app_{menu_definition[i]['submenu'][_i]['label']}")
 
+    # if default_app_selected_id is None:
+    items = menu_definition
+    if home_name is not None:
+        items = [home_data] + items
+    if login_name is not None:
+        items = items + [login_data]
+    default_app_selected_id = items[first_select].get('id')
+
     component_value = _component_func(
-        menu_definition=menu_definition, first_select=first_select, key=key, home=home_data, fvalue=force_value,
+        menu_definition=menu_definition, key=key, home=home_data, fvalue=force_value,
         login=login_data, override_theme=override_theme, use_animation=use_animation,
-        override_app_selected_id=override_app_selected_id
+        override_app_selected_id=override_app_selected_id,
+        default=default_app_selected_id, default_app_selected_id=default_app_selected_id
     )
 
     if sticky_nav:
@@ -134,27 +146,12 @@ def nav_bar(menu_definition, first_select=0, key="NavBarComponent", home_name=No
         st.markdown(HIDE_ST_STYLE, unsafe_allow_html=True)
 
     if component_value is None:
-        if override_app_selected_id:
-            return override_app_selected_id
-        else:
-            if first_select > len(menu_definition):
-                if login_name is not None:
-                    return login_name
-                else:
-                    menu_item = menu_definition[-1]
+        component_value = default_app_selected_id
 
-            elif home_name is None:
-                menu_item = menu_definition[first_select]
+    if override_app_selected_id:
+        component_value = override_app_selected_id
 
-            else:
-                if first_select == 0:
-                    return home_data.get('id')
-                else:
-                    menu_item = menu_definition[(first_select - 1)]
+    # print(f"Component Value: {component_value}")
+    # st.session_state[key] = component_value
 
-            if 'id' in menu_item:
-                return menu_item.get('id')
-            else:
-                return menu_item.get('label')
-    else:
-        return component_value
+    return component_value

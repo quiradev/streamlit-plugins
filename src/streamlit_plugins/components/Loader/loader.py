@@ -3434,6 +3434,15 @@ def book_loader(**kwargs):
             border-radius: 50%;
             z-index: 1000;
         }
+        .parent:after {
+            content: "";
+            position: fixed;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #ffffffbf;
+            z-index: 999;
+        }
         .container {
             --duration: 6s;
             --color: ||-pcolor-||;

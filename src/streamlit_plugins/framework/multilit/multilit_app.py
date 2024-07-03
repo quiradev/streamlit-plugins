@@ -602,7 +602,8 @@ class MultiApp(object):
                         nav_section = nav_section_root.expander(label=sect_label, expanded=False)
 
                     for app_item_id in self._complex_nav[nav_section_id]:
-                        if nav_section.button(label=self._navbar_pointers[app_item_id][0]):
+                        btn_type = "primary" if self.session_state.selected_app == app_item_id else "secondary"
+                        if nav_section.button(label=self._navbar_pointers[app_item_id][0], type=btn_type):
                             self.session_state.previous_app = self.session_state.selected_app
                             self.session_state.selected_app = app_item_id
 
