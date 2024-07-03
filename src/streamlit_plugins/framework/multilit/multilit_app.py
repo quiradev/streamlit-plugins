@@ -4,7 +4,8 @@ from collections import defaultdict
 from typing import Dict
 
 import streamlit as st
-from streamlit.runtime.scriptrunner import RerunException, StopException
+from streamlit.runtime.scriptrunner import RerunException, StopException, get_script_run_ctx
+from streamlit.runtime.scriptrunner.script_requests import ScriptRequestType
 
 from streamlit_plugins.components.Navbar import nav_bar
 from streamlit_plugins.framework.multilit.wrapper_class import Templateapp
@@ -183,7 +184,7 @@ class MultiApp(object):
         self._session_attrs = {
             'previous_app': None, 'selected_app': None, 'other_nav_app': None,
             'preserve_state': preserve_state, 'allow_access': self._no_access_level,
-            'logged_in': False, 'access_hash': None
+            'logged_in': False, 'access_hash': None, 'uncaught_error': None
         }
         self.session_state = st.session_state
 
@@ -323,8 +324,7 @@ class MultiApp(object):
         return SectionWithStatement(title, _exit_fn)
 
     def _run_selected(self):
-        app = None
-        app_id = None
+        app_label = None
         try:
             if self.session_state.selected_app is None:
                 self.session_state.other_nav_app = None
@@ -335,7 +335,6 @@ class MultiApp(object):
                 app_id = self._home_id
 
             else:
-
                 if self.session_state.other_nav_app is not None:
                     self.session_state.previous_app = self.session_state.selected_app
                     self.session_state.selected_app = self.session_state.other_nav_app
@@ -348,23 +347,6 @@ class MultiApp(object):
                     app = self._apps[self.session_state.selected_app]
                     app_id = self.session_state.selected_app
 
-            if self._user_loader:
-                self._loader_app.run(app)
-            else:
-                app.run()
-
-        except BaseException as e:
-            if isinstance(e, RerunException):
-                raise e
-
-            if isinstance(e, StopException):
-                while e:
-                    e = e.__context__
-
-            trace_err = "".join(traceback.format_exception(type(e), e, e.__traceback__))
-            # trace_err = traceback.format_exc()
-
-            logger.error(trace_err)
             app_label = app_id
             if app_id in self._navbar_pointers:
                 app_label = self._navbar_pointers[app_id][0]
@@ -373,7 +355,40 @@ class MultiApp(object):
             if app_id == self._logout_id:
                 app_label = self._logout_label[0]
 
+            if self._user_loader:
+                self._loader_app.run(app)
+            else:
+                if self.session_state.uncaught_error:
+                    st.error(
+                        f'😭 Error triggered from app: **{self.session_state.selected_app}**\n\n'
+                        f'Details:\n'
+                        f'```{self.session_state.uncaught_error}```',
+                        icon="🚨"
+                    )
+                app.run()
+                self.session_state.uncaught_error = None
+
+        except BaseException as e:
+            if isinstance(e, RerunException):
+                raise e
+
+            if isinstance(e, StopException):
+                while isinstance(e, StopException):
+                    if e.__context__ is not None:
+                        break
+                    e = e.__context__
+
+            trace_err = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+            # trace_err = traceback.format_exc()
+
+            logger.error(trace_err)
+
             # TODO: Averiguar como parar un stop y poder enviar el error a la interfaz de streamlit
+            run_ctx = get_script_run_ctx()
+            with run_ctx.script_requests._lock:
+                run_ctx.script_requests._state = ScriptRequestType.CONTINUE
+
+            self.session_state.uncaught_error = trace_err
 
             st.error(
                 f'😭 Error triggered from app: **{app_label}**\n\n'
