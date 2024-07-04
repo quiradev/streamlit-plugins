@@ -1,18 +1,20 @@
-from setuptools import setup, find_packages
+import os
 from io import open
-import sys, os
+from pathlib import Path
 
-with open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding='utf-8') as f:
+from setuptools import setup, find_packages
+
+with open(os.path.join(Path(__file__).parent.parent / 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 # Se leen los requirements de requirements.txt
-with open(os.path.join(os.path.dirname(__file__), 'requirements.txt'), encoding='utf-8') as f:
+with open(os.path.join(Path(__file__).parent, 'requirements.txt'), encoding='utf-8') as f:
     requirements = f.read().splitlines()
 
 
 setup(
     name='streamlit-plugins',
-    version='0.1.0',
+    version='1.0.0',
     license='MIT',
     url='https://github.com/vquilon/streamlit-plugins',
     description='Components and Frameworks to give new features to streamlit',
@@ -23,24 +25,14 @@ setup(
     packages=find_packages(),
     install_requires=[
         *requirements,
-        # 'pywin32 >= 1.0 ; platform_system=="Windows"',
-        # 'pasteboard == 0.3.3 ; platform_system=="Darwin"',
     ],
-    # extras_require=extras,
     include_package_data=True,
     classifiers=[
         'Intended Audience :: Developers',
         'Programming Language :: Python',
-        # 'License :: OSI Approved :: Apache Software License',
-        # 'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
     ],
-    # entry_points={
-    #     'console_scripts': ['pyclip = pyclip.cli:main']
-    # },
-    # tests_require=test_requirements,
-    keywords='streamlit plugins framework component'
+    keywords=["streamlit", "plugins", "framework", "components", "streamlit navbar"]
 )
