@@ -1,7 +1,7 @@
 # streamlit-plugins
 Components and Frameworks to give new features to streamlit
 
-![Demo Multipage with Navbar](/resources/demo1.gif)
+![Demo Multipage with Navbar](https://raw.githubusercontent.com/quiradev/streamlit-plugins/main/resources/demo1.gif)
 
 ## Frameworks
 ### Multilit (Inherit from Hydralit)
@@ -12,7 +12,7 @@ And it improves the interface to be more user-friendly. Also, it respects the st
 In a future is planned to incorporate the new multipage native of streamlit. Instead of the current implementation.
 
 Can use built-in buttons to change the page, or use a function to change the page programmatically.
-![Change Page with button](/resources/demo2.gif)
+![Change Page with button](https://raw.githubusercontent.com/quiradev/streamlit-plugins/main/resources/demo2.gif)
 
 ## Components
 The Navbar and Loader component are inherited from Hydralit components, only to give support to the multilit framework.
