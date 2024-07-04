@@ -3,5 +3,6 @@ __pycache__
 .history
 .idea
 .vscode
-src/build
+build
+dist
 streamlit_plugins.egg-info
