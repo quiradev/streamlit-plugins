@@ -150,7 +150,6 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
                 menu_definition[i]['submenu'][_i]['label'] = menu_definition[i]['submenu'][_i].get('label', f'{i}_Label_{_i}')
                 menu_definition[i]['submenu'][_i]['id'] = menu_definition[i]['submenu'][_i].get('id', f"app_{menu_definition[i]['submenu'][_i]['label']}")
 
-    # if default_app_selected_id is None:
     items = menu_definition
     if home_name is not None:
         items = [home_data] + items
@@ -161,6 +160,8 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
     if first_select_item.get('submenu', []):
         default_app_selected_id = first_select_item['submenu'][0].get('id', None)
 
+    if override_app_selected_id is None or override_app_selected_id == "":
+        override_app_selected_id = default_app_selected_id
 
     component_value = _component_func(
         menu_definition=menu_definition, key=key, home=home_data, fvalue=force_value,
