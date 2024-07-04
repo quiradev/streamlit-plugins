@@ -6,7 +6,7 @@ from streamlit.navigation.page import StreamlitPage
 
 # _RELEASE = os.getenv("RELEASE", "").upper() != "DEV"
 _RELEASE = True
-# _RELEASE = False
+_RELEASE = False
 
 if _RELEASE:
     absolute_path = os.path.dirname(os.path.abspath(__file__))
@@ -188,9 +188,19 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
 
     if component_value is None:
         component_value = default_app_selected_id
+        # from streamlit.runtime.state import get_session_state
+        # session_state = get_session_state()
+        # widget_key = session_state._state._key_id_mapping[key]
+        # session_state._state[widget_key] = component_value
+        # session_state._state._old_state[widget_key] = component_value
 
     if override_app_selected_id:
         component_value = override_app_selected_id
+        # from streamlit.runtime.state import get_session_state
+        # session_state = get_session_state()
+        # widget_key = session_state._state._key_id_mapping[key]
+        # session_state._state[widget_key] = component_value
+        # session_state._state._old_state[widget_key] = component_value
 
     # print(f"FROM Navbar FINAL: {component_value}")
     # print()

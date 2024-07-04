@@ -44,10 +44,9 @@ const NavBar: React.VFC = () => {
   const renderData = useRenderData<NavBarRenderData>();
 
   const args: PythonArgs = renderData.args;
-  // if (_app_selected_id === "") _app_selected_id = args.default_app_selected_id;
 
   const [expandState, setExpandState] = useState(false);
-  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [selectedAppId, setSelectedAppId] = useState<string>(args.default_app_selected_id);
   const [selectedSubMenu, setSelectedSubMenu] = useState<string | null>(null);
   const [expandSubMenu, setExpandSubMenu] = useState(false);
   const [blockState, setBlockState] = useState("none");

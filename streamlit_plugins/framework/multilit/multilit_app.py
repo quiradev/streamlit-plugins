@@ -51,7 +51,8 @@ class MultiApp(object):
                  use_banner_images=None,
                  banner_spacing=None,
                  clear_cross_app_sessions=True,
-                 session_params=None):
+                 session_params=None,
+                 verbose=False):
         """
         A class to create an Multi-app Streamlit application. This class will be the host application for multiple applications that are added after instancing.
         The secret saurce to making the different apps work together comes from the use of a global session store that is shared with any MultiHeadApp that is added to the parent MultiApp.
@@ -107,6 +108,7 @@ class MultiApp(object):
 
         self._active_section = None
         self._active_section_icon = None
+        self._verbose = verbose
 
         self._apps = {}
         self._navbar_pointers = {}
@@ -355,26 +357,28 @@ class MultiApp(object):
             if app_id == self._logout_id:
                 app_label = self._logout_label[0]
 
+            # print("Running", app_label)
+            if self._verbose and self.session_state.uncaught_error:
+                st.error(
+                    f'😭 Error triggered from app: **{self.session_state.selected_app}**\n\n'
+                    f'Details:\n'
+                    f'```{self.session_state.uncaught_error}```',
+                    icon="🚨"
+                )
+
             if self._user_loader:
                 self._loader_app.run(app)
             else:
-                if self.session_state.uncaught_error:
-                    st.error(
-                        f'😭 Error triggered from app: **{self.session_state.selected_app}**\n\n'
-                        f'Details:\n'
-                        f'```{self.session_state.uncaught_error}```',
-                        icon="🚨"
-                    )
                 app.run()
-                self.session_state.uncaught_error = None
 
+            self.session_state.uncaught_error = None
         except BaseException as e:
             if isinstance(e, RerunException):
                 raise e
 
             if isinstance(e, StopException):
                 while isinstance(e, StopException):
-                    if e.__context__ is not None:
+                    if e.__context__ is None:
                         break
                     e = e.__context__
 
@@ -382,6 +386,9 @@ class MultiApp(object):
             # trace_err = traceback.format_exc()
 
             logger.error(trace_err)
+
+            if isinstance(e, StopException):
+                raise e
 
             # TODO: Averiguar como parar un stop y poder enviar el error a la interfaz de streamlit
             run_ctx = get_script_run_ctx()
