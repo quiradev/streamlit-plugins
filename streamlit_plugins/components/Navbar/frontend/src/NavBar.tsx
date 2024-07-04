@@ -54,7 +54,7 @@ const NavBar: React.VFC = () => {
   // Handle override_app_selected_id updates
   useEffect(() => {
     if (args.override_app_selected_id) {
-      console.log(args.override_app_selected_id);
+      //console.log(args.override_app_selected_id);
       setSelectedAppId(args.override_app_selected_id);
       setExpandState(false);
       setBlockState("none");
