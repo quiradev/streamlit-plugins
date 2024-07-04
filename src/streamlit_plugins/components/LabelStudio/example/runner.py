@@ -10,10 +10,10 @@ if __name__ == '__main__':
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
     )))
     real_script = "app.py"
-    os.environ['RELEASE'] = 'DEV'
+    # os.environ['RELEASE'] = 'DEV'
     _config.set_option("browser.gatherUsageStats", False)
     _config.set_option("server.port", 8502)
     _config.set_option("server.headless", True)
     args = []
 
-    bootstrap.run(real_script, '', args, flag_options={})
+    bootstrap.run(real_script, False, args, flag_options={})

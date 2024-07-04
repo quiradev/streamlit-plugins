@@ -2,6 +2,7 @@ import os
 import streamlit as st
 import math
 import streamlit.components.v1 as components
+from streamlit.navigation.page import StreamlitPage
 
 # _RELEASE = os.getenv("RELEASE", "").upper() != "DEV"
 _RELEASE = True
@@ -79,7 +80,35 @@ HIDE_ST_STYLE = """
                     </style>
                 """
 
-def nav_bar(menu_definition, first_select=0, key="NavBarComponent", home_name=None, login_name=None,
+
+def build_menu_from_st_pages(*pages: StreamlitPage | dict, login_app: StreamlitPage = None, logout_app: StreamlitPage = None) -> tuple[list[dict], dict[str, StreamlitPage]]:
+    menu = []
+    app_map = {}
+    for page in pages:
+        if isinstance(page, dict):
+            for label, sub_pages in page.items():
+                submenu, sub_app_map = build_menu_from_st_pages(*sub_pages)
+                menu.append({'id': label.lower().replace(" ", "_"), 'label': label, 'submenu': submenu})
+                app_map.update(sub_app_map)
+        elif isinstance(page, StreamlitPage):
+            app_id = page.url_path
+            if not app_id:
+                app_id = "app_default"
+            menu.append({'label': page.title, 'id': app_id})
+            app_map[app_id] = page
+        else:
+            raise ValueError(f"Invalid page type: {type(page)}")
+
+    if login_app:
+        app_map["app_login"] = login_app
+
+    if logout_app:
+        app_map["app_logout"] = logout_app
+
+    return menu, app_map
+
+
+def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent", home_name=None, login_name=None,
             override_theme=None, sticky_nav=True, force_value=None, use_animation=True,
             hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False, override_app_selected_id=None):
     # if key not in st.session_state:
@@ -127,7 +156,11 @@ def nav_bar(menu_definition, first_select=0, key="NavBarComponent", home_name=No
         items = [home_data] + items
     if login_name is not None:
         items = items + [login_data]
-    default_app_selected_id = items[first_select].get('id')
+    first_select_item = items[first_select]
+    default_app_selected_id = first_select_item.get('id', None)
+    if first_select_item.get('submenu', []):
+        default_app_selected_id = first_select_item['submenu'][0].get('id', None)
+
 
     component_value = _component_func(
         menu_definition=menu_definition, key=key, home=home_data, fvalue=force_value,

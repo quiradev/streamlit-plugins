@@ -10,7 +10,7 @@ import datetime
 
 import streamlit as st
 
-from streamlit_plugins.components.Navbar import nav_bar
+from streamlit_plugins.components.Navbar import st_navbar
 
 # make it look nice from the start
 st.set_page_config(layout='wide', initial_sidebar_state='collapsed')
@@ -34,7 +34,7 @@ menu_data = [
 ]
 
 
-menu_id = nav_bar(
+menu_id = st_navbar(
     menu_definition=menu_data,
     home_name='Home',
     login_name='Logout',

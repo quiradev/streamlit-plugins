@@ -5,12 +5,12 @@
       "id": 1,
       "type": "NER",
       "state": "PENDING",
-      "text": "El Sr. D. Edmundo Rodríguez Achútegui, Magistrado-Juez del Juzgado de lo Mercantil nº 1 de Bilbao, ha visto los presentes autos de Juicio Ordinario nº 75/2004, instados por el Procurador de los Tribunales D. SANTIAGO IBAÑEZ FERNANDEZ, en nombre y representación de QUIMICA DE MUNGUIA S.A. (QUIMUNSA), domiciliada en MUNGIA (Bizkaia), asistido del letrado D. JESUS MARIA QUINTANA ARANGUREN, frente a D. Agustín , D. Jose Ramón , D. Inocencio y DTS OABE S.L., los primeros mayores de edad, domiciliados en GÓRLIZ y ARCENTALES (BIZKAIA), CASTRO-URDIALES (CANTABRIA), y la última en OROZKO (BIZKAIA), representados todos ellos por la Procuradora de los Tribunales Dª MARIA LECETA BILBAO, asistida del letrado D. Constantino, sobre reclamación de cantidad, y los siguientes",
+      "text": "El Sr. D. Edmundo Rodr\u00edguez Ach\u00fategui, Magistrado-Juez del Juzgado de lo Mercantil n\u00ba 1 de Bilbao, ha visto los presentes autos de Juicio Ordinario n\u00ba 75/2004, instados por el Procurador de los Tribunales D. SANTIAGO IBA\u00d1EZ FERNANDEZ, en nombre y representaci\u00f3n de QUIMICA DE MUNGUIA S.A. (QUIMUNSA), domiciliada en MUNGIA (Bizkaia), asistido del letrado D. JESUS MARIA QUINTANA ARANGUREN, frente a D. Agust\u00edn , D. Jose Ram\u00f3n , D. Inocencio y DTS OABE S.L., los primeros mayores de edad, domiciliados en G\u00d3RLIZ y ARCENTALES (BIZKAIA), CASTRO-URDIALES (CANTABRIA), y la \u00faltima en OROZKO (BIZKAIA), representados todos ellos por la Procuradora de los Tribunales D\u00aa MARIA LECETA BILBAO, asistida del letrado D. Constantino, sobre reclamaci\u00f3n de cantidad, y los siguientes",
       "annotations": [
         {
           "start": 3,
           "end": 37,
-          "text": "Sr. D. Edmundo Rodríguez Achútegui",
+          "text": "Sr. D. Edmundo Rodr\u00edguez Ach\u00fategui",
           "labels": [
             "PER"
           ]
@@ -26,7 +26,7 @@
         {
           "start": 18,
           "end": 27,
-          "text": "Rodríguez",
+          "text": "Rodr\u00edguez",
           "labels": [
             "SURNAME"
           ]
@@ -34,7 +34,7 @@
         {
           "start": 28,
           "end": 37,
-          "text": "Achútegui",
+          "text": "Ach\u00fategui",
           "labels": [
             "SURNAME"
           ]
@@ -46,12 +46,12 @@
       "id": 2,
       "type": "NER",
       "state": "PENDING",
-      "text": "PRIMERO.- El Procurador de los Tribunales D. SANTIAGO IBAÑEZ FERNANDEZ, en nombre y representación de QUIMICA DE MUNGUIA S.A. (QUIMUNSA), interpuso demanda de juicio ordinario frente a D. Agustín , D. Jose Ramón , D. Inocencio y DTS OABE S.L., en reclamación de que se declare que los demandados han incurrido en competencia desleal, que la distracción y utilización de información técnica, industria y comercial de la actora y su uso en el mercado supone un acto de competencia desleal, que la utilización de las instalaciones y medios técnicos de la actora para poner en marcha la sociedad demandada",
+      "text": "PRIMERO.- El Procurador de los Tribunales D. SANTIAGO IBA\u00d1EZ FERNANDEZ, en nombre y representaci\u00f3n de QUIMICA DE MUNGUIA S.A. (QUIMUNSA), interpuso demanda de juicio ordinario frente a D. Agust\u00edn , D. Jose Ram\u00f3n , D. Inocencio y DTS OABE S.L., en reclamaci\u00f3n de que se declare que los demandados han incurrido en competencia desleal, que la distracci\u00f3n y utilizaci\u00f3n de informaci\u00f3n t\u00e9cnica, industria y comercial de la actora y su uso en el mercado supone un acto de competencia desleal, que la utilizaci\u00f3n de las instalaciones y medios t\u00e9cnicos de la actora para poner en marcha la sociedad demandada",
       "annotations": [
         {
           "start": 42,
           "end": 70,
-          "text": "D. SANTIAGO IBAÑEZ FERNANDEZ",
+          "text": "D. SANTIAGO IBA\u00d1EZ FERNANDEZ",
           "labels": [
             "PER"
           ]

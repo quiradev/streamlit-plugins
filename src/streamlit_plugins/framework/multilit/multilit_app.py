@@ -7,7 +7,7 @@ import streamlit as st
 from streamlit.runtime.scriptrunner import RerunException, StopException, get_script_run_ctx
 from streamlit.runtime.scriptrunner.script_requests import ScriptRequestType
 
-from streamlit_plugins.components.Navbar import nav_bar
+from streamlit_plugins.components.Navbar import st_navbar
 from streamlit_plugins.framework.multilit.wrapper_class import Templateapp
 from .app_template import MultiHeadApp
 from .loading_app import LoadingApp
@@ -513,7 +513,7 @@ class MultiApp(object):
         if self.session_state.other_nav_app:
             app_selected = self.session_state.other_nav_app
 
-        self.session_state.selected_app = nav_bar(
+        self.session_state.selected_app = st_navbar(
             menu_definition=menu_data, key="mainMultilitMenuComplex", home_name=home_nav,
             override_theme=self._navbar_theme, login_name=login_nav,
             use_animation=self._navbar_animation, hide_streamlit_markers=self._hide_streamlit_markers,
