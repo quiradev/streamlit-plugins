@@ -15,7 +15,6 @@ if _RELEASE:
 else:
     _component_func = components.declare_component("nav_bar", url="http://localhost:3000")
 
-
 PINNED_NAV_STYLE = f"""
                     <style>
                     .reportview-container .sidebar-content {{
@@ -81,7 +80,8 @@ HIDE_ST_STYLE = """
                 """
 
 
-def build_menu_from_st_pages(*pages: StreamlitPage | dict, login_app: StreamlitPage = None, logout_app: StreamlitPage = None) -> tuple[list[dict], dict[str, StreamlitPage]]:
+def build_menu_from_st_pages(*pages: StreamlitPage | dict, login_app: StreamlitPage = None,
+                             logout_app: StreamlitPage = None) -> tuple[list[dict], dict[str, StreamlitPage]]:
     menu = []
     app_map = {}
     for page in pages:
@@ -109,8 +109,8 @@ def build_menu_from_st_pages(*pages: StreamlitPage | dict, login_app: StreamlitP
 
 
 def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent", home_name=None, login_name=None,
-            override_theme=None, sticky_nav=True, force_value=None, use_animation=True,
-            hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False, override_app_selected_id=None):
+              override_theme=None, sticky_nav=True, force_value=None, use_animation=True,
+              hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False, override_app_selected_id=None):
     # if key not in st.session_state:
     #     st.session_state[key] = None
 
@@ -147,8 +147,10 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
         menu_definition[i]['id'] = menu_definition[i].get('id', f"app_{menu_definition[i]['label']}")
         if 'submenu' in menu_definition[i]:
             for _i, _msubitem in enumerate(menu_definition[i]['submenu']):
-                menu_definition[i]['submenu'][_i]['label'] = menu_definition[i]['submenu'][_i].get('label', f'{i}_Label_{_i}')
-                menu_definition[i]['submenu'][_i]['id'] = menu_definition[i]['submenu'][_i].get('id', f"app_{menu_definition[i]['submenu'][_i]['label']}")
+                menu_definition[i]['submenu'][_i]['label'] = menu_definition[i]['submenu'][_i].get('label',
+                                                                                                   f'{i}_Label_{_i}')
+                menu_definition[i]['submenu'][_i]['id'] = menu_definition[i]['submenu'][_i].get('id',
+                                                                                                f"app_{menu_definition[i]['submenu'][_i]['label']}")
 
     items = menu_definition
     if home_name is not None:
@@ -160,7 +162,9 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
     if first_select_item.get('submenu', []):
         default_app_selected_id = first_select_item['submenu'][0].get('id', None)
 
-    if override_app_selected_id is None or override_app_selected_id == "":
+    if key not in st.session_state:
+        override_app_selected_id = default_app_selected_id
+    elif st.session_state[key] is None:
         override_app_selected_id = default_app_selected_id
 
     component_value = _component_func(

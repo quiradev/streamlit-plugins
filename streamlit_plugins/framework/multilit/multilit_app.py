@@ -509,15 +509,15 @@ class MultiApp(object):
 
         # menu_index = [self._home_id] + [d['id'] for d in menu_data] + [self._logout_id]
 
-        app_selected = ""
+        override_app_selected_id = None
         if self.session_state.other_nav_app:
-            app_selected = self.session_state.other_nav_app
+            override_app_selected_id = self.session_state.other_nav_app
 
         self.session_state.selected_app = st_navbar(
             menu_definition=menu_data, key="mainMultilitMenuComplex", home_name=home_nav,
             override_theme=self._navbar_theme, login_name=login_nav,
             use_animation=self._navbar_animation, hide_streamlit_markers=self._hide_streamlit_markers,
-            override_app_selected_id=app_selected,
+            override_app_selected_id=override_app_selected_id,
             sticky_nav=self._navbar_sticky, sticky_mode=self._navbar_mode
         )
 
