@@ -47,7 +47,7 @@ const NavBar: React.VFC = () => {
   // if (_app_selected_id === "") _app_selected_id = args.default_app_selected_id;
 
   const [expandState, setExpandState] = useState(false);
-  const [selectedAppId, setSelectedAppId] = useState<string>(args.default_app_selected_id);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   const [selectedSubMenu, setSelectedSubMenu] = useState<string | null>(null);
   const [expandSubMenu, setExpandSubMenu] = useState(false);
   const [blockState, setBlockState] = useState("none");
@@ -55,10 +55,12 @@ const NavBar: React.VFC = () => {
   // Handle override_app_selected_id updates
   useEffect(() => {
     if (args.override_app_selected_id) {
+      console.log(args.override_app_selected_id);
       setSelectedAppId(args.override_app_selected_id);
       setExpandState(false);
       setBlockState("none");
       setExpandSubMenu(false);
+      Streamlit.setComponentValue(args.override_app_selected_id);
     }
   }, [args.override_app_selected_id]);
 

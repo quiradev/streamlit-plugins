@@ -167,12 +167,15 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
     elif st.session_state[key] is None:
         override_app_selected_id = default_app_selected_id
 
+    # print()
+    # print(f"FROM Multi: {override_app_selected_id}")
     component_value = _component_func(
         menu_definition=menu_definition, key=key, home=home_data, fvalue=force_value,
         login=login_data, override_theme=override_theme, use_animation=use_animation,
         override_app_selected_id=override_app_selected_id,
         default=default_app_selected_id, default_app_selected_id=default_app_selected_id
     )
+    # print(f"FROM Navbar: {component_value}")
 
     if sticky_nav:
         if sticky_mode == 'pinned':
@@ -189,7 +192,6 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
     if override_app_selected_id:
         component_value = override_app_selected_id
 
-    # print(f"Component Value: {component_value}")
-    # st.session_state[key] = component_value
-
+    # print(f"FROM Navbar FINAL: {component_value}")
+    # print()
     return component_value
