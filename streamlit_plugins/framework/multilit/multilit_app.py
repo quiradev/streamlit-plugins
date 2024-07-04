@@ -52,7 +52,8 @@ class MultiApp(object):
                  banner_spacing=None,
                  clear_cross_app_sessions=True,
                  session_params=None,
-                 verbose=False):
+                 verbose=False,
+                 within_fragment=False):
         """
         A class to create an Multi-app Streamlit application. This class will be the host application for multiple applications that are added after instancing.
         The secret saurce to making the different apps work together comes from the use of a global session store that is shared with any MultiHeadApp that is added to the parent MultiApp.
@@ -109,6 +110,7 @@ class MultiApp(object):
         self._active_section = None
         self._active_section_icon = None
         self._verbose = verbose
+        self._within_fragment = within_fragment
 
         self._apps = {}
         self._navbar_pointers = {}
@@ -325,6 +327,149 @@ class MultiApp(object):
 
         return SectionWithStatement(title, _exit_fn)
 
+    def _build_nav_menu(self):
+        number_of_sections = int(self._login_app is not None) + len(self._complex_nav.keys())
+
+        if self._use_navbar:
+            menu_data = []
+            for i, nav_section_id in enumerate(self._complex_nav):
+                menu_item = None
+                if nav_section_id not in [self._home_label[0], self._logout_label[0]]:
+                    submenu_items = []
+                    for app_item_id in self._complex_nav[nav_section_id]:
+                        menu_item = {
+                            'id': app_item_id,
+                            'label': self._navbar_pointers[app_item_id][0],
+                            'icon': self._navbar_pointers[app_item_id][1]
+                        }
+                        if len(self._complex_nav[nav_section_id]) > 1:
+                            submenu_items.append(menu_item)
+
+                    if len(submenu_items) > 0:
+                        menu_item = {
+                            'id': nav_section_id,
+                            'label': self._navbar_pointers[nav_section_id][0],
+                            'icon': self._navbar_pointers[nav_section_id][1],
+                            'submenu': submenu_items
+                        }
+
+                    if menu_item is not None:
+                        menu_data.append(menu_item)
+
+            # Add logout button and kick to login action
+            if self._login_app is not None:
+                # if self.session_state.current_user is not None:
+                #    self._logout_label = '{} : {}'.format(self.session_state.current_user.capitalize(),self._logout_label)
+
+                with self._nav_container:
+                    self._run_navbar(menu_data)
+
+                # user clicked logout
+                if self.session_state.selected_app == self._logout_id:
+                    self._do_logout()
+            else:
+                # self.session_state.previous_app = self.session_state.selected_app
+                with self._nav_container:
+                    new_app_id = self._run_navbar(menu_data)
+                    self.session_state.selected_app = new_app_id
+
+        else:
+            if self._nav_horizontal:
+                if hasattr(self._nav_container, 'columns'):
+                    nav_slots = self._nav_container.columns(number_of_sections)
+                elif self._nav_container.__name__ in ['columns']:
+                    nav_slots = self._nav_container(number_of_sections)
+                else:
+                    nav_slots = self._nav_container
+            else:
+                if self._nav_container.__name__ in ['columns']:
+                    # columns within columns currently not supported
+                    nav_slots = st
+                else:
+                    nav_slots = self._nav_container
+
+            for i, nav_section_id in enumerate(self._complex_nav):
+                if nav_section_id not in [self._home_id, self._logout_id]:
+                    if self._nav_horizontal:
+                        nav_section_root = nav_slots[i]
+                    else:
+                        nav_section_root = nav_slots
+
+                    if len(self._complex_nav[nav_section_id]) == 1:
+                        nav_section = nav_section_root.container()
+                    else:
+                        sect_label = f"{self._navbar_pointers[nav_section_id][1]} {self._navbar_pointers[nav_section_id][1]}"
+                        nav_section = nav_section_root.expander(label=sect_label, expanded=False)
+
+                    for app_item_id in self._complex_nav[nav_section_id]:
+                        btn_type = "primary" if self.session_state.selected_app == app_item_id else "secondary"
+                        if nav_section.button(label=self._navbar_pointers[app_item_id][0], type=btn_type):
+                            self.session_state.previous_app = self.session_state.selected_app
+                            self.session_state.selected_app = app_item_id
+
+            if self.cross_session_clear and self.session_state.previous_app != self.session_state.selected_app and not self.session_state.preserve_state:
+                self._clear_session_values()
+
+            # Add logout button and kick to login action
+            if self._login_app is not None:
+                # if self.session_state.current_user is not None:
+                #    self._logout_label = '{} : {}'.format(self.session_state.current_user.capitalize(),self._logout_label)
+
+                if self._nav_horizontal:
+                    if nav_slots[-1].button(label=self._logout_label[0]):
+                        self._do_logout()
+                else:
+                    if nav_slots.button(label=self._logout_label[0]):
+                        self._do_logout()
+
+    @st.experimental_fragment
+    def _fragment_navbar(self, menu_data):
+        new_app_id = self._standalone_navbar(menu_data)
+        if new_app_id != self.session_state.selected_app:
+            self.session_state.selected_app = new_app_id
+            st.rerun()
+
+        return new_app_id
+
+    def _standalone_navbar(self, menu_data):
+        login_nav = None
+        home_nav = None
+        if self._login_app:
+            login_nav = {
+                'id': self._logout_id, 'label': self._logout_label[0], 'icon': self._logout_label[1], 'ttip': 'Logout'
+            }
+
+        if self._home_app:
+            home_nav = {
+                'id': self._home_id, 'label': self._home_label[0], 'icon': self._home_label[1], 'ttip': 'Home'
+            }
+
+        # menu_index = [self._home_id] + [d['id'] for d in menu_data] + [self._logout_id]
+
+        override_app_selected_id = None
+        if self.session_state.other_nav_app:
+            override_app_selected_id = self.session_state.other_nav_app
+
+        new_app_id = st_navbar(
+            menu_definition=menu_data, key="mainMultilitMenuComplex", home_name=home_nav,
+            override_theme=self._navbar_theme, login_name=login_nav,
+            use_animation=self._navbar_animation, hide_streamlit_markers=self._hide_streamlit_markers,
+            override_app_selected_id=override_app_selected_id,
+            sticky_nav=self._navbar_sticky, sticky_mode=self._navbar_mode
+        )
+        if self.cross_session_clear and self.session_state.preserve_state:
+            self._clear_session_values()
+
+        return new_app_id
+
+    def _run_navbar(self, menu_data):
+        if self._within_fragment:
+            new_app_id = self._fragment_navbar(menu_data)
+        else:
+            new_app_id = self._standalone_navbar(menu_data)
+
+        return new_app_id
+
     def _run_selected(self):
         app_label = None
         try:
@@ -500,134 +645,6 @@ class MultiApp(object):
             self._logout_callback()
 
         st.rerun()
-
-    def _run_navbar(self, menu_data):
-        login_nav = None
-        home_nav = None
-        if self._login_app:
-            login_nav = {
-                'id': self._logout_id, 'label': self._logout_label[0], 'icon': self._logout_label[1], 'ttip': 'Logout'
-            }
-
-        if self._home_app:
-            home_nav = {
-                'id': self._home_id, 'label': self._home_label[0], 'icon': self._home_label[1], 'ttip': 'Home'
-            }
-
-        # menu_index = [self._home_id] + [d['id'] for d in menu_data] + [self._logout_id]
-
-        override_app_selected_id = None
-        if self.session_state.other_nav_app:
-            override_app_selected_id = self.session_state.other_nav_app
-
-        self.session_state.selected_app = st_navbar(
-            menu_definition=menu_data, key="mainMultilitMenuComplex", home_name=home_nav,
-            override_theme=self._navbar_theme, login_name=login_nav,
-            use_animation=self._navbar_animation, hide_streamlit_markers=self._hide_streamlit_markers,
-            override_app_selected_id=override_app_selected_id,
-            sticky_nav=self._navbar_sticky, sticky_mode=self._navbar_mode
-        )
-
-        # if nav_selected is not None:
-        #     if nav_selected != self.session_state.previous_app and self.session_state.selected_app != nav_selected:
-        # self.session_state.selected_app = nav_selected
-
-        if self.cross_session_clear and self.session_state.preserve_state:
-            self._clear_session_values()
-
-    def _build_nav_menu(self):
-        number_of_sections = int(self._login_app is not None) + len(self._complex_nav.keys())
-
-        if self._use_navbar:
-            menu_data = []
-            for i, nav_section_id in enumerate(self._complex_nav):
-                menu_item = None
-                if nav_section_id not in [self._home_label[0], self._logout_label[0]]:
-                    submenu_items = []
-                    for app_item_id in self._complex_nav[nav_section_id]:
-                        menu_item = {
-                            'id': app_item_id,
-                            'label': self._navbar_pointers[app_item_id][0],
-                            'icon': self._navbar_pointers[app_item_id][1]
-                        }
-                        if len(self._complex_nav[nav_section_id]) > 1:
-                            submenu_items.append(menu_item)
-
-                    if len(submenu_items) > 0:
-                        menu_item = {
-                            'id': nav_section_id,
-                            'label': self._navbar_pointers[nav_section_id][0],
-                            'icon': self._navbar_pointers[nav_section_id][1],
-                            'submenu': submenu_items
-                        }
-
-                    if menu_item is not None:
-                        menu_data.append(menu_item)
-
-            # Add logout button and kick to login action
-            if self._login_app is not None:
-                # if self.session_state.current_user is not None:
-                #    self._logout_label = '{} : {}'.format(self.session_state.current_user.capitalize(),self._logout_label)
-
-                with self._nav_container:
-                    self._run_navbar(menu_data)
-
-                # user clicked logout
-                if self.session_state.selected_app == self._logout_id:
-                    self._do_logout()
-            else:
-                # self.session_state.previous_app = self.session_state.selected_app
-                with self._nav_container:
-                    self._run_navbar(menu_data)
-
-        else:
-            if self._nav_horizontal:
-                if hasattr(self._nav_container, 'columns'):
-                    nav_slots = self._nav_container.columns(number_of_sections)
-                elif self._nav_container.__name__ in ['columns']:
-                    nav_slots = self._nav_container(number_of_sections)
-                else:
-                    nav_slots = self._nav_container
-            else:
-                if self._nav_container.__name__ in ['columns']:
-                    # columns within columns currently not supported
-                    nav_slots = st
-                else:
-                    nav_slots = self._nav_container
-
-            for i, nav_section_id in enumerate(self._complex_nav):
-                if nav_section_id not in [self._home_id, self._logout_id]:
-                    if self._nav_horizontal:
-                        nav_section_root = nav_slots[i]
-                    else:
-                        nav_section_root = nav_slots
-
-                    if len(self._complex_nav[nav_section_id]) == 1:
-                        nav_section = nav_section_root.container()
-                    else:
-                        sect_label = f"{self._navbar_pointers[nav_section_id][1]} {self._navbar_pointers[nav_section_id][1]}"
-                        nav_section = nav_section_root.expander(label=sect_label, expanded=False)
-
-                    for app_item_id in self._complex_nav[nav_section_id]:
-                        btn_type = "primary" if self.session_state.selected_app == app_item_id else "secondary"
-                        if nav_section.button(label=self._navbar_pointers[app_item_id][0], type=btn_type):
-                            self.session_state.previous_app = self.session_state.selected_app
-                            self.session_state.selected_app = app_item_id
-
-            if self.cross_session_clear and self.session_state.previous_app != self.session_state.selected_app and not self.session_state.preserve_state:
-                self._clear_session_values()
-
-            # Add logout button and kick to login action
-            if self._login_app is not None:
-                # if self.session_state.current_user is not None:
-                #    self._logout_label = '{} : {}'.format(self.session_state.current_user.capitalize(),self._logout_label)
-
-                if self._nav_horizontal:
-                    if nav_slots[-1].button(label=self._logout_label[0]):
-                        self._do_logout()
-                else:
-                    if nav_slots.button(label=self._logout_label[0]):
-                        self._do_logout()
 
     def _do_url_params(self):
         if self._allow_url_nav:

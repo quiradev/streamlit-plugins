@@ -8,13 +8,15 @@ def run():
         use_cookie_cache=True, sidebar_state='auto',
         navbar_animation=True, allow_url_nav=True, hide_streamlit_markers=False, use_banner_images=None,
         banner_spacing=None, clear_cross_app_sessions=True, session_params=None,
-        use_loader=False
+        use_loader=False, within_fragment=False
     )
 
     class DemoApp(MultiHeadApp):
         def run(self):
             st.title("Demo")
             st.write("This is a demo app.")
+            import time
+            time.sleep(2)
 
     demo_app = DemoApp()
 
