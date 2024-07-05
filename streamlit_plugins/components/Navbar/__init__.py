@@ -110,7 +110,8 @@ def build_menu_from_st_pages(*pages: StreamlitPage | dict, login_app: StreamlitP
 
 def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent", home_name=None, login_name=None,
               override_theme=None, sticky_nav=True, force_value=None, use_animation=True,
-              hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False, override_app_selected_id=None):
+              hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False, override_app_selected_id=None,
+              reclick_load=True):
     # if key not in st.session_state:
     #     st.session_state[key] = None
 
@@ -173,7 +174,8 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
         menu_definition=menu_definition, key=key, home=home_data, fvalue=force_value,
         login=login_data, override_theme=override_theme, use_animation=use_animation,
         override_app_selected_id=override_app_selected_id,
-        default=default_app_selected_id, default_app_selected_id=default_app_selected_id
+        default=default_app_selected_id, default_app_selected_id=default_app_selected_id,
+        reclick_load=reclick_load
     )
     # print(f"FROM Navbar: {component_value}")
 

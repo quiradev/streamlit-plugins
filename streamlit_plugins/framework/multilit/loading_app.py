@@ -7,16 +7,23 @@ from streamlit_plugins.components.Loader.loader import LoadersLib, Loader
 
 
 class LoadingApp(MultiHeadApp):
-    def run(self, app_target):
-        try:
-            app_title = ""
-            if hasattr(app_target, "title"):
-                app_title = app_target.title
+    def __init__(self, *args, loader_container=None, app_container=None, **kwargs):
+        super().__init__(*args,  **kwargs)
+        self.loader_container = loader_container
+        self.app_container = app_container
 
-            with Loader(loader_name=LoadersLib.book_loader):
+    def run(self, app_target: MultiHeadApp, status_msg=""):
+        try:
+            if not status_msg:
+                if hasattr(app_target, "title"):
+                    status_msg = app_target.title
+
+            loader = Loader(loader_container=self.loader_container, text=status_msg, loader_name=LoadersLib.book_loader)
+            loader.run_loader()
+            with self.app_container:
                 app_target.run()
+            loader.stop_loader()
 
         except Exception as e:
-            # st.image("./resources/failure.png", width=100, )
             st.error(f"Error details: {e}")
             traceback.print_exc()

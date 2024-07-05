@@ -1,3 +1,4 @@
+import atexit
 from enum import Enum, auto
 
 import streamlit as st
@@ -3381,13 +3382,13 @@ def standard_loaders(index=0):
 
 def book_loader(**kwargs):
     div = """
-    <div class="parent">
-        <div class="container">
+    <div class="book-parent">
+        <div class="book-container">
             <div class="book">
-              <div class="inner">
-                <div class="left"></div>
-                <div class="middle"></div>
-                <div class="right"></div>
+              <div class="book-inner">
+                <div class="book-left"></div>
+                <div class="book-middle"></div>
+                <div class="book-right"></div>
               </div>
               <ul>
                 <li></li>
@@ -3411,13 +3412,14 @@ def book_loader(**kwargs):
               </ul>
             </div>
             <span class="icon"></span>
+            <span class="text">||-label-||</span>
         </div>
     </div>
     """
     style = """
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <style>
-        .parent {
+        .book-parent {
             position: absolute;
             width: 100%;
             top: calc(50vh - ||-height-||);
@@ -3425,7 +3427,7 @@ def book_loader(**kwargs):
             justify-content: center;
             align-items: center;
         }
-        .parent:before {
+        .book-parent:before {
             content: "";
             position: fixed;
             width: 350px;
@@ -3434,16 +3436,16 @@ def book_loader(**kwargs):
             border-radius: 50%;
             z-index: 1000;
         }
-        .parent:after {
+        .book-parent:after {
             content: "";
             position: fixed;
             top: 0;
             width: 100vw;
             height: 100vh;
-            background: #ffffffbf;
+            background: #ffffff40;
             z-index: 999;
         }
-        .container {
+        .book-container {
             --duration: 6s;
             --color: ||-pcolor-||;
             display: flex;
@@ -3454,7 +3456,7 @@ def book_loader(**kwargs):
             pointer-events: none;
             z-index: 1000;
         }
-        .icon {
+        .book-container .icon {
             position: absolute;
             font-family: "Material Icons";
             font-size: 2em;
@@ -3467,7 +3469,7 @@ def book_loader(**kwargs):
             -webkit-animation-iteration-count: infinite;
             animation-iteration-count: infinite;
         }
-        .icon:after {
+        .book-container .icon:after {
             content: "home";
             -webkit-animation-name: icons;
             animation-name: icons;
@@ -3476,14 +3478,14 @@ def book_loader(**kwargs):
             -webkit-animation-iteration-count: infinite;
             animation-iteration-count: infinite;
         }
-        .book {
+        .book-container .book {
             width: 32px;
             height: 12px;
             position: relative;
             margin: 32px 0 0 0;
             zoom: 1.5;
         }
-        .book .inner {
+        .book-container .book .book-inner {
             width: 32px;
             height: 12px;
             position: relative;
@@ -3492,8 +3494,8 @@ def book_loader(**kwargs):
             -webkit-animation: book var(--duration) ease infinite;
             animation: book var(--duration) ease infinite;
         }
-        .book .inner .left,
-        .book .inner .right {
+        .book-container .book .book-inner .book-left,
+        .book-container .book .book-inner .book-right {
             width: 60px;
             height: 4px;
             top: 0;
@@ -3501,32 +3503,22 @@ def book_loader(**kwargs):
             background: var(--color);
             position: absolute;
         }
-        .book .inner .left:before,
-        .book .inner .right:before {
-            content: "";
-            width: 48px;
-            height: 4px;
-            border-radius: 2px;
-            background: inherit;
-            position: absolute;
-            top: -10px;
-            left: 6px;
-        }
-        .book .inner .left {
+        
+        .book-container .book .book-inner .book-left {
             right: 28px;
             transform-origin: 58px 2px;
             transform: rotateZ(90deg);
             -webkit-animation: left var(--duration) ease infinite;
             animation: left var(--duration) ease infinite;
         }
-        .book .inner .right {
+        .book-container .book .book-inner .book-right {
             left: 28px;
             transform-origin: 2px 2px;
             transform: rotateZ(-90deg);
             -webkit-animation: right var(--duration) ease infinite;
             animation: right var(--duration) ease infinite;
         }
-        .book .inner .middle {
+        .book-container .book .book-inner .book-middle {
             width: 32px;
             height: 12px;
             border: 4px solid var(--color);
@@ -3535,7 +3527,7 @@ def book_loader(**kwargs):
             transform: translateY(2px);
             box-sizing: border-box;
         }
-        .book ul {
+        .book-container .book ul {
             margin: 0;
             padding: 0;
             list-style: none;
@@ -3543,7 +3535,7 @@ def book_loader(**kwargs):
             left: 50%;
             top: 0;
         }
-        .book ul li {
+        .book-container .book ul li {
             height: 4px;
             border-radius: 2px;
             transform-origin: 100% 2px;
@@ -3562,79 +3554,79 @@ def book_loader(**kwargs):
             margin: 0;
             padding: 0;
         }
-        .book ul li:nth-child(0) {
+        .book-container .book ul li:nth-child(0) {
             -webkit-animation-name: page-0;
             animation-name: page-0;
         }
-        .book ul li:nth-child(1) {
+        .book-container .book ul li:nth-child(1) {
             -webkit-animation-name: page-1;
             animation-name: page-1;
         }
-        .book ul li:nth-child(2) {
+        .book-container .book ul li:nth-child(2) {
             -webkit-animation-name: page-2;
             animation-name: page-2;
         }
-        .book ul li:nth-child(3) {
+        .book-container .book ul li:nth-child(3) {
             -webkit-animation-name: page-3;
             animation-name: page-3;
         }
-        .book ul li:nth-child(4) {
+        .book-container .book ul li:nth-child(4) {
             -webkit-animation-name: page-4;
             animation-name: page-4;
         }
-        .book ul li:nth-child(5) {
+        .book-container .book ul li:nth-child(5) {
             -webkit-animation-name: page-5;
             animation-name: page-5;
         }
-        .book ul li:nth-child(6) {
+        .book-container .book ul li:nth-child(6) {
             -webkit-animation-name: page-6;
             animation-name: page-6;
         }
-        .book ul li:nth-child(7) {
+        .book-container .book ul li:nth-child(7) {
             -webkit-animation-name: page-7;
             animation-name: page-7;
         }
-        .book ul li:nth-child(8) {
+        .book-container .book ul li:nth-child(8) {
             -webkit-animation-name: page-8;
             animation-name: page-8;
         }
-        .book ul li:nth-child(9) {
+        .book-container .book ul li:nth-child(9) {
             -webkit-animation-name: page-9;
             animation-name: page-9;
         }
-        .book ul li:nth-child(10) {
+        .book-container .book ul li:nth-child(10) {
             -webkit-animation-name: page-10;
             animation-name: page-10;
         }
-        .book ul li:nth-child(11) {
+        .book-container .book ul li:nth-child(11) {
             -webkit-animation-name: page-11;
             animation-name: page-11;
         }
-        .book ul li:nth-child(12) {
+        .book-container .book ul li:nth-child(12) {
             -webkit-animation-name: page-12;
             animation-name: page-12;
         }
-        .book ul li:nth-child(13) {
+        .book-container .book ul li:nth-child(13) {
             -webkit-animation-name: page-13;
             animation-name: page-13;
         }
-        .book ul li:nth-child(14) {
+        .book-container .book ul li:nth-child(14) {
             -webkit-animation-name: page-14;
             animation-name: page-14;
         }
-        .book ul li:nth-child(15) {
+        .book-container .book ul li:nth-child(15) {
             -webkit-animation-name: page-15;
             animation-name: page-15;
         }
-        .book ul li:nth-child(16) {
+        .book-container .book ul li:nth-child(16) {
             -webkit-animation-name: page-16;
             animation-name: page-16;
         }
-        .book ul li:nth-child(17) {
+        .book-container .book ul li:nth-child(17) {
             -webkit-animation-name: page-17;
             animation-name: page-17;
         }
-        .book ul li:nth-child(18) {
+        .book-container .book ul li:nth-child(18) {
             -webkit-animation-name: page-18;
             animation-name: page-18;
         }
@@ -4365,8 +4357,11 @@ def get_loader(loader_name, **kwargs):
 
 class Loader:
 
-    def __init__(self, text='', loader_name: LoadersLib = LoadersLib.book_loader, height=256, index=0, primary_color=None):
+    def __init__(self, loader_container=None, text='', loader_name: LoadersLib = LoadersLib.book_loader, height=256, index=0, primary_color=None):
+        if loader_container is None:
+            loader_container = st.container()
 
+        self.loader_container = loader_container
         # primary_color = st.get_option('theme.primaryColor')
         if primary_color is None:
             if st.get_option('theme.primaryColor') is None:
@@ -4388,10 +4383,29 @@ class Loader:
         self.element_style = self.element_style.replace('||-pcolor-||', primary_color)
         self.element_style = self.element_style.replace('||-bcolor-||', background_color)
 
+        self.running = False
+        with self.loader_container:
+            self.display_element_style = st.empty()
+            self.display_element = st.empty()
+
+        atexit.register(self.stop_loader)
+
+    def run_loader(self):
+        self.running = True
+        with self.loader_container:
+            self.display_element_style.markdown(self.element_style, unsafe_allow_html=True)
+            self.display_element.markdown(self.element_code, unsafe_allow_html=True)
+
+    def stop_loader(self):
+        if self.running:
+            self.running = False
+            with self.loader_container:
+                self.display_element_style.empty()
+                self.display_element.empty()
+
     def __enter__(self):
-        self.display_element_style = st.markdown(self.element_style, unsafe_allow_html=True)
-        self.display_element = st.markdown(self.element_code, unsafe_allow_html=True)
+        self.run_loader()
 
     def __exit__(self, *args, **kwargs):
-        self.display_element_style.empty()
-        self.display_element.empty()
+        self.stop_loader()
+

@@ -137,7 +137,6 @@ class MultiApp(object):
         self._banners = use_banner_images
         self._banner_spacing = banner_spacing
         self._hide_streamlit_markers = hide_streamlit_markers
-        self._loader_app = LoadingApp()
         self._user_loader = use_loader
         self._use_cookie_cache = use_cookie_cache
         self._cookie_manager = None
@@ -163,6 +162,8 @@ class MultiApp(object):
         except Exception as e:
             pass
 
+        # Establecer el tema
+
         self._nav_horizontal = nav_horizontal
 
         if self._banners is not None:
@@ -177,6 +178,12 @@ class MultiApp(object):
                 self._nav_container = nav_container()
             else:
                 self._nav_container = nav_container
+
+        self._app_container = st.container()
+
+        if self._user_loader:
+            self._loader_container = st.container()
+            self._loader_app = LoadingApp(loader_container=self._loader_container, app_container=self._app_container)
 
         self.cross_session_clear = clear_cross_app_sessions
 
@@ -455,7 +462,7 @@ class MultiApp(object):
             override_theme=self._navbar_theme, login_name=login_nav,
             use_animation=self._navbar_animation, hide_streamlit_markers=self._hide_streamlit_markers,
             override_app_selected_id=override_app_selected_id,
-            sticky_nav=self._navbar_sticky, sticky_mode=self._navbar_mode
+            sticky_nav=self._navbar_sticky, sticky_mode=self._navbar_mode, reclick_load=True
         )
         if self.cross_session_clear and self.session_state.preserve_state:
             self._clear_session_values()
@@ -512,9 +519,11 @@ class MultiApp(object):
                 )
 
             if self._user_loader:
-                self._loader_app.run(app)
+                if app.has_loading():
+                    self._loader_app.run(app, status_msg=app_label)
             else:
-                app.run()
+                with self._app_container:
+                    app.run()
 
             self.session_state.uncaught_error = None
         except BaseException as e:

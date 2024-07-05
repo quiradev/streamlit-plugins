@@ -30,6 +30,7 @@ interface PythonArgs {
   override_theme: OverrideTheme;
   default_app_selected_id: string;
   override_app_selected_id?: string;
+  reclick_load?: boolean;
   key?: string;
   fvalue?: boolean;
 }
@@ -200,7 +201,7 @@ const NavBar: React.VFC = () => {
     setBlockState("none");
     setExpandSubMenu(false);
     handleResize();
-    Streamlit.setComponentValue(itemId);
+    if (selectedAppId !== itemId || args.reclick_load) Streamlit.setComponentValue(itemId);
   };
 
   const toggleSubMenu = (parentId: string): void => {

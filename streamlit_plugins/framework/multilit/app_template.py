@@ -20,16 +20,23 @@ class MultiHeadApp(ABC):
 
     """
 
-    def __init__(self):
+    def __init__(self, with_loader=None):
         self._id = None
+        self.with_loader = with_loader
 
     def get_id(self):
         return self._id
 
+    def has_loading(self):
+        if self.with_loader is None:
+            return True
+
+        return self.with_loader
+
     # Must implement this method as the entry point for the application.
     @abstractmethod
-    def run(self):
-        pass
+    def run(self, *args, **kwargs):
+        ...
 
     def assign_session(self, session_state, parent_app):
         """
