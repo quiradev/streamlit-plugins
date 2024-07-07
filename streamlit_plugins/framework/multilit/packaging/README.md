@@ -14,6 +14,11 @@ In a future is planned to incorporate the new multipage native of streamlit. Ins
 Can use built-in buttons to change the page, or use a function to change the page programmatically.
 ![Change Page with button](https://raw.githubusercontent.com/quiradev/streamlit-plugins/main/resources/demo2.gif)
 
+You can install extra components to work with multilit\
+```bash
+pip install streamlit-framework-multilit[navbar,loader]
+```
+
 ## Components
 The Navbar and Loader component are inherited from Hydralit components, only to give support to the multilit framework.
 But this version has improve the interface and loaders to be more user-friendly.

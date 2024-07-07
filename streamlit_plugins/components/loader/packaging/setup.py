@@ -17,7 +17,7 @@ os.chdir(main_folder)
 
 setup(
     name='streamlit-component-loader',
-    version='0.2.0',
+    version='0.2.1',
     license='MIT',
     url='https://github.com/quiradev/streamlit-plugins',
     description='Components and Frameworks to give new features to streamlit',
