@@ -16,7 +16,7 @@ main_folder = Path(__file__).parents[4]
 os.chdir(main_folder)
 
 setup(
-    name='streamlit-component-navbar',
+    name='streamlit-component-annotated-text',
     version='0.2.0',
     license='MIT',
     url='https://github.com/quiradev/streamlit-plugins',
@@ -25,13 +25,10 @@ setup(
     long_description_content_type="text/markdown",
     author_email='v.quilonr@gmail.com',
     author='Victor Quilon Ranera',
-    packages=find_packages(include=["streamlit_plugins.components.navbar", "streamlit_plugins.components.navbar.*"]),
+    packages=find_packages(include=["streamlit_plugins.components.annotated_text", "streamlit_plugins.components.annotated_text.*"]),
     python_requires='>=3.9',
     install_requires=requirements,
     include_package_data=True,
-    package_data={
-          "streamlit_plugins.components.navbar": ["frontend/build/**/*"]
-    },
     classifiers=[
         'Intended Audience :: Developers',
         'Programming Language :: Python',
@@ -39,10 +36,10 @@ setup(
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
     ],
-    keywords=["streamlit", "plugins", "components", "navbar"],
+    keywords=["streamlit", "plugins", "components", "loader"],
     options={
-        'sdist': {'dist_dir': './dist/streamlit-plugins-component-navbar'},
-        'bdist_wheel': {'dist_dir': './dist/streamlit-plugins-component-navbar'},
-        'build': {'build_base': './build/streamlit-plugins-component-navbar'}
+        'sdist': {'dist_dir': './dist/streamlit-plugins-component-annotated-text'},
+        'bdist_wheel': {'dist_dir': './dist/streamlit-plugins-component-annotated-text'},
+        'build': {'build_base': './build/streamlit-plugins-component-annotated-text'}
     }
 )

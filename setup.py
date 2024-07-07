@@ -14,7 +14,7 @@ with open(os.path.join(Path(__file__).parent, 'requirements.txt'), encoding='utf
 
 setup(
     name='streamlit-plugins',
-    version='0.1.3',
+    version='0.2.0',
     license='MIT',
     url='https://github.com/quiradev/streamlit-plugins',
     description='Components and Frameworks to give new features to streamlit',
@@ -28,6 +28,9 @@ setup(
         *requirements,
     ],
     include_package_data=True,
+    package_data={
+      "streamlit_plugins": ["components/*/frontend/build/**/*"]
+    },
     classifiers=[
         'Intended Audience :: Developers',
         'Programming Language :: Python',

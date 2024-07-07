@@ -17,10 +17,10 @@ os.chdir(main_folder)
 
 setup(
     name='streamlit-component-snakeviz',
-    version='0.1.3',
+    version='0.2.0',
     license='MIT',
     url='https://github.com/quiradev/streamlit-plugins',
-    description='Snakeviz Component to analize ',
+    description='Snakeviz Component to analyze ',
     long_description=long_description,
     long_description_content_type="text/markdown",
     author_email='v.quilonr@gmail.com',
@@ -29,6 +29,9 @@ setup(
     python_requires='>=3.9',
     install_requires=requirements,
     include_package_data=True,
+    package_data={
+          "streamlit_plugins.components.snakeviz": ["frontend/build/**/*"]
+    },
     classifiers=[
         'Intended Audience :: Developers',
         'Programming Language :: Python',
