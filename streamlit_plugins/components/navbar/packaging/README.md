@@ -3,18 +3,7 @@ Components and Frameworks to give new features to streamlit
 
 ![Demo Multipage with Navbar](https://raw.githubusercontent.com/quiradev/streamlit-plugins/main/resources/demo1.gif)
 
-## Frameworks
-### Multilit (Inherit from Hydralit)
-This is a fork of [Hydralit](https://github.com/TangleSpace/hydralit).
-
-In this version, I update all the code to be compatible with the last version of streamlit.
-And it improves the interface to be more user-friendly. Also, it respects the strealit active theme and can be override by the user.
-In a future is planned to incorporate the new multipage native of streamlit. Instead of the current implementation.
-
-Can use built-in buttons to change the page, or use a function to change the page programmatically.
-![Change Page with button](https://raw.githubusercontent.com/quiradev/streamlit-plugins/main/resources/demo2.gif)
-
-## Components
+## Component
 The Navbar and Loader component are inherited from Hydralit components, only to give support to the multilit framework.
 But this version has improve the interface and loaders to be more user-friendly.
 
@@ -111,7 +100,7 @@ search = st.Page("tools/search.py", title="Search", icon=":material/search:")
 history = st.Page("tools/history.py", title="History", icon=":material/history:")
 
 # HERE IS THE CHANGE
-from streamlit_plugins.components.Navbar import st_navbar, build_menu_from_st_pages
+from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pages
 
 menu_data, app_map = build_menu_from_st_pages(
     {"Reports": [dashboard, bugs, alerts]}, {"Tools": [search, history]},
@@ -152,13 +141,3 @@ app_map[app_id].run()
 #
 # pg.run()
 ```
-
-### Loader (Inherit from Hydralit Components)
-
-### AnnotatedText (Inspired from SpaCy Anotated Text)
-
-### LabelStudio (Developing)
-LabelStudio adapter for NERs into streamlit
-
-### SnakeViz
-Interface in streamlit to measue bottlenecks in yout code
