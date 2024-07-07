@@ -111,7 +111,7 @@ search = st.Page("tools/search.py", title="Search", icon=":material/search:")
 history = st.Page("tools/history.py", title="History", icon=":material/history:")
 
 # HERE IS THE CHANGE
-from streamlit_plugins.components.Navbar import st_navbar, build_menu_from_st_pages
+from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pages
 
 menu_data, app_map = build_menu_from_st_pages(
     {"Reports": [dashboard, bugs, alerts]}, {"Tools": [search, history]},
