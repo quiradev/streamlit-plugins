@@ -17,7 +17,7 @@ os.chdir(main_folder)
 
 setup(
     name='streamlit-component-label-studio',
-    version='0.1.3',
+    version='0.2.0',
     license='MIT',
     url='https://github.com/quiradev/streamlit-plugins',
     description='Label Studio Component of streamlit, its a port of the Label Studio platform into streamlit',
@@ -29,6 +29,9 @@ setup(
     python_requires='>=3.9',
     install_requires=requirements,
     include_package_data=True,
+    package_data={
+          "streamlit_plugins.components.label_studio": ["frontend/build/**/*"]
+    },
     classifiers=[
         'Intended Audience :: Developers',
         'Programming Language :: Python',

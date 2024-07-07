@@ -15,7 +15,7 @@ with open(os.path.join(Path(__file__).parent, 'requirements.txt'), encoding='utf
 main_folder = Path(__file__).parents[4]
 os.chdir(main_folder)
 
-VERSION = "0.1.3"
+VERSION = "0.2.0"
 
 setup(
     name='streamlit-plugins-framework-multilit',
