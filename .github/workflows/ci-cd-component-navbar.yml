@@ -28,5 +28,5 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         git fetch --all --tags
-        python setup.py sdist bdist_wheel
-        twine upload dist/streamlit-plugins/*
+        python streamlit_plugins/components/navbar/packaging/setup.py sdist bdist_wheel
+        twine upload dist/streamlit-plugins-component-navbar/*
