@@ -1,0 +1,1 @@
+recursive-include streamlit_plugins/components/label_studio/frontend/build *

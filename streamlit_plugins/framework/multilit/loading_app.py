@@ -3,7 +3,7 @@ import traceback
 import streamlit as st
 
 from streamlit_plugins.framework.multilit.app_template import MultiHeadApp
-from streamlit_plugins.components.Loader.loader import LoadersLib, Loader
+from streamlit_plugins.components.loader import LoadersLib, Loader
 
 
 class LoadingApp(MultiHeadApp):

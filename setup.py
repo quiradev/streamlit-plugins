@@ -35,5 +35,10 @@ setup(
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
     ],
-    keywords=["streamlit", "plugins", "framework", "components", "streamlit navbar"]
+    keywords=["streamlit", "plugins", "framework", "components", "navbar", "loader", "multilit"],
+    options={
+        'sdist': {'dist_dir': './dist/streamlit-plugins'},
+        'bdist_wheel': {'dist_dir': './dist/streamlit-plugins'},
+        'build': {'build_base': './build/streamlit-plugins'}
+    }
 )

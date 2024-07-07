@@ -1,0 +1,133 @@
+version: "3"
+
+services:
+  navbar_app:
+    image: streamlit:3.8
+    build: .
+    ports:
+      - 8501:8501
+    working_dir: /streamlit
+    environment:
+      RELEASE: DEV
+      APP: Navbar
+    volumes:
+      - .:/streamlit/components
+    networks:
+      - streamlit-components-network
+
+  navbar_frontend:
+    image: streamlit-component-navbar
+    build: Navbar/frontend
+    ports:
+      - "3000:3000"
+    command: npm run start
+    volumes:
+      - ./Navbar/frontend/.env:/frontend/.env
+      - ./Navbar/frontend/package.json:/frontend/package.json
+      - ./Navbar/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./Navbar/frontend/public:/frontend/public
+      - ./Navbar/frontend/src:/frontend/src
+      - ./Navbar/frontend/build:/frontend/build
+    networks:
+      - streamlit-components-network
+
+  navbar_build:
+    image: streamlit-component-navbar
+    build: Navbar/frontend
+    command: npm run build
+    volumes:
+      - ./Navbar/frontend/.env:/frontend/.env
+      - ./Navbar/frontend/package.json:/frontend/package.json
+      - ./Navbar/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./Navbar/frontend/public:/frontend/public
+      - ./Navbar/frontend/src:/frontend/src
+      - ./Navbar/frontend/build:/frontend/build
+
+  label_studio_dev:
+    image: streamlit-component-labelstudio
+    build: LabelStudio/frontend
+    ports:
+      - "3000:3000"
+      - "9229:9229"
+    command: tail -f /dev/null
+    volumes:
+      - ./LabelStudio/frontend/.env:/frontend/.env
+      - ./LabelStudio/frontend/package.json:/frontend/package.json
+      - ./LabelStudio/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./LabelStudio/frontend/public:/frontend/public
+      - ./LabelStudio/frontend/src:/frontend/src
+      - ./LabelStudio/frontend/build:/frontend/build
+    networks:
+      - streamlit-components-network
+
+  label_studio_frontend:
+    image: streamlit-component-labelstudio
+    build: LabelStudio/frontend
+    ports:
+      - "3000:3000"
+    command: npm run start
+    volumes:
+      - ./LabelStudio/frontend/.env:/frontend/.env
+      - ./LabelStudio/frontend/package.json:/frontend/package.json
+      - ./LabelStudio/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./LabelStudio/frontend/public:/frontend/public
+      - ./LabelStudio/frontend/src:/frontend/src
+      - ./LabelStudio/frontend/build:/frontend/build
+    networks:
+      - streamlit-components-network
+
+  label_studio_build:
+    image: streamlit-component-labelstudio
+    build: LabelStudio/frontend
+    command: npm run build
+    volumes:
+      - ./LabelStudio/frontend/.env:/frontend/.env
+      - ./LabelStudio/frontend/package.json:/frontend/package.json
+      - ./LabelStudio/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./LabelStudio/frontend/public:/frontend/public
+      - ./LabelStudio/frontend/src:/frontend/src
+      - ./LabelStudio/frontend/build:/frontend/build
+
+  snakeviz_dev:
+    image: streamlit-component-snakeviz
+    build: Snakeviz/frontend
+    ports:
+      - "3000:3000"
+      - "9229:9229"
+    command: tail -f /dev/null
+    volumes:
+      - ./Snakeviz/frontend/.env:/frontend/.env
+      - ./Snakeviz/frontend/package.json:/frontend/package.json
+      - ./Snakeviz/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./Snakeviz/frontend/public:/frontend/public
+      - ./Snakeviz/frontend/src:/frontend/src
+      - ./Snakeviz/frontend/build:/frontend/build
+
+  snakeviz_frontend:
+    image: streamlit-component-snakeviz
+    build: Snakeviz/frontend
+    ports:
+      - "3000:3000"
+    command: npm run start
+    volumes:
+      - ./Snakeviz/frontend/.env:/frontend/.env
+      - ./Snakeviz/frontend/package.json:/frontend/package.json
+      - ./Snakeviz/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./Snakeviz/frontend/public:/frontend/public
+      - ./Snakeviz/frontend/src:/frontend/src
+      - ./Snakeviz/frontend/build:/frontend/build
+
+  snakeviz_build:
+    image: streamlit-component-snakeviz
+    build: Snakeviz/frontend
+    command: npm run build
+    volumes:
+      - ./Snakeviz/frontend/.env:/frontend/.env
+      - ./Snakeviz/frontend/package.json:/frontend/package.json
+      - ./Snakeviz/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./Snakeviz/frontend/public:/frontend/public
+      - ./Snakeviz/frontend/src:/frontend/src
+      - ./Snakeviz/frontend/build:/frontend/build
+
+networks:
+  streamlit-components-network:

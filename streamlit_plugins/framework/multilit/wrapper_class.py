@@ -2,8 +2,9 @@ from streamlit_plugins.framework.multilit.app_template import MultiHeadApp
 
 
 class Templateapp(MultiHeadApp):
-
     def __init__(self, mtitle=None, run_method=None, **kwargs):
+        super().__init__()
+
         self.__dict__.update(kwargs)
         self.title = mtitle
 

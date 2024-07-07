@@ -7,7 +7,7 @@ import streamlit as st
 from streamlit.runtime.scriptrunner import RerunException, StopException, get_script_run_ctx
 from streamlit.runtime.scriptrunner.script_requests import ScriptRequestType
 
-from streamlit_plugins.components.Navbar import st_navbar
+from streamlit_plugins.components.navbar import st_navbar
 from streamlit_plugins.framework.multilit.wrapper_class import Templateapp
 from .app_template import MultiHeadApp
 from .loading_app import LoadingApp
