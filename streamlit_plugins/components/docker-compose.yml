@@ -17,31 +17,31 @@ services:
 
   navbar_frontend:
     image: streamlit-component-navbar
-    build: Navbar/frontend
+    build: navbar/frontend
     ports:
       - "3000:3000"
     command: npm run start
     volumes:
-      - ./Navbar/frontend/.env:/frontend/.env
-      - ./Navbar/frontend/package.json:/frontend/package.json
-      - ./Navbar/frontend/tsconfig.json:/frontend/tsconfig.json
-      - ./Navbar/frontend/public:/frontend/public
-      - ./Navbar/frontend/src:/frontend/src
-      - ./Navbar/frontend/build:/frontend/build
+      - ./navbar/frontend/.env:/frontend/.env
+      - ./navbar/frontend/package.json:/frontend/package.json
+      - ./navbar/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./navbar/frontend/public:/frontend/public
+      - ./navbar/frontend/src:/frontend/src
+      - ./navbar/frontend/build:/frontend/build
     networks:
       - streamlit-components-network
 
   navbar_build:
     image: streamlit-component-navbar
-    build: Navbar/frontend
+    build: navbar/frontend
     command: npm run build
     volumes:
-      - ./Navbar/frontend/.env:/frontend/.env
-      - ./Navbar/frontend/package.json:/frontend/package.json
-      - ./Navbar/frontend/tsconfig.json:/frontend/tsconfig.json
-      - ./Navbar/frontend/public:/frontend/public
-      - ./Navbar/frontend/src:/frontend/src
-      - ./Navbar/frontend/build:/frontend/build
+      - ./navbar/frontend/.env:/frontend/.env
+      - ./navbar/frontend/package.json:/frontend/package.json
+      - ./navbar/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./navbar/frontend/public:/frontend/public
+      - ./navbar/frontend/src:/frontend/src
+      - ./navbar/frontend/build:/frontend/build
 
   label_studio_dev:
     image: streamlit-component-labelstudio
