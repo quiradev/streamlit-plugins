@@ -31,8 +31,8 @@ setup(
     python_requires='>=3.9',
     install_requires=requirements,
     extras_require={
-        "navbar": [f"streamlit-plugins-components-navbar~={VERSION}"],
-        "loader": [f"streamlit-plugins-components-loader~={VERSION}"],
+        "navbar": [f"streamlit-components-navbar~={VERSION}"],
+        "loader": [f"streamlit-components-loader~={VERSION}"],
     },
     include_package_data=True,
     classifiers=[
