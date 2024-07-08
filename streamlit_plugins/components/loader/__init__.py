@@ -1,4 +1,5 @@
 import atexit
+import time
 from enum import Enum, auto
 
 import streamlit as st
@@ -2557,7 +2558,7 @@ def points_line(**kwargs):
         </div>
     """
 
-    return point_lines, outer_style + point_line_style
+    return point_lines, outer_style + point_line_style, ""
 
 
 def grid_points(**kwargs):
@@ -2693,7 +2694,7 @@ def grid_points(**kwargs):
         </div>
         """
 
-    return spotted_div, outer_style + spotted_div_style
+    return spotted_div, outer_style + spotted_div_style, ""
 
 
 def pulse_bars(**kwargs):
@@ -2818,7 +2819,7 @@ def pulse_bars(**kwargs):
             </div>
         </div>
         """
-    return spinner_div, outer_style + spinner_div_style
+    return spinner_div, outer_style + spinner_div_style, ""
 
 
 def pacman_loader(**kwargs):
@@ -2967,7 +2968,7 @@ def pacman_loader(**kwargs):
         </div>
     """
 
-    return pacman, pacman_style
+    return pacman, pacman_style, ""
 
 
 # template function for spinners and loaders
@@ -3139,7 +3140,7 @@ def showcase(**kwargs):
 
     element_style = SHOWCASE_GLOBAL_STYLES
 
-    return element_code, element_style
+    return element_code, element_style, ""
 
 
 def showcase_pretty(index=0):
@@ -3282,7 +3283,7 @@ def showcase_pretty(index=0):
 
     element_style = SHOWCASE_GLOBAL_STYLES
 
-    return element_code, element_style
+    return element_code, element_style, ""
 
 
 def standard_loaders(index=0):
@@ -3419,10 +3420,17 @@ def book_loader(**kwargs):
     style = """
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <style>
+        div:has(.book-parent) {
+            width: inherit;
+        }
+        .book-container, book-parent:after {
+            opacity: 0;
+            animation: fadeInOpacity 0.5s ease-in-out forwards;
+        }
         .book-parent {
-            position: absolute;
-            width: 100%;
-            top: calc((50vh - 350px) / 1.5);
+            position: fixed;
+            width: inherit;
+            top: 40vh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -3648,6 +3656,14 @@ def book_loader(**kwargs):
             position: absolute;
             margin-top: 0.5em;
             top: calc(50% + 32px + 12px);
+        }
+        @keyframes fadeInOpacity {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
         }
         @-webkit-keyframes container-icons {
             4%,
@@ -4343,7 +4359,22 @@ def book_loader(**kwargs):
     </style>
     """
 
-    return div, style
+    out_style = """
+    <style>
+        .book-container, book-parent:after {
+            animation: fadeOutOpacity 0.3s ease-in-out forwards !important;
+        }
+        @keyframes fadeOutOpacity {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+    </style>
+    """
+    return div, style, out_style
 
 
 class LoadersLib(Enum):
@@ -4357,7 +4388,7 @@ class LoadersLib(Enum):
     book_loader = auto()
 
 
-def get_loader(loader_name, **kwargs):
+def get_loader(loader_name, **kwargs) -> tuple[str, str, str]:
     loader_map = {
         LoadersLib.points_line: points_line,
         LoadersLib.grid_points: grid_points,
@@ -4395,32 +4426,38 @@ class Loader:
 
         height_str = '{}{}'.format(str(height), 'px')
 
-        loader_div, loader_style = get_loader(loader_name, index=index)
+        loader_div, loader_style, loader_output_style = get_loader(loader_name, index=index)
 
         self.element_code = loader_div.replace("||-label-||", text)
         self.element_style = loader_style.replace('||-height-||', height_str)
         self.element_style = self.element_style.replace('||-pcolor-||', primary_color)
         self.element_style = self.element_style.replace('||-bcolor-||', background_color)
 
+        self.element_out_style = loader_output_style
+
         self.running = False
         with self.loader_container:
-            self.display_element_style = st.empty()
             self.display_element = st.empty()
+            self.display_element_out = st.empty()
 
         atexit.register(self.stop_loader)
 
     def run_loader(self):
         self.running = True
         with self.loader_container:
-            self.display_element_style.markdown(self.element_style, unsafe_allow_html=True)
-            self.display_element.markdown(self.element_code, unsafe_allow_html=True)
+            self.display_element_out.empty()
+            self.display_element.markdown(self.element_style+self.element_code, unsafe_allow_html=True)
 
     def stop_loader(self):
         if self.running:
+            with self.loader_container:
+                self.display_element_out.markdown(self.element_out_style, unsafe_allow_html=True)
+
+            time.sleep(0.3)
             self.running = False
             with self.loader_container:
-                self.display_element_style.empty()
                 self.display_element.empty()
+
 
     def __enter__(self):
         self.run_loader()

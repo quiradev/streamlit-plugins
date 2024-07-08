@@ -13,6 +13,9 @@ def run():
 
     class DemoApp(MultiHeadApp):
         def run(self):
+            with st.sidebar:
+                st.write("This is a sidebar")
+
             st.title("Demo")
             _LOREM_IPSUM = [
                 "Lorem", "ipsum", "dolor", "sit", "amet,", "consectetur",
