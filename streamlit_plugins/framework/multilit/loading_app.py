@@ -19,10 +19,12 @@ class LoadingApp(MultiHeadApp):
                     status_msg = app_target.title
 
             loader = Loader(loader_container=self.loader_container, text=status_msg, loader_name=LoadersLib.book_loader)
-            loader.run_loader()
-            with self.app_container:
-                app_target.run()
-            loader.stop_loader()
+            try:
+                loader.run_loader()
+                with self.app_container:
+                    app_target.run()
+            finally:
+                loader.stop_loader()
 
         except Exception as e:
             st.error(f"Error details: {e}")
