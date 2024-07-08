@@ -14,6 +14,7 @@ def login():
         st.session_state.app_id = "app_default"
         st.rerun()
 
+
 def logout():
     if st.button("Log out"):
         st.session_state.logged_in = False

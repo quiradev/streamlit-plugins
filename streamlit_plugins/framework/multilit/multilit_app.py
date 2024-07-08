@@ -117,7 +117,7 @@ class MultiApp(object):
         self._login_app = None
         self._unsecure_app = None
         self._home_app = None
-        self._home_label = ["Home", "fa fa-home"]
+        self._home_label = ["Home", ":material/home:"]
         self._home_id = 'app_home'
         self._complex_nav = defaultdict(list)
         self._navbar_mode = navbar_mode
@@ -140,7 +140,7 @@ class MultiApp(object):
         self._user_loader = use_loader
         self._use_cookie_cache = use_cookie_cache
         self._cookie_manager = None
-        self._logout_label = ["Logout", "fa fa-user-circle"]
+        self._logout_label = ["Logout", ":material/account_circle:"]
         self._logout_id = 'app_logout'
         self._logout_callback = None
         self._login_callback = None
@@ -314,7 +314,7 @@ class MultiApp(object):
 
             if is_home and title is None and icon is None:
                 app_title = None
-                app_icon = "fa fa-home"
+                app_icon = ":material/home:"
 
             self.add_app(title=app_title, app=wrapped_app, icon=app_icon, is_home=is_home)
 

@@ -80,6 +80,12 @@ HIDE_ST_STYLE = """
                 """
 
 
+MATERIAL_ICON_HOME = ":material/home:"
+MATERIAL_ICON_LOGIN = ":material/login:"
+MATERIAL_ICON_LOGOUT = ":material/logout:"
+MATERIAL_ICON_USER_CIRCLE = ":material/account_circle:"
+
+
 def build_menu_from_st_pages(*pages: StreamlitPage | dict, login_app: StreamlitPage = None,
                              logout_app: StreamlitPage = None) -> tuple[list[dict], dict[str, StreamlitPage]]:
     menu = []
@@ -88,13 +94,17 @@ def build_menu_from_st_pages(*pages: StreamlitPage | dict, login_app: StreamlitP
         if isinstance(page, dict):
             for label, sub_pages in page.items():
                 submenu, sub_app_map = build_menu_from_st_pages(*sub_pages)
-                menu.append({'id': label.lower().replace(" ", "_"), 'label': label, 'submenu': submenu})
+                menu.append({
+                    'id': label.lower().replace(" ", "_"),
+                    'label': label,
+                    'submenu': submenu
+                })
                 app_map.update(sub_app_map)
         elif isinstance(page, StreamlitPage):
             app_id = page.url_path
             if not app_id:
                 app_id = "app_default"
-            menu.append({'label': page.title, 'id': app_id})
+            menu.append({'label': page.title, 'id': app_id, 'icon': page.icon, 'ttip': page.title, 'style': {}})
             app_map[app_id] = page
         else:
             raise ValueError(f"Invalid page type: {type(page)}")
@@ -118,20 +128,20 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
     # first_select = math.floor(first_select / 10)
 
     if type(home_name) is str:
-        home_data = {'id': "app_home", 'label': home_name, 'icon': "fa fa-home", 'ttip': home_name}
+        home_data = {'id': "app_home", 'label': home_name, 'icon': MATERIAL_ICON_HOME, 'ttip': home_name}
     else:
         home_data = home_name
         if home_name is not None:
             if home_name.get('icon', None) is None:
-                home_data['icon'] = "fa fa-home"
+                home_data['icon'] = MATERIAL_ICON_HOME
 
     if type(login_name) is str:
-        login_data = {'id': "app_login", 'label': login_name, 'icon': "fa fa-user-circle", 'ttip': login_name}
+        login_data = {'id': "app_login", 'label': login_name, 'icon': MATERIAL_ICON_USER_CIRCLE, 'ttip': login_name}
     else:
         login_data = login_name
         if login_name is not None:
             if login_name.get('icon', None) is None:
-                login_data['icon'] = "fa fa-user-circle"
+                login_data['icon'] = MATERIAL_ICON_USER_CIRCLE
 
     if option_menu:
         max_len = 0
@@ -148,10 +158,12 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
         menu_definition[i]['id'] = menu_definition[i].get('id', f"app_{menu_definition[i]['label']}")
         if 'submenu' in menu_definition[i]:
             for _i, _msubitem in enumerate(menu_definition[i]['submenu']):
-                menu_definition[i]['submenu'][_i]['label'] = menu_definition[i]['submenu'][_i].get('label',
-                                                                                                   f'{i}_Label_{_i}')
-                menu_definition[i]['submenu'][_i]['id'] = menu_definition[i]['submenu'][_i].get('id',
-                                                                                                f"app_{menu_definition[i]['submenu'][_i]['label']}")
+                menu_definition[i]['submenu'][_i]['label'] = menu_definition[i]['submenu'][_i].get(
+                    'label', f'{i}_Label_{_i}'
+                )
+                menu_definition[i]['submenu'][_i]['id'] = menu_definition[i]['submenu'][_i].get(
+                    'id', f"app_{menu_definition[i]['submenu'][_i]['label']}"
+                )
 
     items = menu_definition
     if home_name is not None:

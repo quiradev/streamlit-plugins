@@ -235,20 +235,24 @@ const NavBar: React.VFC = () => {
 
   const createMenu = (item: MenuItem, key: number): JSX.Element => {
     const isActive = item.id === selectedAppId;
-    const iconClass = containsEmojis(item.icon) ? "" : item.icon;
-    const iconTxt = containsEmojis(item.icon) ? item.icon : "";
-//     if (!selected_app_id) {
-//       if (key === first_select) {
-//         // isActive = true;
-//         setSelectedAppId(item.id);
-//       }
-//     }
-//     if (item.id === override_app_selected_id && selected_app_id !== override_app_selected_id) {
-//       // isActive = true;
-//       setSelectedAppId(override_app_selected_id);
-//       override_app_selected_id = "";
-//     }
-    // if (Array.isArray(item.submenu)) {
+    const hasIcon = item.icon ? true : false;
+
+    let iconMarkup;
+
+    // Determinar si se usa <i> o <span> para el icono
+    if (hasIcon) {
+      const regex = /:material\/(\w+):/gm;
+      const m = regex.exec(item.icon);
+      if (m !== null) {
+        const symbol = m[1];
+        iconMarkup = <span className="material-symbols-rounded icon">{symbol}</span>;
+      } else {
+        const iconClass = containsEmojis(item.icon) ? "icon" : `${item.icon} icon`;
+        const iconTxt = containsEmojis(item.icon) ? item.icon : "";
+        iconMarkup = <i className={iconClass}>{iconTxt}</i>;
+      }
+    }
+
     if (item.submenu) {
       return (
         <li
@@ -266,7 +270,7 @@ const NavBar: React.VFC = () => {
             data-html="true"
             title={item.ttip}
           >
-            <i className={iconClass}>{iconTxt}</i>
+            {hasIcon && iconMarkup}
             <span>{item.label}</span>
           </a>
           <ul key={key * 103} className={`dropdown-menu ${selectedSubMenu === item.id && expandSubMenu ? "show" : ""}`}>
@@ -323,12 +327,12 @@ const NavBar: React.VFC = () => {
   const renderNavBar = (): ReactNode => {
     const menuItems = addHomeLogin();
     const menuLook = args.use_animation ? "complexnavbarSupportedContent" : "navbarSupportedContent";
-    const selector = args.use_animation ? (
-      <div className="hori-selector">
-        <div className="left"></div>
-        <div className="right"></div>
-      </div>
-    ) : null;
+//     const selector = args.use_animation ? (
+//       <div className="hori-selector">
+//         <div className="left"></div>
+//         <div className="right"></div>
+//       </div>
+//     ) : null;
 
     return (
       <div key={args.key}>
@@ -340,11 +344,10 @@ const NavBar: React.VFC = () => {
             onClick={toggleNav}
             aria-expanded={expandState}
           >
-            <i className="fas fa-bars text-color"></i>
+            <span className="material-symbols-rounded text-color">menu</span>
           </button>
           <div id={menuLook} className="navbar-collapse" style={{ display: blockState }}>
             <ul className="navbar-nav py-0">
-              {selector}
               {menuItems.map((item: MenuItem, index: number) => createMenu(item, index))}
             </ul>
           </div>

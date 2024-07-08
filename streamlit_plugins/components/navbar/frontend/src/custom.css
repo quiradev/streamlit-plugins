@@ -17,6 +17,10 @@
     position: relative;
   }
 
+  ul.navbar-nav {
+    width: 100%;
+  }
+
   #complexnavbarSupportedContent ul{
     padding: 0px;
     margin: 0px;
@@ -59,6 +63,7 @@
   #complexnavbarSupportedContent .active>a:not(:only-child):after {
     transform: rotate(90deg);
   }
+  /*
   .hori-selector{
     display:inline-block;
     position:absolute;
@@ -102,6 +107,7 @@
     bottom: 0;
       left: -25px;
   }
+  */
 
 
   @media(min-width: 992px){
@@ -131,6 +137,7 @@
     #complexnavbarSupportedContent ul li a{
       padding: 8px;
     }
+    /*
     .hori-selector{
       margin-top: 0px;
 
@@ -155,8 +162,8 @@
       bottom: -25px;
       left: -25px;
     }
+    */
   }
-
 
 #navbarSupportedContent{
   position: relative;

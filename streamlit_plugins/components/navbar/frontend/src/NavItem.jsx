@@ -46,22 +46,30 @@ const NavItem = (props) => {
 
     ret_id = item.id;
 
-    let label = "";
-    let iconClass = "";
-    let iconTxt = "";
-    if (containsEmojis(item.icon)) {
-      iconTxt = item.icon
-      label = item.label;
-    } else {
-      iconClass = item.icon;
-      label = item.label;
+    const label = item.label;
+    const hasIcon = item.icon ? true : false;
+
+    let iconMarkup;
+
+    // Determinar si se usa <i> o <span> para el icono
+    if (hasIcon) {
+      const regex = /:material\/(\w+):/gm;
+      const m = regex.exec(item.icon);
+      if (m !== null) {
+        const symbol = m[1];
+        iconMarkup = <span className="material-symbols-rounded icon">{symbol}</span>;
+      } else {
+        const iconClass = containsEmojis(item.icon) ? "icon" : `${item.icon} icon`;
+        const iconTxt = containsEmojis(item.icon) ? item.icon : "";
+        iconMarkup = <i className={iconClass}>{iconTxt}</i>;
+      }
     }
 
     return (
       <li style={item.style || {}} className={`nav-item py-0 ${is_active ? "active": ""}`} key={kid}>
         <a className="nav-link" href={"#" + kid} onClick={()=>onSelect(ret_id)} data-toggle="tooltip" data-placement="top" data-html="true" title={item.ttip}>
-            <i className={iconClass}>{iconTxt}</i>
-            <span>{label}</span>
+          {hasIcon && iconMarkup}
+          <span>{label}</span>
         </a>
       </li>
     );

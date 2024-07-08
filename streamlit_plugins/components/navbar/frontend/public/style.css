@@ -102,6 +102,16 @@ body {
     position: relative;
 }
 
+ul li a:has(.icon) {
+    display: flex !important;
+    align-items: center;
+}
+
+ul li a .icon {
+    margin-right: 0.5rem;
+    font-style: normal;
+}
+
 #complexnavbarSupportedContent ul.navbar-nav li.nav-item a {
     background-color: transparent;
     color: var(--txc_inactive);
