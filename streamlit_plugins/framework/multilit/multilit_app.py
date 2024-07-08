@@ -518,9 +518,8 @@ class MultiApp(object):
                     icon="🚨"
                 )
 
-            if self._user_loader:
-                if app.has_loading():
-                    self._loader_app.run(app, status_msg=app_label)
+            if self._user_loader and app.has_loading():
+                self._loader_app.run(app, status_msg=app_label)
             else:
                 with self._app_container:
                     app.run()
