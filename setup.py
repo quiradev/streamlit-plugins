@@ -4,17 +4,20 @@ from pathlib import Path
 
 from setuptools import setup, find_packages
 
-with open(os.path.join(Path(__file__).parent / 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
+with open(os.path.join(Path(__file__).parent / 'README.md'), encoding='utf-8') as reader:
+    long_description = reader.read()
 
 # Se leen los requirements de requirements.txt
-with open(os.path.join(Path(__file__).parent, 'requirements.txt'), encoding='utf-8') as f:
-    requirements = f.read().splitlines()
+with open(os.path.join(Path(__file__).parent, 'requirements.txt'), encoding='utf-8') as reader:
+    requirements = reader.read().splitlines()
+
+with open(Path(__file__).parent / "VERSION", "r") as reader:
+    VERSION = reader.read().strip()
 
 
 setup(
     name='streamlit-plugins',
-    version='0.2.1',
+    version=VERSION,
     license='MIT',
     url='https://github.com/quiradev/streamlit-plugins',
     description='Components and Frameworks to give new features to streamlit',
@@ -22,7 +25,7 @@ setup(
     long_description_content_type="text/markdown",
     author_email='v.quilonr@gmail.com',
     author='Victor Quilon Ranera',
-    packages=find_packages(),
+    packages=find_packages(exclude=["lab_streamlit_plugins", "lab_streamlit_plugins.*"]),
     python_requires='>=3.9',
     install_requires=[
         *requirements,

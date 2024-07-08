@@ -15,7 +15,10 @@ with open(os.path.join(Path(__file__).parent, 'requirements.txt'), encoding='utf
 main_folder = Path(__file__).parents[4]
 os.chdir(main_folder)
 
-VERSION = "0.2.1"
+with open(main_folder / "VERSION", "r") as reader:
+    VERSION = reader.read().strip()
+
+MINOR_VERSION = ".".join(VERSION.split(".")[0:-1] + ["0"])
 
 setup(
     name='streamlit-framework-multilit',
@@ -31,8 +34,8 @@ setup(
     python_requires='>=3.9',
     install_requires=requirements,
     extras_require={
-        "navbar": [f"streamlit-components-navbar~={VERSION}"],
-        "loader": [f"streamlit-components-loader~={VERSION}"],
+        "navbar": [f"streamlit-component-navbar~={MINOR_VERSION}"],
+        "loader": [f"streamlit-component-loader~={MINOR_VERSION}"],
     },
     include_package_data=True,
     classifiers=[

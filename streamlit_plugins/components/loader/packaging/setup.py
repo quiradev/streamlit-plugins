@@ -15,9 +15,12 @@ with open(os.path.join(Path(__file__).parent, 'requirements.txt'), encoding='utf
 main_folder = Path(__file__).parents[4]
 os.chdir(main_folder)
 
+with open(main_folder / "VERSION", "r") as reader:
+    VERSION = reader.read().strip()
+
 setup(
     name='streamlit-component-loader',
-    version='0.2.1',
+    version=VERSION,
     license='MIT',
     url='https://github.com/quiradev/streamlit-plugins',
     description='Components and Frameworks to give new features to streamlit',

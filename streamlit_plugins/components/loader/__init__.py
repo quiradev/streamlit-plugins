@@ -4375,7 +4375,6 @@ def get_loader(loader_name, **kwargs):
 
 
 class Loader:
-
     def __init__(self, loader_container=None, text='', loader_name: LoadersLib = LoadersLib.book_loader, height=256,
                  index=0, primary_color=None):
         if loader_container is None:
