@@ -8,15 +8,15 @@ def run():
         use_cookie_cache=True, sidebar_state='auto',
         navbar_animation=True, allow_url_nav=True, hide_streamlit_markers=False, use_banner_images=None,
         banner_spacing=None, clear_cross_app_sessions=True, session_params=None,
-        use_loader=True, within_fragment=False
+        use_loader=False, within_fragment=False
     )
 
-    class DemoApp(MultiHeadApp):
+    class Demo1App(MultiHeadApp):
         def run(self):
             with st.sidebar:
                 st.write("This is a sidebar")
 
-            st.title("Demo")
+            st.title("Demo 1")
             _LOREM_IPSUM = [
                 "Lorem", "ipsum", "dolor", "sit", "amet,", "consectetur",
                 "adipiscing", "elit.", "Sed", "nec", "urna", "felis.",
@@ -34,15 +34,42 @@ def run():
 
             st.write_stream(stream_data)
 
-    demo_app = DemoApp()
+    class Demo2App(MultiHeadApp):
+        def run(self):
+            with st.sidebar:
+                st.write("This is a sidebar")
+
+            st.title("Demo 2")
+            _LOREM_IPSUM = [
+                "Lorem", "ipsum", "dolor", "sit", "amet,", "consectetur",
+                "adipiscing", "elit.", "Sed", "nec", "urna", "felis.",
+                "Cras", "eleifend", "for ", "dolor", "at", "congue.",
+                "Maecenas", "vel", "nunc", "sit", "amet", "libero", "suscipit",
+                "ultrices."
+            ]
+
+            import time
+
+            def stream_data():
+                for word in _LOREM_IPSUM:
+                    yield word + " "
+                    time.sleep(0.1)
+
+            st.write_stream(stream_data)
+
+    demo1_app = Demo1App()
+    demo2_app = Demo2App(with_loader=False)
 
     @multi_app.addapp(title="Home", is_home=True)
     def my_home():
         st.info('HOME')
-        # st.markdown('<a target="_self" href="?selected=app_1">Demo Page</a>', unsafe_allow_html=True)
-        multi_app.change_app_button(demo_app.get_id(), "Demo")
+        if st.button('Demo1'):
+            multi_app.change_app(demo1_app.get_id())
+        if st.button('Demo2'):
+            multi_app.change_app(demo2_app.get_id())
 
-    multi_app.add_app(title="Demo", app=demo_app, icon=None)
+    multi_app.add_app(title="Demo1", app=demo1_app, icon=None)
+    multi_app.add_app(title="Demo2", app=demo2_app, icon=None)
 
     multi_app.get_nav_transition()
 

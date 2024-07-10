@@ -1,17 +1,20 @@
 version: "3"
 
 services:
-  navbar_app:
-    image: streamlit:3.8
-    build: .
+  navbar_dev:
+    image: streamlit-component-navbar
+    build: navbar/frontend
     ports:
-      - 8501:8501
-    working_dir: /streamlit
-    environment:
-      RELEASE: DEV
-      APP: Navbar
+      - "3000:3000"
+      - "9229:9229"
+    command: tail -f /dev/null
     volumes:
-      - .:/streamlit/components
+      - ./navbar/frontend/.env:/frontend/.env
+      - ./navbar/frontend/package.json:/frontend/package.json
+      - ./navbar/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./navbar/frontend/public:/frontend/public
+      - ./navbar/frontend/src:/frontend/src
+      - ./navbar/frontend/build:/frontend/build
     networks:
       - streamlit-components-network
 

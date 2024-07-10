@@ -41,21 +41,23 @@ interface NavBarRenderData extends RenderData {
   theme?: Theme;
 }
 
-const NavBar: React.VFC = () => {
-  const renderData = useRenderData<NavBarRenderData>();
+const NavBar: ReactNode = () => {
+  const renderData: NavBarRenderData = useRenderData();
 
   const args: PythonArgs = renderData.args;
 
   const [expandState, setExpandState] = useState(false);
-  const [selectedAppId, setSelectedAppId] = useState<string>(args.default_app_selected_id);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   const [selectedSubMenu, setSelectedSubMenu] = useState<string | null>(null);
   const [expandSubMenu, setExpandSubMenu] = useState(false);
   const [blockState, setBlockState] = useState("none");
 
+  console.log("SELECCIONADA", selectedAppId);
+
   // Handle override_app_selected_id updates
   useEffect(() => {
     if (args.override_app_selected_id) {
-      //console.log(args.override_app_selected_id);
+      console.log("OVERRIDE", args.override_app_selected_id);
       setSelectedAppId(args.override_app_selected_id);
       setExpandState(false);
       setBlockState("none");
@@ -63,6 +65,20 @@ const NavBar: React.VFC = () => {
       Streamlit.setComponentValue(args.override_app_selected_id);
     }
   }, [args.override_app_selected_id]);
+
+  useEffect(() => {
+    let hasChangeSelected = false;
+    if (selectedAppId === null) hasChangeSelected = true;
+    if (selectedAppId !== args.default_app_selected_id) hasChangeSelected = true;
+
+    if (hasChangeSelected) {
+      console.log("DEFAULT", args.default_app_selected_id, selectedAppId);
+      setSelectedAppId(args.default_app_selected_id);
+      setExpandState(false);
+      setBlockState("none");
+      setExpandSubMenu(false);
+    }
+  }, [selectedAppId]);
 
   const handleResize = useCallback(() => {
     let lastHeight = document.body.scrollHeight;
@@ -356,35 +372,8 @@ const NavBar: React.VFC = () => {
     );
   };
 
-//
-//   if (!document.defineListeners) document.defineListeners = false;
-//   if (!document.clickInside) document.clickInside = false;
-//   const loseFocus = (): void => {
-//     if (!document.defineListeners) {
-//       document.defineListeners = true
-//       document.addEventListener('focusout', event => {
-//         setTimeout(
-//         () => {
-//             if (!document.clickInside) {
-//               console.log("FOCUSOUT FIRE");
-//               setExpandState(false);
-//               setBlockState("none");
-//               setExpandSubMenu(false);
-//               // framed_resize();
-//               delayed_resize(50);
-//             }
-//             document.clickInside = false;
-//         }, 50
-//         )
-//       });
-//       document.addEventListener('click', event => {
-//         document.clickInside = true;
-//       });
-//     }
-//   }
-//   loseFocus();
   return renderNavBar();
 };
 
 //export default withStreamlitConnection(NavBar);
-export default NavBar;
+// export default NavBar;

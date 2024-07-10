@@ -6,7 +6,7 @@ from streamlit.navigation.page import StreamlitPage
 
 # _RELEASE = os.getenv("RELEASE", "").upper() != "DEV"
 _RELEASE = True
-# _RELEASE = False
+_RELEASE = False
 
 if _RELEASE:
     absolute_path = os.path.dirname(os.path.abspath(__file__))
@@ -120,7 +120,9 @@ def build_menu_from_st_pages(*pages: StreamlitPage | dict, login_app: StreamlitP
 
 def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent", home_name=None, login_name=None,
               override_theme=None, sticky_nav=True, force_value=None, use_animation=True,
-              hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False, override_app_selected_id=None,
+              hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False,
+              default_app_selected_id=None,
+              override_app_selected_id=None,
               reclick_load=True):
     # if key not in st.session_state:
     #     st.session_state[key] = None
@@ -165,23 +167,27 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
                     'id', f"app_{menu_definition[i]['submenu'][_i]['label']}"
                 )
 
-    items = menu_definition
-    if home_name is not None:
-        items = [home_data] + items
-    if login_name is not None:
-        items = items + [login_data]
-    first_select_item = items[first_select]
-    default_app_selected_id = first_select_item.get('id', None)
-    if first_select_item.get('submenu', []):
-        default_app_selected_id = first_select_item['submenu'][0].get('id', None)
+    if default_app_selected_id is None:
+        items = menu_definition
+        if home_name is not None:
+            items = [home_data] + items
+        if login_name is not None:
+            items = items + [login_data]
+        first_select_item = items[first_select]
+        default_app_selected_id = first_select_item.get('id', None)
+        if first_select_item.get('submenu', []):
+            default_app_selected_id = first_select_item['submenu'][0].get('id', None)
 
-    if key not in st.session_state:
-        override_app_selected_id = default_app_selected_id
-    elif st.session_state[key] is None:
-        override_app_selected_id = default_app_selected_id
+    if override_app_selected_id:
+        default_app_selected_id = override_app_selected_id
 
-    # print()
-    # print(f"FROM Multi: {override_app_selected_id}")
+    # if key not in st.session_state:
+    #     override_app_selected_id = default_app_selected_id
+    # elif st.session_state[key] is None:
+    #     override_app_selected_id = default_app_selected_id
+
+    print()
+    print(f"FROM Override Multi: {override_app_selected_id}")
     component_value = _component_func(
         menu_definition=menu_definition, key=key, home=home_data, fvalue=force_value,
         login=login_data, override_theme=override_theme, use_animation=use_animation,
@@ -189,7 +195,7 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
         default=default_app_selected_id, default_app_selected_id=default_app_selected_id,
         reclick_load=reclick_load
     )
-    # print(f"FROM Navbar: {component_value}")
+    print(f"FROM Navbar: {component_value}")
 
     if sticky_nav:
         if sticky_mode == 'pinned':
@@ -216,6 +222,6 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
         # session_state._state[widget_key] = component_value
         # session_state._state._old_state[widget_key] = component_value
 
-    # print(f"FROM Navbar FINAL: {component_value}")
-    # print()
+    print(f"FROM Navbar FINAL: {component_value}")
+    print()
     return component_value

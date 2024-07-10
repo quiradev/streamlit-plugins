@@ -461,6 +461,7 @@ class MultiApp(object):
             menu_definition=menu_data, key="mainMultilitMenuComplex", home_name=home_nav,
             override_theme=self._navbar_theme, login_name=login_nav,
             use_animation=self._navbar_animation, hide_streamlit_markers=self._hide_streamlit_markers,
+            default_app_selected_id=override_app_selected_id or self.session_state.selected_app,
             override_app_selected_id=override_app_selected_id,
             sticky_nav=self._navbar_sticky, sticky_mode=self._navbar_mode, reclick_load=True
         )
@@ -509,7 +510,7 @@ class MultiApp(object):
             if app_id == self._logout_id:
                 app_label = self._logout_label[0]
 
-            # print("Running", app_label)
+            print("Running", app_label)
             if self._verbose and self.session_state.uncaught_error:
                 st.error(
                     f'😭 Error triggered from app: **{self.session_state.selected_app}**\n\n'
