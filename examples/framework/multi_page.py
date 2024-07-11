@@ -39,23 +39,15 @@ def run():
             with st.sidebar:
                 st.write("This is a sidebar")
 
-            st.title("Demo 2")
-            _LOREM_IPSUM = [
-                "Lorem", "ipsum", "dolor", "sit", "amet,", "consectetur",
-                "adipiscing", "elit.", "Sed", "nec", "urna", "felis.",
-                "Cras", "eleifend", "for ", "dolor", "at", "congue.",
-                "Maecenas", "vel", "nunc", "sit", "amet", "libero", "suscipit",
-                "ultrices."
-            ]
+            with st.container(height=400):
+                with st.chat_message("ai"):
+                    st.write("This is a chat message")
 
-            import time
+                with st.chat_message("user"):
+                    st.write("Hi!")
 
-            def stream_data():
-                for word in _LOREM_IPSUM:
-                    yield word + " "
-                    time.sleep(0.1)
-
-            st.write_stream(stream_data)
+            with st._bottom:
+                st.chat_input(placeholder="Type a message...")
 
     demo1_app = Demo1App()
     demo2_app = Demo2App(with_loader=False)

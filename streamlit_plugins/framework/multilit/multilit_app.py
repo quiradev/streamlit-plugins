@@ -5,7 +5,7 @@ from typing import Dict
 
 import streamlit as st
 from streamlit.runtime.scriptrunner import RerunException, StopException, get_script_run_ctx
-from streamlit.runtime.scriptrunner.script_requests import ScriptRequestType
+from streamlit.runtime.scriptrunner.script_requests import ScriptRequestType, RerunData
 
 from streamlit_plugins.components.navbar import st_navbar
 from streamlit_plugins.framework.multilit.wrapper_class import Templateapp
@@ -432,9 +432,16 @@ class MultiApp(object):
     @st.experimental_fragment
     def _fragment_navbar(self, menu_data):
         new_app_id = self._standalone_navbar(menu_data)
-        if new_app_id != self.session_state.selected_app:
-            self.session_state.selected_app = new_app_id
-            st.rerun()
+        # if new_app_id != self.session_state.selected_app:
+        #     self.session_state.selected_app = new_app_id
+
+            # ctx = get_script_run_ctx()
+            # page_script_hash = ctx.active_script_hash
+            # rerun_data = RerunData(
+            #     query_string=ctx.query_string,
+            #     page_script_hash=page_script_hash,
+            # )
+            # raise RerunException(rerun_data)
 
         return new_app_id
 
@@ -476,6 +483,19 @@ class MultiApp(object):
         else:
             new_app_id = self._standalone_navbar(menu_data)
 
+        if new_app_id != self.session_state.selected_app:
+            self.session_state.selected_app = new_app_id
+
+            # Hack to force a rerun and component update correctly
+            # because
+            ctx = get_script_run_ctx()
+            page_script_hash = ctx.active_script_hash
+            rerun_data = RerunData(
+                query_string=ctx.query_string,
+                page_script_hash=page_script_hash,
+            )
+            raise RerunException(rerun_data)
+
         return new_app_id
 
     def _run_selected(self):
@@ -510,7 +530,7 @@ class MultiApp(object):
             if app_id == self._logout_id:
                 app_label = self._logout_label[0]
 
-            print("Running", app_label)
+            # print("Running", app_label)
             if self._verbose and self.session_state.uncaught_error:
                 st.error(
                     f'😭 Error triggered from app: **{self.session_state.selected_app}**\n\n'
@@ -732,8 +752,9 @@ class MultiApp(object):
                             cols[idx].image(im)
             else:
                 if self._banner_spacing is not None and len(self._banner_spacing) != len(self._banners):
-                    print(
-                        'WARNING: Banner spacing spec is a different length to the number of banners supplied, using even spacing for each banner.')
+                    logger.warning(
+                        'Banner spacing spec is a different length to the number of banners supplied, using even spacing for each banner.'
+                    )
 
                 cols = self._banner_container.columns([1] * len(self._banners))
                 for idx, im in enumerate(self._banners):

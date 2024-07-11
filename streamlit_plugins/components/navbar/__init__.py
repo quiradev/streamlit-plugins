@@ -6,7 +6,7 @@ from streamlit.navigation.page import StreamlitPage
 
 # _RELEASE = os.getenv("RELEASE", "").upper() != "DEV"
 _RELEASE = True
-_RELEASE = False
+# _RELEASE = False
 
 if _RELEASE:
     absolute_path = os.path.dirname(os.path.abspath(__file__))
@@ -186,8 +186,8 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
     # elif st.session_state[key] is None:
     #     override_app_selected_id = default_app_selected_id
 
-    print()
-    print(f"FROM Override Multi: {override_app_selected_id}")
+    # print()
+    # print(f"FROM Override Multi: {override_app_selected_id}")
     component_value = _component_func(
         menu_definition=menu_definition, key=key, home=home_data, fvalue=force_value,
         login=login_data, override_theme=override_theme, use_animation=use_animation,
@@ -195,7 +195,7 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
         default=default_app_selected_id, default_app_selected_id=default_app_selected_id,
         reclick_load=reclick_load
     )
-    print(f"FROM Navbar: {component_value}")
+    # print(f"FROM Navbar: {component_value}")
 
     if sticky_nav:
         if sticky_mode == 'pinned':
@@ -222,6 +222,6 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
         # session_state._state[widget_key] = component_value
         # session_state._state._old_state[widget_key] = component_value
 
-    print(f"FROM Navbar FINAL: {component_value}")
-    print()
+    # print(f"FROM Navbar FINAL: {component_value}")
+    # print()
     return component_value

@@ -92,7 +92,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             Streamlit.setComponentValue(selectedAppId);
         }
 
-        console.log("SELECCIONADA", selectedAppId, args.override_app_selected_id, args.default_app_selected_id);
+        // console.log("SELECCIONADA", selectedAppId, args.override_app_selected_id, args.default_app_selected_id);
 
         this.state = {
             selectedAppId: selectedAppId,
@@ -134,11 +134,11 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     }
 
     public componentDidMount = () => {
-        console.log(
-            "DidMount",
-            this.state.selectedAppId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
-            this.state.fromClick
-        );
+        // console.log(
+        //     "DidMount",
+        //     this.state.selectedAppId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
+        //     this.state.fromClick
+        // );
 
         // useEffect resize
         this.handleResize();
@@ -164,40 +164,44 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         let argOverride = args.override_app_selected_id;
         let prevArgOverride = prevProps.args.override_app_selected_id;
 
+        // console.log(
+        //     "DidUpdate",
+        //     this.state.selectedAppId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
+        //     this.state.fromClick
+        // );
+
         if (prevArgDefault !== argDefault || prevArgOverride !== argOverride) {
 
             let selectedAppId = this.state.selectedAppId;
 
-            console.log(
-                "Props DidUpdate",
-                this.state.selectedAppId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
-                this.state.fromClick
-            );
+            // console.log(
+            //     "Props DidUpdate",
+            //     this.state.selectedAppId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
+            //     this.state.fromClick
+            // );
             if (argOverride) {
                 selectedAppId = argOverride || argDefault;
+
+                this.setState(
+                    {
+                        selectedAppId: selectedAppId,
+                        selectedSubMenu: this.state.selectedSubMenu,
+                        expandState: this.state.expandState,
+                        expandSubMenu: this.state.expandSubMenu,
+                        blockState: this.state.blockState,
+                        fromClick: false
+                    },
+                    () => {
+                        this.handleResize();
+                        if (prevArgOverride !== argOverride) Streamlit.setComponentValue(selectedAppId);
+                    }
+                );
             }
-            else if (!this.state.fromClick) {
-                selectedAppId = argDefault;
-            }
-            this.setState(
-                {
-                    selectedAppId: selectedAppId,
-                    selectedSubMenu: this.state.selectedSubMenu,
-                    expandState: this.state.expandState,
-                    expandSubMenu: this.state.expandSubMenu,
-                    blockState: this.state.blockState,
-                    fromClick: false
-                },
-                () => {
-                    this.handleResize();
-                    if (prevArgOverride !== argOverride) Streamlit.setComponentValue(selectedAppId);
-                }
-            );
         }
     }
 
     public componentWillUnmount = () => {
-        console.log("Unmount", this.state.selectedAppId);
+        // console.log("Unmount", this.state.selectedAppId);
 
         // useEffect resize
         window.removeEventListener("resize", this.handleResize);
