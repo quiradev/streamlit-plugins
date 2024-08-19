@@ -10,7 +10,6 @@ import { Provider as StyletronProvider } from "styletron-react"
 import NavItem from "./NavItem.jsx";
 import NavSubItem from "./NavSubItem.jsx";
 import "./bootstrap.min.css";
-import "./custom.css";
 
 // Initialize our Styletron engine
 const engine = new Styletron()
@@ -157,7 +156,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         const args: PythonArgs = this.props.args
 
         let selectedAppId = this.state.selectedAppId;
-        let prevSelectedAppId = prevState.selectedAppId;
+        // let prevSelectedAppId = prevState.selectedAppId;
 
         let argDefault = args.default_app_selected_id;
         let prevArgDefault = prevProps.args.default_app_selected_id;
@@ -172,7 +171,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         if (prevArgDefault !== argDefault || prevArgOverride !== argOverride) {
 
-            let selectedAppId = this.state.selectedAppId;
+            selectedAppId = this.state.selectedAppId;
 
             // console.log(
             //     "Props DidUpdate",
@@ -452,7 +451,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 --txc_active: ${mergedTheme.txc_active};
                 --option_active: ${mergedTheme.option_active};
                 --option_active_opacity: ${this.theme.primaryColor}99;
-                --option_active_translucent: ${this.theme.primaryColor}66;
+                --option_active_translucent: ${this.theme.primaryColor}38;
             }
             `}
         </style>

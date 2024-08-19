@@ -1,11 +1,12 @@
 import logging
 import traceback
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, Literal
 
 import streamlit as st
 from streamlit.runtime.scriptrunner import RerunException, StopException, get_script_run_ctx
 from streamlit.runtime.scriptrunner.script_requests import ScriptRequestType, RerunData
+import streamlit.components.v1 as components
 
 from streamlit_plugins.components.navbar import st_navbar
 from streamlit_plugins.framework.multilit.wrapper_class import Templateapp
@@ -32,28 +33,29 @@ class MultiApp(object):
     Class to create a host application for combining multiple streamlit applications.
     """
 
-    def __init__(self,
-                 title='Multilit Apps',
-                 nav_container=None,
-                 nav_horizontal=True,
-                 layout='wide',
-                 favicon="🤹‍♀️",
-                 use_navbar=True,
-                 navbar_theme=None,
-                 navbar_sticky=True,
-                 navbar_mode='pinned',
-                 use_loader=True,
-                 use_cookie_cache=True,
-                 sidebar_state='auto',
-                 navbar_animation=True,
-                 allow_url_nav=False,
-                 hide_streamlit_markers=False,
-                 use_banner_images=None,
-                 banner_spacing=None,
-                 clear_cross_app_sessions=True,
-                 session_params=None,
-                 verbose=False,
-                 within_fragment=False):
+    def __init__(
+        self,
+        title='Multilit Apps',
+        nav_container=None,
+        nav_horizontal=True,
+        layout='wide',
+        favicon="🤹‍♀️",
+        use_navbar=True,
+        navbar_theme=None,
+        navbar_sticky=True,
+        navbar_mode: Literal["top", "under"] = 'under',
+        use_loader=True,
+        use_cookie_cache=True,
+        sidebar_state='auto',
+        navbar_animation=True,
+        allow_url_nav=False,
+        hide_streamlit_markers=False,
+        use_banner_images=None,
+        banner_spacing=None,
+        clear_cross_app_sessions=True,
+        session_params=None,
+        verbose=False,
+        within_fragment=False):
         """
         A class to create an Multi-app Streamlit application. This class will be the host application for multiple applications that are added after instancing.
         The secret saurce to making the different apps work together comes from the use of a global session store that is shared with any MultiHeadApp that is added to the parent MultiApp.
@@ -165,6 +167,8 @@ class MultiApp(object):
         # Establecer el tema
 
         self._nav_horizontal = nav_horizontal
+
+        # self._theme_change_container = st.container()
 
         if self._banners is not None:
             self._banner_container = st.container()
@@ -435,13 +439,13 @@ class MultiApp(object):
         # if new_app_id != self.session_state.selected_app:
         #     self.session_state.selected_app = new_app_id
 
-            # ctx = get_script_run_ctx()
-            # page_script_hash = ctx.active_script_hash
-            # rerun_data = RerunData(
-            #     query_string=ctx.query_string,
-            #     page_script_hash=page_script_hash,
-            # )
-            # raise RerunException(rerun_data)
+        # ctx = get_script_run_ctx()
+        # page_script_hash = ctx.active_script_hash
+        # rerun_data = RerunData(
+        #     query_string=ctx.query_string,
+        #     page_script_hash=page_script_hash,
+        # )
+        # raise RerunException(rerun_data)
 
         return new_app_id
 
@@ -470,12 +474,53 @@ class MultiApp(object):
             use_animation=self._navbar_animation, hide_streamlit_markers=self._hide_streamlit_markers,
             default_app_selected_id=override_app_selected_id or self.session_state.selected_app,
             override_app_selected_id=override_app_selected_id,
-            sticky_nav=self._navbar_sticky, sticky_mode=self._navbar_mode, reclick_load=True
+            sticky_nav=self._navbar_sticky, position_mode=self._navbar_mode, reclick_load=True
         )
         if self.cross_session_clear and self.session_state.preserve_state:
             self._clear_session_values()
 
         return new_app_id
+
+    def _run_change_theme(self):
+        # Configure theme
+        base_theme = st._config.get_option("theme.base") or "light"
+        self.session_state["theme"] = base_theme
+        if base_theme == "light":
+            change_theme = st.button("dark", key="theme-button")
+        else:
+            change_theme = st.button("light", key="theme-button")
+
+        # if change_theme:
+        #     if base_theme == "light":
+        #         st._config._set_option("theme.base", "dark", "<streamlit>")
+        #     else:
+        #         st._config._set_option("theme.base", "light", "<streamlit>")
+        #
+        #     st.rerun()
+
+        # Función para inyectar CSS
+        def inject_css():
+            style = """
+            body.default-theme {
+                background-color: white !important;
+                color: black !important;
+            }
+
+            body.dark-theme {
+                background-color: black !important;
+                color: white !important;
+            }
+            """
+            st.markdown(f'<style>{style}</style>', unsafe_allow_html=True)
+
+        inject_css()
+
+        if base_theme == "light":
+            components.html("<script>window.parent.document.body.className = 'dark-theme';</script>", height=0)
+            self.session_state["theme"] = "dark"
+        else:
+            components.html("<script>window.parent.document.body.className = 'default-theme';</script>", height=0)
+            self.session_state["theme"] = "light"
 
     def _run_navbar(self, menu_data):
         if self._within_fragment:
@@ -538,6 +583,9 @@ class MultiApp(object):
                     f'```{self.session_state.uncaught_error}```',
                     icon="🚨"
                 )
+
+            # with self._theme_change_container:
+            #     self._run_change_theme()
 
             if self._user_loader and app.has_loading():
                 self._loader_app.run(app, status_msg=app_label)

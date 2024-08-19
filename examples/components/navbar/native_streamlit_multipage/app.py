@@ -1,4 +1,12 @@
+import sys
+
 import streamlit as st
+
+try:
+    if "_pydevd_frame_eval.pydevd_frame_eval_cython_wrapper" not in sys.modules:
+        import _pydevd_frame_eval.pydevd_frame_eval_cython_wrapper
+except ImportError:
+    pass
 
 st.set_page_config(layout="wide")
 
@@ -8,7 +16,12 @@ if "logged_in" not in st.session_state:
 if "app_id" not in st.session_state:
     st.session_state.app_id = None
 
+
 def login():
+    st.chat_input(key="0")
+    st.chat_input("Username", key="1", max_chars=10)
+    st.chat_input("Username", key="2", disabled=True)
+    st.chat_input("Username", key="3", disabled=True, max_chars=10)
     if st.button("Log in"):
         st.session_state.logged_in = True
         st.session_state.app_id = "app_default"
@@ -45,13 +58,22 @@ menu_data, app_map = build_menu_from_st_pages(
     logout_app=logout_page,
 )
 
+with st.sidebar:
+    st.write("Logged in:", st.session_state.logged_in)
+    position_mode = st.radio(
+        "Navbar position mode",
+        ["top", "under"],
+    )
+    sticky_nav = st.checkbox("Sticky navbar", value=True)
+
+
 app_id = st_navbar(
     menu_definition=menu_data if st.session_state.logged_in else [],
     login_name=logout_page.title if st.session_state.logged_in else login_page.title,
     hide_streamlit_markers=False,
     override_app_selected_id=st.session_state.app_id,
-    sticky_nav=True,  # at the top or not
-    sticky_mode='pinned',  # sticky or pinned
+    sticky_nav=sticky_nav,  # at the top or not
+    position_mode=position_mode,  # top or subtop
 )
 if app_id == "app_login":
     if st.session_state.logged_in:

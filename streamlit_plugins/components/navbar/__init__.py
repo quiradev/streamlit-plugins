@@ -1,6 +1,7 @@
 import os
+from typing import Literal
+
 import streamlit as st
-import math
 import streamlit.components.v1 as components
 from streamlit.navigation.page import StreamlitPage
 
@@ -15,70 +16,120 @@ if _RELEASE:
 else:
     _component_func = components.declare_component("nav_bar", url="http://localhost:3000")
 
-PINNED_NAV_STYLE = f"""
-                    <style>
-                    .reportview-container .sidebar-content {{
-                        padding-top: 0rem;
-                    }}
-                    .reportview-container .main .block-container {{
-                        padding-top: 0rem;
-                        padding-right: 4rem;
-                        padding-left: 4rem;
-                        padding-bottom: 4rem;
-                    }}
-                    .stApp > header {{
-                        border-bottom: 1px solid #9e9e9e;
-                    }}
-                    iframe[title="{_component_func.name}"] {{
-                        position: fixed;
-                        z-index: 1000;
-                        box-sizing: content-box;
-                        top: calc(3.75rem - 0.75rem);
-                        border: 2px solid #ff4b56;
-                        border: 1px solid #9e9e9e;
-                        border-radius: 5px;
-                    }}
-                    </style>
-                """
+UNDER_NAV_STYLE = f"""
+    .reportview-container .sidebar-content {{
+        padding-top: 0rem;
+    }}
+    .reportview-container .main .block-container {{
+        padding-top: 0rem;
+        padding-right: 4rem;
+        padding-left: 4rem;
+        padding-bottom: 4rem;
+    }}
+    .stApp > header {{
+        border-bottom: 1px solid #c3c3c380;
+    }}
+    div:has(> iframe[title="{_component_func.name}"]) {{
+        position: fixed;
+        z-index: 1000;
+        top: calc(3.75rem - 0.125rem);
+    }}
+    iframe[title="{_component_func.name}"] {{
+        position: relative;
+        z-index: 1000;
+        top: 0;
+        background-color: var(--background-color);
+        /* box-shadow: none !important; */
+    }}
+"""
+
+NAV_TOP_STYLE = f"""
+    #header {{
+        background: transparent !important;
+    }}
+    div:has(> iframe[title="{_component_func.name}"]) {{
+        top: 0rem;
+        z-index: 999990;
+    }}
+    iframe[title="{_component_func.name}"] {{
+        position: relative;
+        top: 0.125rem;
+        border-top-right-radius: 0;
+        border-top-left-radius: 0;
+    }}
+"""
+
+VERTICAL_ST_STYLE = """
+    header {
+        position: static;
+    }
+    
+    [data-testid="stToolbar"] {
+        display: flex;
+        flex-direction: column-reverse;
+        flex-wrap: nowrap;
+        align-items: flex-end;
+        border-left: solid 1px #c3c3c380;
+    }
+    
+    [data-testid="stStatusWidget"] {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        margin-top: 1rem;
+        backdrop-filter: blur(5px);
+        background: radial-gradient(transparent, #dcdcdc2e);
+        padding: 0.5em;
+        border: 1px solid #dcdcdc2e;
+        border-radius: 5px;
+    }
+    
+    [data-testid="stToolbar"] > [data-testid="stToolbarActions"] {
+        display: flex;
+        -webkit-box-align: center;
+        align-items: flex-end;
+        flex-direction: column;
+        flex-wrap: nowrap;
+    }
+"""
+
+
 
 STICKY_NAV_STYLE = f"""
-                    <style>
-                    div[data-stale="false"] > iframe[title="{_component_func.name}"] {{
-                        position: fixed;
-                        z-index: 99;
-                        box-sizing: border-box;
-                        top: 0;
-                    }}
-                    </style>
-                """
+    div:has(> iframe[title="{_component_func.name}"]) {{
+        position: sticky;
+    }}
+    iframe[title="{_component_func.name}"] {{
+        box-shadow: 0 0px 10px 5px #00000012;
+        border-radius: 5px;
+    }}
+"""
 
 HIDE_ST_STYLE = """
-                    <style>
-                    div[data-testid="stToolbar"] {
-                    display: none;
-                    position: none;
-                    }
+    div[data-testid="stToolbar"] {
+        display: none;
+        position: none;
+    }
+    
+    div[data-testid="stDecoration"] {
+        display: none;
+        position: none;
+    }
+    
+    div[data-testid="stStatusWidget"] {
+        display: none;
+        position: none;
+    }
+    
+    #MainMenu {
+        display: none;
+    }
+    header {
+        display: none;
+    }
+"""
 
-                    div[data-testid="stDecoration"] {
-                    display: none;
-                    position: none;
-                    }
-
-                    div[data-testid="stStatusWidget"] {
-                    display: none;
-                    position: none;
-                    }
-
-                    #MainMenu {
-                    display: none;
-                    }
-                    header {
-                    display: none;
-                    }
-
-                    </style>
-                """
-
+# TODO: Hay que poner margenes en el iframe para que no ocupe el 100% de ancho si es menor la pantalla a 575
 
 MATERIAL_ICON_HOME = ":material/home:"
 MATERIAL_ICON_LOGIN = ":material/login:"
@@ -118,16 +169,28 @@ def build_menu_from_st_pages(*pages: StreamlitPage | dict, login_app: StreamlitP
     return menu, app_map
 
 
-def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent", home_name=None, login_name=None,
-              override_theme=None, sticky_nav=True, force_value=None, use_animation=True,
-              hide_streamlit_markers=True, sticky_mode='pinned', option_menu=False,
-              default_app_selected_id=None,
-              override_app_selected_id=None,
-              reclick_load=True):
+def st_navbar(
+    menu_definition: list[dict], first_select=0, key="NavBarComponent", home_name=None, login_name=None,
+    override_theme=None, sticky_nav=True, hide_streamlit_markers=True,
+    position_mode: Literal["top", "under"] = 'under',
+    force_value=None, use_animation=True,
+    option_menu=False,
+    default_app_selected_id=None,
+    override_app_selected_id=None,
+    reclick_load=True
+):
     # if key not in st.session_state:
     #     st.session_state[key] = None
 
     # first_select = math.floor(first_select / 10)
+
+    override_theme = override_theme or {
+        "menu_background": "var(--background-color)",
+        # "menu_background": "transparent",
+        "txc_inactive": "var(--text-color)",
+        "txc_active": "var(--text-color)",
+        "option_active": "var(--primary-color)",
+    }
 
     if type(home_name) is str:
         home_data = {'id': "app_home", 'label': home_name, 'icon': MATERIAL_ICON_HOME, 'ttip': home_name}
@@ -196,15 +259,65 @@ def st_navbar(menu_definition: list[dict], first_select=0, key="NavBarComponent"
         reclick_load=reclick_load
     )
     # print(f"FROM Navbar: {component_value}")
+    style = f"""
+        header[data-testid="stHeader"] {{
+            margin-right: 6px;
+        }}
+        iframe[title="{_component_func.name}"] {{
+            # box-sizing: content-box;
+            # border: 1px solid #9e9e9e;
+            outline: 1px solid #c3c3c380;
+            border-radius: 5px;
+            width: 100%;
+            width: calc(100% - 1rem);
+        }}
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            opacity: 1 !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }}
+    """
+
+    if position_mode == 'under':
+        style += UNDER_NAV_STYLE
+    else:
+        style += NAV_TOP_STYLE
+        style += f"""
+        @media(max-width: 576px) {{
+            div:has(> iframe[title="{_component_func.name}"]) {{
+                width: calc(100% - 8.5rem);
+                left: 4.25rem;
+            }}
+        }}
+        """
+        style += VERTICAL_ST_STYLE
 
     if sticky_nav:
-        if sticky_mode == 'pinned':
-            st.markdown(PINNED_NAV_STYLE, unsafe_allow_html=True)
-        else:
-            st.markdown(STICKY_NAV_STYLE, unsafe_allow_html=True)
+        style += STICKY_NAV_STYLE
+        style += f"""
+        @media(max-width: 576px) {{
+            div:has(> iframe[title="{_component_func.name}"]) {{
+                width: calc(100% - 6rem) !important;
+                left: 4.25rem;
+            }}
+        }}
+        """
+    else:
+        style += f"""
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            position: fixed;
+        }}
+        iframe[title="{_component_func.name}"] {{
+            border-top-right-radius: 0;
+            border-top-left-radius: 0;
+        }}
+        """
 
     if hide_streamlit_markers:
-        st.markdown(HIDE_ST_STYLE, unsafe_allow_html=True)
+        style += HIDE_ST_STYLE
+
+    st.markdown(f"<style>\n{style}\n<style>", unsafe_allow_html=True)
 
     if component_value is None:
         component_value = default_app_selected_id

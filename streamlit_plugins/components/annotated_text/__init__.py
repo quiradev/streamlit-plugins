@@ -1,3 +1,4 @@
+import hashlib
 import html
 import string
 
@@ -5,6 +6,7 @@ import random
 from enum import Enum
 
 import re
+from typing import List, Union
 
 import htbuilder
 import streamlit as st
@@ -69,6 +71,23 @@ def generate_hsla_colors(saturation, lightness, alpha, amount):
         )
         for i in range(amount)
     ]
+
+def generate_hash_colors(names: List[str], saturation: int, lightness: int, alpha: float) -> Tuple[str, str]:
+    colors = []
+    for name in names:
+        # Obtener un número hash único para el nombre
+        hash_num = int(hashlib.sha256(name.encode('utf-8')).hexdigest(), 16)
+
+        # Convertir el hash en valores de H (matiz), S (saturación) y V (brillo)
+        h = hash_num % 256
+
+        colors.append(
+            (
+                hsla_to_hex(h, saturation, lightness, alpha),
+                contrast_color(hsla_to_hex(h, saturation, lightness, alpha), bw=True)
+            )
+        )
+    return colors
 
 # Only works in 3.7+: from htbuilder import div, span
 div = H.div
@@ -158,7 +177,9 @@ def annotation(body: str, label: str, body_class: str, label_class: str, body_cs
     )
 
 
-def annotated_text(*tokens, annotation_style: dict = None, display_mode: AnnotationDisplayMode = AnnotationDisplayMode.NORMAL, _st=None):
+def annotated_text(*tokens, annotation_style: dict = None,
+                   display_mode: AnnotationDisplayMode = AnnotationDisplayMode.NORMAL, parse_raw=True,
+                   without_styles=False) -> Union[str, HtmlElement]:
     """Writes test with annotations into your Streamlit app.
 
     Parameters
@@ -167,17 +188,17 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
         Arguments can be:
         - strings, to draw the string as-is on the screen.
         - tuples of the form (main_text, annotation_text) where
-          background and foreground colors are optional and should be an CSS-valid string such as
-          "#aabbcc" or "rgb(10, 20, 30)"
+            background and foreground colors are optional and should be an CSS-valid string such as
+            "#aabbcc" or "rgb(10, 20, 30)"
         - HtmlElement objects in case you want to customize the annotations further. In particular,
-          you can import the `annotation()` function from this module to easily produce annotations
-          whose CSS you can customize via keyword arguments.
+            you can import the `annotation()` function from this module to easily produce annotations
+            whose CSS you can customize via keyword arguments.
 
     annotation_style: dict
 
     display_mode: AnnotationDisplayMode
 
-    _st: Streamlit object
+    parse_raw: bool
 
     Examples
     --------
@@ -205,8 +226,6 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
 
     # uuid_component = f"{random.randrange(16**5):05x}"
     uuid_component = ''.join((random.choice(string.ascii_letters) for x in range(8)))
-    if _st is None:
-        _st = st
 
     # display_mode = _st.radio(
     #     "Select display style",
@@ -229,9 +248,9 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
         # Generamos el mapa de anotaciones, asignando un color unico a cada una
         annotation_tags = list(set([x[1] for x in tokens if isinstance(x, tuple)]))
         if len(annotation_tags) > 0:
-            colors_list = generate_hsla_colors(70, 50, 1, len(annotation_tags))
+            colors_list = generate_hash_colors(annotation_tags, 70, 50, 1)
             for tag in annotation_tags:
-                bg, fg = colors_list.pop()
+                bg, fg = list(colors_list).pop()
                 annotation_style[tag] = (bg, fg)
 
     annotations_style_colors = "<style>"
@@ -253,15 +272,15 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
         # Se agrega un borde al label si esta en modo minimal
         if display_mode == AnnotationDisplayMode.MINIMAL:
             annotations_style_colors += f"""
-               div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")} .annotation:before {{
-                  border-color: inherit;
-               }}
+            div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")} .annotation:before {{
+                border-color: inherit;
+            }}
             """
         else:
             annotations_style_colors += f"""
-               div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")} .annotation:before {{
-                  border-color: {bg[0]};
-               }}
+            div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")} .annotation:before {{
+                border-color: {bg[0]};
+            }}
             """
 
     annotations_style_colors += "</style>"
@@ -294,6 +313,12 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
     raw_html = str(out)
     raw_html = raw_html.replace("\n", "<div></div>")
 
+    if without_styles and parse_raw:
+        return raw_html
+
+    elif without_styles and not parse_raw:
+        return out
+
     # Genera un texto HTML con 3 radio inputs, uno por cada modo de visualización
     # de anotaciones.
     choice_raw = f"""
@@ -323,6 +348,25 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
     # reading_id = f"div.annotated-text.reading"
     normal_style = f"""
     <style>
+        span.annotation-container {{
+            font-weight: bold;
+        }}
+        .annotation-container .annotation {{
+            z-index: 1;
+        }}
+
+        .annotation-container .annotation-container .annotation {{
+            z-index: 2;
+        }}
+
+        .annotation-container .annotation-container .annotation-container .annotation {{
+            z-index: 3;
+        }}
+
+        .annotation-container .annotation-container .annotation-container .annotation-container .annotation {{
+            z-index: 4;
+        }}
+
         {normal_id} span.annotation-container {{
             border-radius: 0.33rem;
             display: inline-flex;
@@ -330,7 +374,7 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
             align-items: center;
         }}
 
-        {normal_id} span.annotation-container {{
+        span.annotation-container {{
             padding: 0px 0.67rem;
         }}
 
@@ -386,13 +430,13 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
             border: 2px solid white;
         }}
 
-        {minimal_id} span.annotation-container:hover span.annotation {{
+        {minimal_id} span.annotation-container:hover > span.annotation {{
             display: flex;
             top: -100%;
             width: max-content;
             padding: 0 0.5em;
         }}
-        {minimal_id} span.annotation-container:hover span.annotation:before {{
+        {minimal_id} span.annotation-container:hover > span.annotation:before {{
             position: absolute;
             content: "";
             width: 0px;
@@ -421,14 +465,14 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
             background-size: 100% 2px, 0 2px;
             background-position: 100% 100%, 0 100%;
             background-repeat: no-repeat;
-            transition: background-size 0.2s linear;
+            transition: color 0.2s, background-size 0.2s linear;
 
             position: relative;
         }}
         {reading_id} span.annotation-container:hover {{
             background-size: 100% 100%, 100% 0;
         }}
-        
+
         {reading_id} span.annotation-container span.annotation {{
             display: none;
             font-size: 0.8em;
@@ -438,7 +482,7 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
             text-transform: uppercase;
         }}
 
-        {reading_id} span.annotation-container:hover span.annotation {{
+        {reading_id} span.annotation-container:hover > span.annotation {{
             display: flex;
             position: absolute;
             top: -100%;
@@ -449,7 +493,7 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
 
             background-size: 100% 100%, 100% 0;
         }}
-        {reading_id} span.annotation-container:hover span.annotation:before {{
+        {reading_id} span.annotation-container:hover > span.annotation:before {{
             content: "";
             position: absolute;
             width: 0px;
@@ -460,6 +504,11 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
             border-left: 0.5em solid transparent !important;
             top: 100%;
             z-index: 1;
+        }}
+
+        {reading_id} span.annotation.side:hover {{
+            opacity: 1 !important;
+            z-index: 100;
         }}
     </style>
     """
@@ -475,4 +524,4 @@ def annotated_text(*tokens, annotation_style: dict = None, display_mode: Annotat
 
     choice_raw = choice_raw.replace("\n", "")
 
-    _st.write(styles_tags + choice_raw + raw_html, unsafe_allow_html=True)
+    st.write(styles_tags + choice_raw + raw_html, unsafe_allow_html=True)

@@ -12,7 +12,8 @@ if __name__ == '__main__':
     real_script = "app.py"
     os.environ['RELEASE'] = 'DEV'
     _config.set_option("browser.gatherUsageStats", False)
-    _config.set_option("server.port", 8502)
+    _config.set_option("server.headless", True)
+    # _config.set_option("server.port", 8502)
     args = []
 
     bootstrap.run(real_script, False, args, flag_options={})

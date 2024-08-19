@@ -4,7 +4,6 @@ import { useRenderData } from "./NavBarProvider";
 import NavItem from "./NavItem.jsx";
 import NavSubItem from "./NavSubItem.jsx";
 import "./bootstrap.min.css";
-import "./custom.css";
 
 interface MenuItem {
   icon: string;

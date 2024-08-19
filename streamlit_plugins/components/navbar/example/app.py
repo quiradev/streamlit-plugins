@@ -39,8 +39,8 @@ menu_id = st_navbar(
     home_name='Home',
     login_name='Logout',
     hide_streamlit_markers=False,  # will show the st hamburger as well as the navbar now!
-    sticky_nav=True,  # at the top or not
-    sticky_mode='pinned',  # jumpy or not-jumpy, but sticky or pinned
+    sticky_nav=False,  # floating or sticky navbar
+    position_mode='top',  # top or under streamlit header
 )
 
 if st.button('click me'):
