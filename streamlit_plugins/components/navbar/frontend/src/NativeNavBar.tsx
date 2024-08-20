@@ -21,6 +21,7 @@ interface MenuItem {
   ttip?: string;
   submenu?: MenuItem[];
   style?: React.CSSProperties;
+  dataset?: object;
 }
 
 interface OverrideTheme {
@@ -290,10 +291,10 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         const args: PythonArgs = this.props.args;
         const menuItems = [...args.menu_definition];
         if (args.home) {
-        menuItems.unshift(args.home);
+            menuItems.unshift(args.home);
         }
         if (args.login) {
-        menuItems.push({ ...args.login, style: { marginLeft: "auto" } });
+            menuItems.push({ ...args.login, style: { marginLeft: "auto" }, dataset: { login: true } });
         }
         return menuItems;
     };
@@ -373,54 +374,63 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         // Determinar si se usa <i> o <span> para el icono
         if (hasIcon) {
-        const regex = /:material\/(\w+):/gm;
-        const m = regex.exec(item.icon);
-        if (m !== null) {
-            const symbol = m[1];
-            iconMarkup = <span className="material-symbols-rounded icon">{symbol}</span>;
-        } else {
-            const iconClass = this.containsEmojis(item.icon) ? "icon" : `${item.icon} icon`;
-            const iconTxt = this.containsEmojis(item.icon) ? item.icon : "";
-            iconMarkup = <i className={iconClass}>{iconTxt}</i>;
+            const regex = /:material\/(\w+):/gm;
+            const m = regex.exec(item.icon);
+            if (m !== null) {
+                const symbol = m[1];
+                iconMarkup = <span className="material-symbols-rounded icon">{symbol}</span>;
+            }
+            else {
+                const iconClass = this.containsEmojis(item.icon) ? "icon" : `${item.icon} icon`;
+                const iconTxt = this.containsEmojis(item.icon) ? item.icon : "";
+                iconMarkup = <i className={iconClass}>{iconTxt}</i>;
+            }
         }
-        }
+        // Construir los atributos data-* a partir de item.dataset
+        const dataAttributes = item.dataset ? Object.entries(item.dataset).reduce((acc, [key, value]) => {
+            acc[`data-${key}`] = value;
+            return acc;
+        }, {} as { [key: string]: any }) : {};
 
         if (item.submenu) {
-        return (
-            <li
-            style={item.style}
-            className={`nav-item py-0 dropdown ${isActive ? "active" : ""}`}
-            key={key * 100}
-            >
-            <a
-                className="nav-link dropdown-toggle"
-                href={"#_sub" + key}
-                key={"sub1_" + key}
-                onClick={() => this.toggleSubMenu(item.id)}
-                data-toggle="tooltip"
-                data-placement="top"
-                data-html="true"
-                title={item.ttip}
-            >
-                {hasIcon && iconMarkup}
-                <span>{item.label}</span>
-            </a>
-            <ul key={key * 103} className={`dropdown-menu ${this.state.selectedSubMenu === item.id && this.state.expandSubMenu ? "show" : ""}`}>
-                {item.submenu.map((subitem: MenuItem, subindex: number) => this.createSubMenu(subitem, subindex))}
-            </ul>
-            </li>
-        );
-        } else {
-        return (
-            <NavItem
-            menuitem={item}
-            menu_id={key}
-            is_active={isActive}
-            submenu_toggle={this.toggleSubMenu}
-            click_on_app={this.clickOnApp}
-            key={key * 104}
-            />
-        );
+            return (
+                <li
+                    style={item.style}
+                    className={`nav-item py-0 dropdown ${isActive ? "active" : ""}`}
+                    key={key * 100}
+                    {...dataAttributes}
+                >
+                <a
+                    className="nav-link dropdown-toggle"
+                    href={"#_sub" + key}
+                    key={"sub1_" + key}
+                    onClick={() => this.toggleSubMenu(item.id)}
+                    data-toggle="tooltip"
+                    data-placement="top"
+                    data-html="true"
+                    title={item.ttip}
+                >
+                    {hasIcon && iconMarkup}
+                    <span>{item.label}</span>
+                </a>
+                <ul key={key * 103} className={`dropdown-menu ${this.state.selectedSubMenu === item.id && this.state.expandSubMenu ? "show" : ""}`}>
+                    {item.submenu.map((subitem: MenuItem, subindex: number) => this.createSubMenu(subitem, subindex))}
+                </ul>
+                </li>
+            );
+        }
+        else {
+            return (
+                <NavItem
+                    menuitem={item}
+                    menu_id={key}
+                    is_active={isActive}
+                    submenu_toggle={this.toggleSubMenu}
+                    click_on_app={this.clickOnApp}
+                    key={key * 104}
+                    dataAttributes={dataAttributes}
+                />
+            );
         }
     };
 

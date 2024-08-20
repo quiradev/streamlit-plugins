@@ -7,6 +7,7 @@ const NavItem = (props) => {
   let menu_id = props.menu_id;
   const submenu_toggle = props.submenu_toggle;
   const click_on_app = props.click_on_app;
+  const dataAttributes = props.dataAttributes;
 
   const containsEmojis = (input) => {
 
@@ -66,7 +67,7 @@ const NavItem = (props) => {
     }
 
     return (
-      <li style={item.style || {}} className={`nav-item py-0 ${is_active ? "active": ""}`} key={kid}>
+      <li style={item.style || {}} className={`nav-item py-0 ${is_active ? "active": ""}`} key={kid} {...dataAttributes}>
         <a className="nav-link" href={"#" + kid} onClick={()=>onSelect(ret_id)} data-toggle="tooltip" data-placement="top" data-html="true" title={item.ttip}>
           {hasIcon && iconMarkup}
           <span>{label}</span>

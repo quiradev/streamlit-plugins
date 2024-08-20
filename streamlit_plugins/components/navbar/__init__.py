@@ -33,6 +33,7 @@ UNDER_NAV_STYLE = f"""
         position: fixed;
         z-index: 1000;
         top: calc(3.75rem - 0.125rem);
+        padding: 0;
     }}
     iframe[title="{_component_func.name}"] {{
         position: relative;
@@ -40,6 +41,29 @@ UNDER_NAV_STYLE = f"""
         top: 0;
         background-color: var(--background-color);
         /* box-shadow: none !important; */
+    }}
+    @media (min-width: 576px) {{
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% + 10rem + 1rem - 1px);
+            margin-left: -5.5rem;
+            padding: 0 1.5rem;
+        }}
+    }}
+    @media (max-width: 575px) {{
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100vw + 1rem - 7px);
+            margin-left: -1.5rem;
+            padding: 0 1.5rem;
+        }}
+    }}
+    @media (min-width: 768px) {{
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            position: sticky !important;
+            width: calc(100% + 8rem + 1rem - 1px);
+            margin-top: -3rem;
+            margin-left: -4.5rem;
+            padding: 0 0.5rem;
+        }}
     }}
 """
 
@@ -50,12 +74,59 @@ NAV_TOP_STYLE = f"""
     div:has(> iframe[title="{_component_func.name}"]) {{
         top: 0rem;
         z-index: 999990;
+        padding: 0;
     }}
     iframe[title="{_component_func.name}"] {{
         position: relative;
         top: 0.125rem;
         border-top-right-radius: 0;
         border-top-left-radius: 0;
+    }}
+"""
+
+NAV_TOP_FIXED_STYLE = f"""
+    div:has(> iframe[title="{_component_func.name}"]) {{
+        /* width: calc(100% - 6rem); */
+        /* left: 4.25rem; */
+    }}
+    @media (max-width: 768px) {{
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 8rem);
+            left: 4.5rem;
+        }}
+    }}
+    @media(max-width: 575px) {{
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 8rem);
+            left: 4.5rem;
+        }}
+    }}
+    @media (min-width: 576px) {{
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            width: 100%;
+            padding: 0;
+            margin-left: -0.5rem;
+        }}
+    }}
+"""
+
+NAV_TOP_STICKY_STYLE = f"""
+    div:has(> iframe[title="{_component_func.name}"]) {{
+        width: calc(100% - 8.5rem);
+        left: 4.25rem;
+    }}
+    @media (min-width: 576px) {{
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            width: 100%;
+            margin-left: -4.25rem;
+            padding: 0;
+        }}
+    }}
+    @media(max-width: 575px) {{
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 8.5rem);
+            left: 4.25rem;
+        }}
     }}
 """
 
@@ -93,11 +164,10 @@ VERTICAL_ST_STYLE = """
     }
 """
 
-
-
 STICKY_NAV_STYLE = f"""
     div:has(> iframe[title="{_component_func.name}"]) {{
         position: sticky;
+        padding-top: 0.5rem !important;
     }}
     iframe[title="{_component_func.name}"] {{
         box-shadow: 0 0px 10px 5px #00000012;
@@ -269,13 +339,13 @@ def st_navbar(
             outline: 1px solid #c3c3c380;
             border-radius: 5px;
             width: 100%;
-            width: calc(100% - 1rem);
         }}
         div:has(> iframe[title="{_component_func.name}"]) {{
             opacity: 1 !important;
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding: 0 2.5rem;
         }}
     """
 
@@ -283,30 +353,20 @@ def st_navbar(
         style += UNDER_NAV_STYLE
     else:
         style += NAV_TOP_STYLE
-        style += f"""
-        @media(max-width: 576px) {{
-            div:has(> iframe[title="{_component_func.name}"]) {{
-                width: calc(100% - 8.5rem);
-                left: 4.25rem;
-            }}
-        }}
-        """
         style += VERTICAL_ST_STYLE
 
     if sticky_nav:
         style += STICKY_NAV_STYLE
-        style += f"""
-        @media(max-width: 576px) {{
-            div:has(> iframe[title="{_component_func.name}"]) {{
-                width: calc(100% - 6rem) !important;
-                left: 4.25rem;
-            }}
-        }}
-        """
+        if position_mode == 'top':
+            style += NAV_TOP_STICKY_STYLE
     else:
+        if position_mode == 'top':
+            style += NAV_TOP_FIXED_STYLE
+
         style += f"""
         div:has(> iframe[title="{_component_func.name}"]) {{
-            position: fixed;
+            position: sticky; /* Fixed with custom width */
+            margin-top: -6rem;
         }}
         iframe[title="{_component_func.name}"] {{
             border-top-right-radius: 0;

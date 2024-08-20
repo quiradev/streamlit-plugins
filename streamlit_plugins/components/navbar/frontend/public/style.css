@@ -170,8 +170,12 @@ ul li a .icon {
     border-bottom: 0.25rem solid transparent;
 }
 
-#complexnavbarSupportedContent li.nav-item li > a {
+#complexnavbarSupportedContent li.nav-item > a {
     border-left: 0.25rem solid transparent;
+}
+#complexnavbarSupportedContent li.nav-item[data-login="true"] > a {
+    border-left: none;
+    border-right: 0.25rem solid transparent;
 }
 
 #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active) > a,
@@ -186,6 +190,10 @@ ul li a .icon {
 #complexnavbarSupportedContent li.nav-item li.active > a {
     /* background: var(--option_active_translucent); */
     border-left: 0.25rem solid var(--option_active);
+}
+#complexnavbarSupportedContent li.nav-item li.active[data-login="true"] > a {
+    border-right: 0.25rem solid var(--option_active);
+    border-left: none;
 }
 
 nav.navbar:before {
@@ -370,6 +378,11 @@ nav.navbar:before {
     #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active) > a {
        border-left: 4px solid var(--option_active);
        border-bottom: none;
+    }
+    #complexnavbarSupportedContent ul.navbar-nav li.nav-item.active[data-login="true"] > a,
+    #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active[data-login="true"]) > a {
+        border-right: 4px solid var(--option_active);
+        border-left: none;
     }
     #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active),
     #complexnavbarSupportedContent > ul.navbar-nav > li.active {
