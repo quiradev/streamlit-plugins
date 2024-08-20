@@ -1,15 +1,12 @@
 import hashlib
 import html
-import string
-
 import random
+import string
 from enum import Enum
+from typing import List, Union, Tuple
 
-import re
-from typing import List, Union
-
-import htbuilder
 import streamlit as st
+import webcolors
 from htbuilder import H, HtmlElement, styles
 from htbuilder.units import unit
 
@@ -72,7 +69,15 @@ def generate_hsla_colors(saturation, lightness, alpha, amount):
         for i in range(amount)
     ]
 
-def generate_hash_colors(names: List[str], saturation: int, lightness: int, alpha: float) -> Tuple[str, str]:
+
+def get_color_pallete(types_list: list[str]) -> dict[str, tuple[str, str]]:
+    # colors = generate_hsla_colors(70, 50, 1, len(types_list))
+    colors = generate_hash_colors(types_list, 70, 50, 1)
+    colored_patterns = dict(zip(types_list, colors))
+    return colored_patterns
+
+
+def generate_hash_colors(names: list[str], saturation: int, lightness: int, alpha: float) -> list[tuple[str, str]]:
     colors = []
     for name in names:
         # Obtener un número hash único para el nombre
@@ -80,11 +85,15 @@ def generate_hash_colors(names: List[str], saturation: int, lightness: int, alph
 
         # Convertir el hash en valores de H (matiz), S (saturación) y V (brillo)
         h = hash_num % 256
+        # Variacion de la saturacion en base al hash de un 20%
+        s = saturation + (hash_num % 51) - 25
+        # Variacion de la luminosidad de un 10% en base al hash
+        l = lightness + (hash_num % 26) - 13
 
         colors.append(
             (
-                hsla_to_hex(h, saturation, lightness, alpha),
-                contrast_color(hsla_to_hex(h, saturation, lightness, alpha), bw=True)
+                hsla_to_hex(h, s, l, alpha),
+                contrast_color(hsla_to_hex(h, s, l, alpha), bw=True)
             )
         )
     return colors
@@ -117,7 +126,12 @@ class AnnotaionClass(Enum):
     READING = "floating"
 
 
-def annotation(body: str, label: str, body_class: str, label_class: str, body_css: dict = None, label_css: dict = None):
+CSS_COLOR_MAP = {
+    "transparent": "#00000000",
+    "gray": "#808080",
+}
+
+def annotation(body: str | HtmlElement, label: str, body_css: dict = None, label_css: dict = None):
     """Build an HtmlElement span object with the given body and annotation label.
 
     The end result will look something like this:
@@ -161,29 +175,75 @@ def annotation(body: str, label: str, body_class: str, label_class: str, body_cs
     if label_css is None:
         label_css = {}
 
-    return span(
+    # Se asigna la clase del contenedor y de la anotacion para los estilos
+    body_class = f"annotation-container"
+    label_class = f"annotation"
+
+    return H.span(
         _class=f'{body_class} {label.lower().replace(" ", "-")}',
+        _data_label=label,
         style=styles(
             **body_css,
         )
     )(
-        html.escape(body),
         span(
             _class=label_class,
             style=styles(
                 **label_css,
             )
-        )(html.escape(label))
+        )(html.escape(label)),
+        html.escape(body) if isinstance(body, str) else body
     )
 
 
-def annotated_text(*tokens, annotation_style: dict = None,
-                   display_mode: AnnotationDisplayMode = AnnotationDisplayMode.NORMAL, parse_raw=True,
-                   without_styles=False) -> Union[str, HtmlElement]:
+def extract_labels(tokens) -> list[str]:
+    # Extraccion recursiva de las etiquetas de anotacion
+    labels = []
+    for tok in tokens:
+        if isinstance(tok, tuple):
+            labels.append(tok[1])
+            if isinstance(tok[0], tuple):
+                labels.extend(extract_labels(tok[0]))
+
+    return list(set(labels))
+
+
+def resolve_background_style(styles_map: dict[str, str]) -> str:
+    bg = styles_map.get("background", None)
+    if bg is not None:
+        return CSS_COLOR_MAP.get(bg, bg)
+
+    # Try to get from background-image
+    # Support for linear-gradient
+    bg_image = styles_map.get("background-image", None)
+    if bg_image is not None:
+        if bg_image.startswith("linear-gradient"):
+            bg = bg_image.split("linear-gradient(")[1].split(",")[0]
+            return CSS_COLOR_MAP.get(bg, bg)
+
+    # Try to get crontrast from color
+    fg = styles_map.get("color", None)
+    if fg is not None:
+        fg = CSS_COLOR_MAP.get(fg, fg)
+        return contrast_color(fg)
+
+    # Defaults to gray
+    return CSS_COLOR_MAP["gray"]
+
+
+@st.experimental_fragment
+def annotated_text(
+    *tokens, annotation_style: dict[str, dict[str, str]] = None,
+    display_mode: AnnotationDisplayMode = AnnotationDisplayMode.NORMAL,
+    without_styles=False,
+    front_inputs=False,
+    key="annotated_text",
+):
     """Writes test with annotations into your Streamlit app.
 
     Parameters
     ----------
+    key : str
     *tokens : str, tuple or htbuilder.HtmlElement
         Arguments can be:
         - strings, to draw the string as-is on the screen.
@@ -198,12 +258,15 @@ def annotated_text(*tokens, annotation_style: dict = None,
 
     display_mode: AnnotationDisplayMode
 
-    parse_raw: bool
+    front_inputs: bool
+
+    without_styles: bool
 
     Examples
     --------
 
     >>> annotated_text(
+    ...     "example",
     ...     "This ",
     ...     ("is", "verb", dict(background="#8ef")),
     ...     " some ",
@@ -218,153 +281,171 @@ def annotated_text(*tokens, annotation_style: dict = None,
     ... )
 
     >>> annotated_text(
+    ...     "example",
     ...     "Hello ",
     ...     annotation("world!", "noun", body_css=dict(color="#8ef", border="1px dashed red")),
     ... )
 
     """
 
-    # uuid_component = f"{random.randrange(16**5):05x}"
-    uuid_component = ''.join((random.choice(string.ascii_letters) for x in range(8)))
+    if f"{key}_annotated_text_uuid" not in st.session_state:
+        st.session_state[f"{key}_annotated_text_uuid"] = ''.join((random.choice(string.ascii_letters) for x in range(8)))
 
-    # display_mode = _st.radio(
-    #     "Select display style",
-    #     key=uuid_component,
-    #     options=[AnnotationDisplayMode.NORMAL, AnnotationDisplayMode.MINIMAL, AnnotationDisplayMode.READING],
-    #     index=display_mode.value,
-    #     format_func=lambda x: x.name
-    # )
+    uuid_component = st.session_state[f"{key}_annotated_text_uuid"]
 
-    # annotated-text.normal annotation-container.displayed + annotation.side
-    # annotated-text.minimal = annotation-container.displayed + annotation.floating
-    # annotated-text.reading = annotation-container.compressive + annotation.floating
+    if not front_inputs:
+        options = list(map(lambda x: x.name, [*AnnotationDisplayMode]))
+        display_mode_in = st.radio(
+            "Select display style",
+            key=uuid_component,
+            options=options,
+            horizontal=True,
+            index=options.index(display_mode.name)
+        )
+        display_mode = AnnotationDisplayMode[display_mode_in.upper()]
+
     out = div(
         _id=uuid_component,
         _class=f"annotated-text {display_mode.name.lower()}",
     )
 
-    if annotation_style is None:
-        annotation_style = {}
-        # Generamos el mapa de anotaciones, asignando un color unico a cada una
-        annotation_tags = list(set([x[1] for x in tokens if isinstance(x, tuple)]))
-        if len(annotation_tags) > 0:
-            colors_list = generate_hash_colors(annotation_tags, 70, 50, 1)
-            for tag in annotation_tags:
-                bg, fg = list(colors_list).pop()
-                annotation_style[tag] = (bg, fg)
+    def create_out_html(_out: HtmlElement, *toks) -> HtmlElement:
+        for tok in toks:
+            if isinstance(tok, str):
+                _out(html.escape(tok))
 
-    annotations_style_colors = "<style>"
-    for tag, colors in annotation_style.items():
-        bg = [colors[0], colors[0]]
-        fg = colors[-1]
-        if len(colors) > 2:
-            bg = colors[0:-1]
+            elif isinstance(tok, HtmlElement):
+                _out(tok)
 
-        annotations_style_colors += f"""
-            div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")} {{
-                background-image: linear-gradient({', '.join(bg)});
-                color: {fg};
-            }}
-            div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")}:hover {{
-                color: {fg} !important;
-            }}
-        """
-        # Se agrega un borde al label si esta en modo minimal
-        if display_mode == AnnotationDisplayMode.MINIMAL:
-            annotations_style_colors += f"""
-            div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")} .annotation:before {{
-                border-color: inherit;
-            }}
-            """
-        else:
-            annotations_style_colors += f"""
-            div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")} .annotation:before {{
-                border-color: {bg[0]};
-            }}
-            """
+            elif isinstance(tok, tuple):
+                body, label = tok[0:2]
+                if isinstance(body, tuple):
+                    # Anidamiento de anotaciones
+                    body = create_out_html(H.span(), *body)
 
-    annotations_style_colors += "</style>"
+                body_css = {}
+                label_css = {}
+                if len(tok) == 3:
+                    body_css = tok[2]
+                if len(tok) == 4:
+                    label_css = tok[3]
 
-    # Se asigna la clase del contenedor y de la anotacion para los estilos
-    annotation_container_class = f"annotation-container {AnnotaionContainerClass[display_mode.name].value}"
-    annotation_class = f"annotation {AnnotaionClass[display_mode.name].value}"
+                _out(annotation(body, label, body_css=body_css, label_css=label_css))
 
-    for tok in tokens:
-        if isinstance(tok, str):
-            out(html.escape(tok))
+            else:
+                raise Exception("Oh noes!")
 
-        elif isinstance(tok, HtmlElement):
-            out(tok)
-
-        elif isinstance(tok, tuple):
-            body, label = tok[0:2]
-            body_css = {}
-            label_css = {}
-            if len(tok) == 3:
-                body_css = tok[2]
-            if len(tok) == 4:
-                label_css = tok[3]
-
-            out(annotation(*tok, annotation_container_class, annotation_class, body_css=body_css, label_css=label_css))
-
-        else:
-            raise Exception("Oh noes!")
-
-    raw_html = str(out)
-    raw_html = raw_html.replace("\n", "<div></div>")
-
-    if without_styles and parse_raw:
-        return raw_html
-
-    elif without_styles and not parse_raw:
-        return out
+        return _out
 
     # Genera un texto HTML con 3 radio inputs, uno por cada modo de visualización
     # de anotaciones.
     choice_raw = f"""
-    <style>
-        .annotated-style-label {{
-            display: inline-block;
-            margin-right: 1em;
-            cursor: pointer;
-            user-select: none;
+        <style>
+            .annotated-style-label {{
+                margin-right: 1em;
+                margin-top: 1em;
+                margin-bottom: 1em;
+                display: inline-block;
+                margin-right: 1em;
+                cursor: pointer;
+                user-select: none;
+            }}
+        </style>
+        <input class="annotated-style-input" {"checked" if display_mode == AnnotationDisplayMode.NORMAL else ""} type="radio" name="{uuid_component}-annotation-style-mode" id="{uuid_component}-annotated-style-normal" value="{AnnotationDisplayMode.NORMAL.name.lower()}">
+        <label class="annotated-style-label" for="{uuid_component}-annotated-style-normal">Normal</label>
+
+        <input class="annotated-style-input" {"checked" if display_mode == AnnotationDisplayMode.MINIMAL else ""} type="radio" name="{uuid_component}-annotation-style-mode" id="{uuid_component}-annotated-style-minimal" value="{AnnotationDisplayMode.MINIMAL.name.lower()}">
+        <label class="annotated-style-label" for="{uuid_component}-annotated-style-minimal">Minimal</label>
+
+        <input class="annotated-style-input" {"checked" if display_mode == AnnotationDisplayMode.READING else ""} type="radio" name="{uuid_component}-annotation-style-mode" id="{uuid_component}-annotated-style-reading" value="{AnnotationDisplayMode.READING.name.lower()}">
+        <label class="annotated-style-label" for="{uuid_component}-annotated-style-reading">Reading</label>
+        """
+
+    out = create_out_html(out, *tokens)
+
+    raw_html = str(out)
+    raw_html = raw_html.replace("\n", "<div></div>")
+
+    if without_styles:
+        st.markdown(raw_html, unsafe_allow_html=True)
+
+    if front_inputs:
+        normal_id = f"input#{uuid_component}-annotated-style-normal:checked ~ div.annotated-text"
+        minimal_id = f"input#{uuid_component}-annotated-style-minimal:checked ~ div.annotated-text"
+        reading_id = f"input#{uuid_component}-annotated-style-reading:checked ~ div.annotated-text"
+    else:
+        normal_id = f"div.annotated-text#{uuid_component}.normal"
+        minimal_id = f"div.annotated-text#{uuid_component}.minimal"
+        reading_id = f"div.annotated-text#{uuid_component}.reading"
+
+
+    if annotation_style is None:
+        annotation_style = {}
+        # Generamos el mapa de anotaciones, asignando un color unico a cada una
+        annotation_tags = extract_labels(tokens)
+        if len(annotation_tags) > 0:
+            colors_map = get_color_pallete(annotation_tags)
+            for tag in annotation_tags:
+                bg, fg = colors_map[tag]
+                annotation_style[tag] = {"background": bg, "border-color": bg, "color": fg}
+
+    annotations_style_colors = f"""
+        .annotated-text {{
+            margin-bottom: 2em;
         }}
-    </style>
-    <input class="annotated-style-input" {"checked" if display_mode == AnnotationDisplayMode.NORMAL else ""} type="radio" name="{uuid_component}-annotation-style-mode" id="{uuid_component}-annotated-style-normal" value="{AnnotationDisplayMode.NORMAL.name.lower()}">
-    <label class="annotated-style-label" for="{uuid_component}-annotated-style-normal">Normal</label>
-
-    <input class="annotated-style-input" {"checked" if display_mode == AnnotationDisplayMode.MINIMAL else ""} type="radio" name="{uuid_component}-annotation-style-mode" id="{uuid_component}-annotated-style-minimal" value="{AnnotationDisplayMode.MINIMAL.name.lower()}">
-    <label class="annotated-style-label" for="{uuid_component}-annotated-style-minimal">Minimal</label>
-
-    <input class="annotated-style-input" {"checked" if display_mode == AnnotationDisplayMode.READING else ""} type="radio" name="{uuid_component}-annotation-style-mode" id="{uuid_component}-annotated-style-reading" value="{AnnotationDisplayMode.READING.name.lower()}">
-    <label class="annotated-style-label" for="{uuid_component}-annotated-style-reading">Reading</label>
+        div.annotated-text#{uuid_component} .annotation-container {{
+            background-image: linear-gradient(gray, gray);
+        }}
+        div.annotated-text#{uuid_component} .annotation-container > .annotation:before {{
+            border-color: gray !important;
+        }}
+        div.annotated-text#{uuid_component} .annotation-container > .annotation,
+        div.annotated-text#{uuid_component} .annotation-container:hover {{
+            color: white;
+        }}
     """
+    for tag, ann_styles_map in annotation_style.items():
+        # Defaults
+        ann_styles_map["background"] = resolve_background_style(ann_styles_map)
+        ann_styles_map["background-image"] = ann_styles_map.get('background-image', f"linear-gradient({ann_styles_map['background']}, {ann_styles_map['background']})")
+        border_color = ann_styles_map.get("border-color", ann_styles_map["background"])
+        if border_color == CSS_COLOR_MAP["transparent"]:
+            border_color = "currentColor"
 
-    normal_id = f"input#{uuid_component}-annotated-style-normal:checked ~ div.annotated-text"
-    minimal_id = f"input#{uuid_component}-annotated-style-minimal:checked ~ div.annotated-text"
-    reading_id = f"input#{uuid_component}-annotated-style-reading:checked ~ div.annotated-text"
-    # normal_id = f"div.annotated-text.normal"
-    # minimal_id = f"div.annotated-text.minimal"
-    # reading_id = f"div.annotated-text.reading"
+        if ann_styles_map["background"] in webcolors.names():
+            ann_styles_map["background"] = webcolors.name_to_hex(ann_styles_map["background"])
+
+        if not ann_styles_map["background"].startswith("#"):
+            raise ValueError("Only hex colors are supported for background")
+
+        if "color" not in ann_styles_map and (ann_styles_map["background"] == CSS_COLOR_MAP["transparent"] or ann_styles_map["background"][-2:] == "00"):
+            color = "currentColor"
+        else:
+            color = ann_styles_map.get("color", contrast_color(ann_styles_map["background"]))
+
+        ann_styles = "\n".join(f"{style_name}: {style_val};" for style_name, style_val in ann_styles_map.items() if style_name != "background")
+        annotations_style_colors += f"""
+            div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")} {{
+                {ann_styles}
+            }}
+            {normal_id} .annotation-container.{tag.lower().replace(" ", "-")},
+            {minimal_id} .annotation-container.{tag.lower().replace(" ", "-")},
+            div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")} > .annotation,
+            div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")}:hover {{
+                color: {color};
+            }}
+        """
+
+        annotations_style_colors += f"""
+            div.annotated-text#{uuid_component} .annotation-container.{tag.lower().replace(" ", "-")} > .annotation:before {{
+                border-color: {border_color} !important;
+            }}
+        """
+
+
     normal_style = f"""
-    <style>
         span.annotation-container {{
             font-weight: bold;
-        }}
-        .annotation-container .annotation {{
-            z-index: 1;
-        }}
-
-        .annotation-container .annotation-container .annotation {{
-            z-index: 2;
-        }}
-
-        .annotation-container .annotation-container .annotation-container .annotation {{
-            z-index: 3;
-        }}
-
-        .annotation-container .annotation-container .annotation-container .annotation-container .annotation {{
-            z-index: 4;
         }}
 
         {normal_id} span.annotation-container {{
@@ -372,6 +453,7 @@ def annotated_text(*tokens, annotation_style: dict = None,
             display: inline-flex;
             justify-content: center;
             align-items: center;
+            flex-direction: row-reverse;
         }}
 
         span.annotation-container {{
@@ -389,10 +471,8 @@ def annotated_text(*tokens, annotation_style: dict = None,
             font-size: 0.67em;
             opacity: 0.8;
         }}
-    </style>
     """
     minimal_style = f"""
-    <style>
         {minimal_id} span.annotation-container {{
             border-radius: 0.33rem;
             display: inline-flex;
@@ -441,17 +521,16 @@ def annotated_text(*tokens, annotation_style: dict = None,
             content: "";
             width: 0px;
             height: 0px;
-            border-top: 0.5em solid;
+            border-top-width: 0.5em;
+            border-top-style: solid;
             border-right: 0.5em solid transparent !important;
             border-bottom: 0.5em solid transparent !important;
             border-left: 0.5em solid transparent !important;
-            top: 100%;
+            top: 90%;
             z-index: 1;
         }}
-    </style>
     """
     reading_style = f"""
-    <style>
         {reading_id} span.annotation-container {{
             display: inline-flex;
             border-radius: 0.33rem;
@@ -461,6 +540,7 @@ def annotated_text(*tokens, annotation_style: dict = None,
         }}
 
         {reading_id} span.annotation-container {{
+            color: inherit;
             text-decoration: none;
             background-size: 100% 2px, 0 2px;
             background-position: 100% 100%, 0 100%;
@@ -502,26 +582,24 @@ def annotated_text(*tokens, annotation_style: dict = None,
             border-right: 0.5em solid transparent !important;
             border-bottom: 0.5em solid transparent !important;
             border-left: 0.5em solid transparent !important;
-            top: 100%;
+            top: 90%;
             z-index: 1;
         }}
 
-        {reading_id} span.annotation.side:hover {{
+        {reading_id} span.annotation:hover {{
             opacity: 1 !important;
             z-index: 100;
         }}
-    </style>
     """
-    # display_styles_map = {
-    #     AnnotationDisplayMode.NORMAL: normal_style,
-    #     AnnotationDisplayMode.MINIMAL: minimal_style,
-    #     AnnotationDisplayMode.READING: reading_style
-    # }
 
-    styles_tags = normal_style + minimal_style + reading_style + annotations_style_colors
-    # styles_tags = styles_tags.replace("\n", "")
-    styles_tags = styles_tags.strip("\n")
+    styles = "<style>\n" + normal_style + minimal_style + reading_style + annotations_style_colors + "</style>"
+    styles = styles.strip("\n")
 
     choice_raw = choice_raw.replace("\n", "")
 
-    st.write(styles_tags + choice_raw + raw_html, unsafe_allow_html=True)
+    if front_inputs:
+        res_html = styles + choice_raw + raw_html
+    else:
+        res_html = styles + raw_html
+
+    st.markdown(res_html, unsafe_allow_html=True)
