@@ -18,10 +18,6 @@ if "app_id" not in st.session_state:
 
 
 def login():
-    st.chat_input(key="0")
-    st.chat_input("Username", key="1", max_chars=10)
-    st.chat_input("Username", key="2", disabled=True)
-    st.chat_input("Username", key="3", disabled=True, max_chars=10)
     if st.button("Log in"):
         st.session_state.logged_in = True
         st.session_state.app_id = "app_default"

@@ -1,6 +1,6 @@
 body {
     /* backdrop-filter: blur(4px) !important; */
-    background-color: var(--menu_background);
+    background-color: var(--background-color);
     color: var(--text-color);
 }
 
@@ -124,6 +124,9 @@ ul li a .icon {
     margin-right: 0.5rem;
     font-style: normal;
 }
+#complexnavbarSupportedContent ul.navbar-nav li a span {
+    white-space: nowrap;
+}
 
 #complexnavbarSupportedContent ul.navbar-nav li.nav-item a {
     background-color: transparent;
@@ -131,6 +134,8 @@ ul li a .icon {
     border-radius: 0px;
     height: calc(3.75rem - 0.125rem - 0.15rem);
     display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
     align-items: center;
 }
 
@@ -317,21 +322,22 @@ nav.navbar:before {
   */
 
 
-  @media(min-width: 992px){
-    .navbar-expand-custom {
+  /* @media(min-width: 992px){ */
+  nav.navbar:not(.collapsed) {
+    & {
         -ms-flex-flow: row wrap;
         flex-flow: row wrap;
         -ms-flex-pack: start;
         justify-content: flex-start;
     }
-    .navbar-expand-custom .navbar-nav {
+    & .navbar-nav {
         -ms-flex-direction: row;
         flex-direction: row;
     }
-    .navbar-expand-custom .navbar-toggler {
+    & .navbar-toggler {
         display: none;
     }
-    .navbar-expand-custom .navbar-collapse {
+    & .navbar-collapse {
         display: -ms-flexbox!important;
         display: flex!important;
         -ms-flex-preferred-size: auto;
@@ -341,8 +347,9 @@ nav.navbar:before {
   }
 
 
-  @media (max-width: 991px){
-    #complexnavbarSupportedContent ul li a{
+  /*@media (max-width: 991px){*/
+  nav.navbar.collapsed {
+    & #complexnavbarSupportedContent ul li a {
       padding: 0.5rem;
     }
     /*
@@ -371,24 +378,24 @@ nav.navbar:before {
       left: -25px;
     }
     */
-    #complexnavbarSupportedContent {
+    & #complexnavbarSupportedContent {
         top: 3.5rem;
     }
-    #complexnavbarSupportedContent ul.navbar-nav li.nav-item.active > a,
-    #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active) > a {
+    & #complexnavbarSupportedContent ul.navbar-nav li.nav-item.active > a,
+    & #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active) > a {
        border-left: 4px solid var(--option_active);
        border-bottom: none;
     }
-    #complexnavbarSupportedContent ul.navbar-nav li.nav-item.active[data-login="true"] > a,
-    #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active[data-login="true"]) > a {
+    & #complexnavbarSupportedContent ul.navbar-nav li.nav-item.active[data-login="true"] > a,
+    & #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active[data-login="true"]) > a {
         border-right: 4px solid var(--option_active);
         border-left: none;
     }
-    #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active),
-    #complexnavbarSupportedContent > ul.navbar-nav > li.active {
+    & #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active),
+    & #complexnavbarSupportedContent > ul.navbar-nav > li.active {
         border-bottom: none;
     }
-    .navbar-nav {
+    & .navbar-nav {
         align-items: unset;
         padding-top: 0.125em !important;
     }

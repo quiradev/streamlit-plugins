@@ -327,6 +327,7 @@ const NavBar: ReactNode = () => {
       <style>
         {`
           :root {
+            --background-color: ${theme.backgroundColor};
             --menu_background: ${mergedTheme.menu_background};
             --txc_inactive: ${mergedTheme.txc_inactive};
             --txc_active: ${mergedTheme.txc_active};

@@ -243,21 +243,71 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             () => this.delayed_resize(50)
         );
     };
+    private checkNavbarOverflow = () => {
+        const navbar$ = document.querySelector('nav.navbar') as HTMLElement;
+        if (navbar$ === null) return;
+
+        const container$ = navbar$.querySelector("#complexnavbarSupportedContent") as HTMLElement;
+        if (container$ === null) return;
+        // Cambio el style
+        container$.style.display = "block";
+
+        const pagesList$ = navbar$.querySelector("#complexnavbarSupportedContent > ul.navbar-nav") as HTMLElement;
+        if (pagesList$ === null) return;
+
+        let navBarWidth = 0;
+        // Si tiene collapsed lo calcula y si no lo coje de clientWidth
+        if (navbar$.classList.contains('collapsed') || pagesList$.clientWidth === 0) {
+            // Itero por cada elemento de la lista
+            for (let i = 0; i < pagesList$.children.length; i++) {
+                const element$ = pagesList$.children[i];
+                // Tengo que mirar de cada li, los hijos de li > a
+                // y sumar el ancho de cada elemento ademas del ancho del after de a
+                let spans$ = element$.querySelectorAll("& > a > span");
+                if (spans$.length === 0) continue;
+
+                spans$.forEach((a$) => {
+                    navBarWidth += a$.clientWidth;
+                });
+                // Si el element$ tiene la clase dropdown sumo el ancho del :after
+                if (element$.classList.contains("dropdown")) {
+                    // Obtengo el  pseudoelemento :after
+                    const anchorDropDown$ = element$.querySelector(".dropdown-toggle");
+                    if (anchorDropDown$ === null) continue;
+
+                    const after$ = window.getComputedStyle(anchorDropDown$, ":after");
+                    let dropDownWidth = parseFloat(after$.width);
+                    if (dropDownWidth) navBarWidth += dropDownWidth;
+                }
+            }
+        }
+        else {
+            navBarWidth = pagesList$.clientWidth;
+        }
+        container$.style.display = "none";
+
+        if (pagesList$.scrollWidth > navBarWidth) {
+            navbar$.classList.add('collapsed');
+        } else {
+            navbar$.classList.remove('collapsed');
+        }
+    };
 
     private handleResize = () => {
         let lastHeight = document.body.scrollHeight;
         const step_resize = () => {
-        Streamlit.setFrameHeight();
-        if (lastHeight !== document.body.scrollHeight)
-            requestAnimationFrame(step_resize);
+            Streamlit.setFrameHeight();
+            if (lastHeight !== document.body.scrollHeight) requestAnimationFrame(step_resize);
         };
+        this.checkNavbarOverflow();
         Streamlit.setFrameHeight();
         requestAnimationFrame(step_resize);
+
     };
 
     private delayed_resize = (wait_time: number): NodeJS.Timeout => {
         return setTimeout(() => {
-        Streamlit.setFrameHeight();
+            Streamlit.setFrameHeight();
         }, wait_time);
     };
 
