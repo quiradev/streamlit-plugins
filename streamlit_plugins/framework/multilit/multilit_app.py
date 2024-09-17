@@ -15,7 +15,8 @@ from .loading_app import LoadingApp
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_NAVBAR_PARENT_SELECTOR = """[data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stVerticalBlockBorderWrapper"] iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
+
+DEFAULT_NAVBAR_PARENT_SELECTOR = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] > [data-testid="element-container"] > iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
 
 
 class SectionWithStatement:
@@ -536,7 +537,7 @@ class MultiApp(object):
                 styles = f"""
                 {self._st_navbar_parent_selector} {{
                     position: sticky;
-                    top: 0;
+                    top: -1.25em;
                     z-index: 999990;
                 }}
                 """

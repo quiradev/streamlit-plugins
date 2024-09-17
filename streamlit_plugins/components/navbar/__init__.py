@@ -96,13 +96,13 @@ UNDER_NAV_STYLE = f"""
 """
 
 UNDER_NAV_STICKY_STYLE = f"""
-    div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]) ~ div {{
+    div:has(> iframe[title="{_component_func.name}"]) ~ div {{
         top: 2rem;
     }}
 """
 
 UNDER_NAV_FIXED_STYLE = f"""
-    div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]) ~ div {{
+    div:has(> iframe[title="{_component_func.name}"]) ~ div {{
         top: 4rem;
     }}
 """
@@ -124,8 +124,16 @@ NAV_TOP_STYLE = f"""
         border-top-right-radius: 0;
         border-top-left-radius: 0;
     }}
+    [data-testid="collapsedControl"] {{
+        /* flex-direction: column !important; */
+        border-right: solid 1px #c3c3c380;
+    }}
+    [data-testid="collapsedControl"]:has(> [data-testid="stLogoSpacer"]) {{
+        flex-direction: row !important;
+    }}
 """
 
+NAV_TOP_FIXED_LOGO_MARGIN = "0.7125em"
 NAV_TOP_FIXED_STYLE = f"""
     div:has(> iframe[title="{_component_func.name}"]) {{
         /* width: calc(100% - 6rem); */
@@ -139,41 +147,90 @@ NAV_TOP_FIXED_STYLE = f"""
     }}
     @media(max-width: 575px) {{
         div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 8rem);
-            left: 4.5rem;
+            width: calc(100% - 5em);
+            left: 0;
+        }}
+        body:has([data-testid="collapsedControl"] > img) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 11rem);
+            left: 7.5rem;
+        }}
+        body:has([data-testid="collapsedControl"] > img:last-child) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 9rem);
+            left: 5.125rem;
+        }}
+        body:has([data-testid="collapsedControl"] > [data-testid="stLogoSpacer"]) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 7.75rem);
+            left: 4.125rem;
         }}
     }}
     @media (min-width: 576px) {{
         div:has(> iframe[title="{_component_func.name}"]) {{
             width: 100%;
             padding: 0;
-            margin-left: -0.5rem;
+            margin-left: calc(-0.5rem - 0.5em);
+        }}
+        body:has([data-testid="collapsedControl"] > img:last-child) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 1.25em);
+            margin-left: calc(-0.5rem + 0.75em);
+        }}
+        body:has([data-testid="collapsedControl"] > img) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 3em);
+            margin-left: calc(-0.5rem + 3em);
+        }}
+        body:has([data-testid="collapsedControl"] > [data-testid="stLogoSpacer"]) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: 100%;
+            margin-left: calc(-0.5rem - 0.125em);
         }}
     }}
-    div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]) ~ div {{
+    div:has(> iframe[title="{_component_func.name}"]) ~ div {{
         top: 4rem;
     }}
 """
 
+NAV_TOP_STICKY_LOGO_MARGIN = "1.25em"
 NAV_TOP_STICKY_STYLE = f"""
     div:has(> iframe[title="{_component_func.name}"]) {{
         width: calc(100% - 8.5rem);
-        left: 4.25rem;
+        left: calc(4.25rem + {NAV_TOP_STICKY_LOGO_MARGIN});
     }}
     @media (min-width: 576px) {{
         div:has(> iframe[title="{_component_func.name}"]) {{
-            width: 100%;
+            width: calc(100% - {NAV_TOP_STICKY_LOGO_MARGIN});
             margin-left: -4.25rem;
             padding: 0;
+        }}
+        body:has([data-testid="collapsedControl"] > img:last-child) div:has(> iframe[title="{_component_func.name}"]) {{
+           width: calc(100% - 2em);
+           left: 4.25em;
+        }}
+        body:has([data-testid="collapsedControl"] > img) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 3.5em);
+            left: 7.5em;
+        }}
+        body:has([data-testid="collapsedControl"] > [data-testid="stLogoSpacer"]) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: 100%;
+            left: 4.25rem;
         }}
     }}
     @media(max-width: 575px) {{
         div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 8.5rem);
+            width: calc(100% - 5rem);
+            left: 0;
+        }}
+        body:has([data-testid="collapsedControl"] > img:last-child) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 9.215em);
+            left: 5.25rem;
+        }}
+        body:has([data-testid="collapsedControl"] > img) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 11em);
+            left: 7.5rem;
+        }}
+        body:has([data-testid="collapsedControl"] > [data-testid="stLogoSpacer"]) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 8rem);
             left: 4.25rem;
         }}
     }}
-    div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]) ~ div {{
+    div:has(> iframe[title="{_component_func.name}"]) ~ div {{
         top: 2rem;
     }}
 """
