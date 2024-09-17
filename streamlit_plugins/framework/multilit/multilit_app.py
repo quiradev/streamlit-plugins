@@ -15,6 +15,8 @@ from .loading_app import LoadingApp
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_NAVBAR_PARENT_SELECTOR = """[data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stVerticalBlockBorderWrapper"] iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
+
 
 class SectionWithStatement:
     def __init__(self, name, exit_fn):
@@ -55,7 +57,9 @@ class MultiApp(object):
         clear_cross_app_sessions=True,
         session_params=None,
         verbose=False,
-        within_fragment=False):
+        within_fragment=False,
+        st_navbar_parent_selector=DEFAULT_NAVBAR_PARENT_SELECTOR,
+    ):
         """
         A class to create an Multi-app Streamlit application. This class will be the host application for multiple applications that are added after instancing.
         The secret saurce to making the different apps work together comes from the use of a global session store that is shared with any MultiHeadApp that is added to the parent MultiApp.
@@ -155,6 +159,8 @@ class MultiApp(object):
         self._no_access_level = 0
 
         self._user_session_params = session_params
+
+        self._st_navbar_parent_selector = st_navbar_parent_selector
 
         try:
             st.set_page_config(
@@ -525,36 +531,41 @@ class MultiApp(object):
     def _run_navbar(self, menu_data):
         # TODO: Agregar estilos para cada modo de navbar
         styles = ""
-        if self._navbar_mode == "top" and self._navbar_sticky:
-            styles = """
-            [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stVerticalBlockBorderWrapper"] iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
-                position: sticky;
-                top: 0;
-                z-index: 999990;
-            """
-        if self._navbar_mode == "top" and not self._navbar_sticky:
-            styles = """
-            [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stVerticalBlockBorderWrapper"] iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
-                position: sticky;
-                z-index: 999990;
-                top: 5em;
-                margin-top: -1em;
-            """
-        if self._navbar_mode == "under" and self._navbar_sticky:
-            styles = """
-            [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stVerticalBlockBorderWrapper"] iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
-                position: sticky;
-                top: 6em;
-                z-index: 1;
-            """
-        if self._navbar_mode == "under" and not self._navbar_sticky:
-            styles = """
-            [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stVerticalBlockBorderWrapper"] iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
-                position: sticky;
-                z-index: 1;
-                top: 8.625em;
-                margin-top: 1em;
-            """
+        if self._st_navbar_parent_selector:
+            if self._navbar_mode == "top" and self._navbar_sticky:
+                styles = f"""
+                {self._st_navbar_parent_selector} {{
+                    position: sticky;
+                    top: 0;
+                    z-index: 999990;
+                }}
+                """
+            if self._navbar_mode == "top" and not self._navbar_sticky:
+                styles = f"""
+                {self._st_navbar_parent_selector} {{
+                    position: sticky;
+                    z-index: 999990;
+                    top: 5em;
+                    margin-top: -1em;
+                }}
+                """
+            if self._navbar_mode == "under" and self._navbar_sticky:
+                styles = f"""
+                {self._st_navbar_parent_selector} {{
+                    position: sticky;
+                    top: 6em;
+                    z-index: 1;
+                }}
+                """
+            if self._navbar_mode == "under" and not self._navbar_sticky:
+                styles = f"""
+                {self._st_navbar_parent_selector} {{
+                    position: sticky;
+                    z-index: 1;
+                    top: 8.625em;
+                    margin-top: 1em;
+                }}
+                """
 
         st.markdown(f'<style>{styles}</style>', unsafe_allow_html=True)
         if self._within_fragment:
