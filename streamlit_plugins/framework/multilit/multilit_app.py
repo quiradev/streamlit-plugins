@@ -523,6 +523,40 @@ class MultiApp(object):
             self.session_state["theme"] = "light"
 
     def _run_navbar(self, menu_data):
+        # TODO: Agregar estilos para cada modo de navbar
+        styles = ""
+        if self._navbar_mode == "top" and self._navbar_sticky:
+            styles = """
+            [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stVerticalBlockBorderWrapper"] iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
+                position: sticky;
+                top: 0;
+                z-index: 999990;
+            """
+        if self._navbar_mode == "top" and not self._navbar_sticky:
+            styles = """
+            [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stVerticalBlockBorderWrapper"] iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
+                position: sticky;
+                z-index: 999990;
+                top: 5em;
+                margin-top: -1em;
+            """
+        if self._navbar_mode == "under" and self._navbar_sticky:
+            styles = """
+            [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stVerticalBlockBorderWrapper"] iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
+                position: sticky;
+                top: 6em;
+                z-index: 1;
+            """
+        if self._navbar_mode == "under" and not self._navbar_sticky:
+            styles = """
+            [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stVerticalBlockBorderWrapper"] iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
+                position: sticky;
+                z-index: 1;
+                top: 8.625em;
+                margin-top: 1em;
+            """
+
+        st.markdown(f'<style>{styles}</style>', unsafe_allow_html=True)
         if self._within_fragment:
             new_app_id = self._fragment_navbar(menu_data)
         else:

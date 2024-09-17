@@ -3,12 +3,12 @@ from streamlit_plugins.framework.multilit import MultiApp, MultiHeadApp
 
 def run():
     multi_app = MultiApp(
-        title="Demo", nav_container=None, nav_horizontal=True, layout='wide', favicon="📚",
-        use_navbar=True, navbar_sticky=True, navbar_mode="pinned",
+        title="Demo", nav_horizontal=True, layout='wide', favicon="📚",
+        use_navbar=True, navbar_sticky=False, navbar_mode="top",
         use_cookie_cache=True, sidebar_state='auto',
         navbar_animation=True, allow_url_nav=True, hide_streamlit_markers=False, use_banner_images=None,
         banner_spacing=None, clear_cross_app_sessions=True, session_params=None,
-        use_loader=False, within_fragment=False
+        use_loader=False, within_fragment=True
     )
 
     class Demo1App(MultiHeadApp):
@@ -30,9 +30,11 @@ def run():
             def stream_data():
                 for word in _LOREM_IPSUM:
                     yield word + " "
-                    time.sleep(0.1)
+                    time.sleep(0.01)
 
             st.write_stream(stream_data)
+
+            st.markdown("\n\n".join(_LOREM_IPSUM))
 
     class Demo2App(MultiHeadApp):
         def run(self):
