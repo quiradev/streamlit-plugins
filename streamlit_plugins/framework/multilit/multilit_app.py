@@ -555,14 +555,14 @@ class MultiApp(object):
                 {self._st_navbar_parent_selector} {{
                     position: sticky;
                     top: 6em;
-                    z-index: 1;
+                    z-index: 10;
                 }}
                 """
             if self._navbar_mode == "under" and not self._navbar_sticky:
                 styles = f"""
                 {self._st_navbar_parent_selector} {{
                     position: sticky;
-                    z-index: 1;
+                    z-index: 10;
                     top: 8.625em;
                     margin-top: 1em;
                 }}

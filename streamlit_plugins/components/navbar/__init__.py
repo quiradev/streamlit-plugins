@@ -96,14 +96,14 @@ UNDER_NAV_STYLE = f"""
 """
 
 UNDER_NAV_STICKY_STYLE = f"""
-    div:has(> iframe[title="{_component_func.name}"]) ~ div {{
-        top: 2rem;
+    div:has(> iframe[title="{_component_func.name}"]) + div {{
+        margin-top: 2rem;
     }}
 """
 
 UNDER_NAV_FIXED_STYLE = f"""
-    div:has(> iframe[title="{_component_func.name}"]) ~ div {{
-        top: 4rem;
+    div:has(> iframe[title="{_component_func.name}"]) + div {{
+        margin-top: 2rem;
     }}
 """
 
@@ -182,8 +182,8 @@ NAV_TOP_FIXED_STYLE = f"""
             margin-left: calc(-0.5rem - 0.125em);
         }}
     }}
-    div:has(> iframe[title="{_component_func.name}"]) ~ div {{
-        top: 4rem;
+    div:has(> iframe[title="{_component_func.name}"]) + div {{
+        margin-top: 2rem;
     }}
 """
 
@@ -230,8 +230,8 @@ NAV_TOP_STICKY_STYLE = f"""
             left: 4.25rem;
         }}
     }}
-    div:has(> iframe[title="{_component_func.name}"]) ~ div {{
-        top: 2rem;
+    div:has(> iframe[title="{_component_func.name}"]) + div {{
+        margin-top: 2rem;
     }}
 """
 
@@ -283,7 +283,7 @@ STICKY_NAV_STYLE = f"""
 FIXED_NAV_STYLE = f"""
 div:has(> iframe[title="{_component_func.name}"]) {{
     position: sticky; /* Fixed with custom width */
-    margin-top: calc(-6rem + (-1 * {GAP_BETWEEN_COMPS}));
+    /* margin-top: calc(-6rem + (-1 * {GAP_BETWEEN_COMPS})); */
 }}
 div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"],
 iframe[title="{_component_func.name}"] {{
