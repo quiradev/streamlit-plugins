@@ -31,7 +31,7 @@ class SectionWithStatement:
         self.exit_fn()
 
 
-class MultiApp(object):
+class MultiApp:
     """
     Class to create a host application for combining multiple streamlit applications.
     """

@@ -74,6 +74,15 @@ def login():
             st.toast("Invalid username or password", icon="❌")
 
 
+def account():
+    st.write("Account page")
+    st.caption("This is a protected page. Only logged in users can view this.")
+
+
+def settings():
+    st.button("Theme")
+
+
 def logout():
     st.session_state.logged_in = False
     st.session_state.app_id = None
@@ -82,7 +91,8 @@ def logout():
 
 
 login_page = st.Page(login, title="Log in", icon=":material/login:")
-logout_page = st.Page(logout, title="Log out", icon=":material/logout:")
+account_page = st.Page(account, title="Account", icon=":material/account_circle:")
+settings_page = st.Page(settings, title="Settings", icon=":material/settings:")
 dashboard = st.Page("dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True)
 bugs = st.Page("reports/bugs.py", title="Bug reports", icon=":material/bug_report:")
 alerts = st.Page("reports/alerts.py", title="System alerts", icon=":material/notification_important:")
@@ -92,10 +102,10 @@ history = st.Page("tools/history.py", title="History", icon=":material/history:"
 # HERE IS THE CHANGE
 from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pages
 
-menu_data, app_map = build_menu_from_st_pages(
+menu_data, menu_account_data, app_map = build_menu_from_st_pages(
     {"Reports": [dashboard, bugs, alerts]}, {"Tools": [search, history]},
-    login_app=login_page,
-    logout_app=logout_page,
+    login_app=login_page, account_app=account_page, settings_app=settings_page,
+    logout_callback=logout,
 )
 st.session_state["app_map"] = app_map
 
@@ -113,7 +123,7 @@ if st.session_state.logged_in:
 
     app_id = st_navbar(
         menu_definition=menu_data if st.session_state.logged_in else [],
-        login_name=logout_page.title if st.session_state.logged_in else login_page.title,
+        login_name=menu_account_data,
         hide_streamlit_markers=False,
         override_app_selected_id=st.session_state.app_id,
         sticky_nav=sticky_nav,  # at the top or not

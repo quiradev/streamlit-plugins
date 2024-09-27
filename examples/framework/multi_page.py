@@ -4,7 +4,7 @@ from streamlit_plugins.framework.multilit import MultiApp, MultiHeadApp
 def run():
     multi_app = MultiApp(
         title="Demo", nav_horizontal=True, layout='wide', favicon="📚",
-        use_navbar=True, navbar_sticky=True, navbar_mode="top",
+        use_navbar=False, navbar_sticky=True, navbar_mode="top",
         use_cookie_cache=True, sidebar_state='auto',
         navbar_animation=True, allow_url_nav=True, hide_streamlit_markers=False, use_banner_images=None,
         banner_spacing=None, clear_cross_app_sessions=True, session_params=None,
@@ -57,9 +57,9 @@ def run():
     @multi_app.addapp(title="Home", is_home=True)
     def my_home():
         st.info('HOME')
-        if st.button('Demo1'):
+        if st.button('Demo1', key="change-app_demo1"):
             multi_app.change_app(demo1_app.get_id())
-        if st.button('Demo2'):
+        if st.button('Demo2', key="change-app_demo2"):
             multi_app.change_app(demo2_app.get_id())
 
     multi_app.add_app(title="Demo1", app=demo1_app, icon=None)

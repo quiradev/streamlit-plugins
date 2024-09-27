@@ -1,5 +1,5 @@
 import os
-from typing import Literal
+from typing import Literal, Callable
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -324,14 +324,20 @@ MATERIAL_ICON_LOGOUT = ":material/logout:"
 MATERIAL_ICON_USER_CIRCLE = ":material/account_circle:"
 
 
-def build_menu_from_st_pages(*pages: StreamlitPage | dict, login_app: StreamlitPage = None,
-                             logout_app: StreamlitPage = None) -> tuple[list[dict], dict[str, StreamlitPage]]:
+def build_menu_from_st_pages(
+    *pages: StreamlitPage | dict,
+    login_app: StreamlitPage = None, logout_callback: Callable = None, account_app: StreamlitPage = None,
+    settings_app: StreamlitPage = None
+) -> tuple[list[dict], dict, dict[str, StreamlitPage]]:
+    if login_app and not logout_callback:
+        raise ValueError("You must provide a logout callback if you provide a login app")
+
     menu = []
     app_map = {}
     for page in pages:
         if isinstance(page, dict):
             for label, sub_pages in page.items():
-                submenu, sub_app_map = build_menu_from_st_pages(*sub_pages)
+                submenu, _, sub_app_map = build_menu_from_st_pages(*sub_pages)
                 menu.append({
                     'id': label.lower().replace(" ", "_"),
                     'label': label,
@@ -350,10 +356,32 @@ def build_menu_from_st_pages(*pages: StreamlitPage | dict, login_app: StreamlitP
     if login_app:
         app_map["app_login"] = login_app
 
-    if logout_app:
-        app_map["app_logout"] = logout_app
+    account_login_definition = {
+        'id': "account_menu",
+        'label': "Account",
+        'icon': MATERIAL_ICON_USER_CIRCLE,
+        'ttip': "Account", 'style': {},
+        'submenu': []
+    }
+    if account_app and logout_callback:
+        account_login_definition['submenu'].append(
+            {'label': "Profile", 'id': "app_account_profile", 'icon': MATERIAL_ICON_USER_CIRCLE, 'ttip': "Profile"},
+        )
+        app_map["app_account_profile"] = account_app
 
-    return menu, app_map
+        if settings_app:
+            account_login_definition['submenu'].append(
+                {'label': "Settings", 'id': "app_account_settings", 'icon': ":material/settings:", 'ttip': "Settings"}
+            )
+            app_map["app_account_settings"] = settings_app
+
+    if logout_callback:
+        account_login_definition['submenu'].append(
+            {'label': "Logout", 'id': "app_logout", 'icon': MATERIAL_ICON_LOGOUT, 'ttip': "Logout"}
+        )
+        app_map["app_logout"] = st.Page(logout_callback, title="Log out", icon=MATERIAL_ICON_LOGOUT)
+
+    return menu, account_login_definition, app_map
 
 
 def st_navbar(
