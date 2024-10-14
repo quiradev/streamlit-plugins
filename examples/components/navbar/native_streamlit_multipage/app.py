@@ -25,11 +25,6 @@ PASSWORD = "admin"
 
 def my_sidebar():
     with st.sidebar:
-        st.logo(
-            image="https://streamlit.io/images/brand/streamlit-logo-primary-colormark-darktext.svg",
-            icon_image="https://streamlit.io/images/brand/streamlit-mark-color.png"
-        )
-
         st.write("Logged in:", st.session_state.logged_in)
         position_mode = st.radio(
             "Navbar position mode",
@@ -109,6 +104,10 @@ menu_data, menu_account_data, app_map = build_menu_from_st_pages(
 )
 st.session_state["app_map"] = app_map
 
+st.logo(
+    image="https://streamlit.io/images/brand/streamlit-logo-primary-colormark-darktext.svg",
+    icon_image="https://streamlit.io/images/brand/streamlit-mark-color.png"
+)
 my_sidebar()
 
 position_mode = st.session_state.get("position_mode", "top")

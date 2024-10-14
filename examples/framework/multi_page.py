@@ -1,20 +1,40 @@
 import streamlit as st
 from streamlit_plugins.framework.multilit import MultiApp, MultiHeadApp
 
+
 def run():
+    with st.sidebar:
+        position_mode = st.radio(
+            "Navbar position mode",
+            ["top", "under"],
+            index=0 if st.session_state.get("position_mode", "top") == "top" else 1,
+        )
+        sticky_nav = st.checkbox(
+            "Sticky navbar", value=st.session_state.get("sticky_nav", True)
+        )
+        within_fragment = st.checkbox(
+            "Use within fragment", value=st.session_state.get("within_fragment", False)
+        )
+        st.divider()
+        st.session_state["position_mode"] = position_mode
+        st.session_state["sticky_nav"] = sticky_nav
+        st.session_state["within_fragment"] = within_fragment
+    # sticky_nav = False
+    # position_mode = "top"
+    # within_fragment = False
     multi_app = MultiApp(
         title="Demo", nav_horizontal=True, layout='wide', favicon="📚",
-        use_navbar=False, navbar_sticky=True, navbar_mode="top",
+        use_navbar=True, navbar_sticky=sticky_nav, navbar_mode=position_mode,
         use_cookie_cache=True, sidebar_state='auto',
-        navbar_animation=True, allow_url_nav=True, hide_streamlit_markers=False, use_banner_images=None,
+        navbar_animation=True, allow_url_nav=False, hide_streamlit_markers=False, use_banner_images=None,
         banner_spacing=None, clear_cross_app_sessions=True, session_params=None,
-        use_loader=False, within_fragment=True
+        use_loader=True, within_fragment=within_fragment
     )
 
     class Demo1App(MultiHeadApp):
         def run(self):
             with st.sidebar:
-                st.write("This is a sidebar")
+                st.write("This is a sidebar defined on App")
 
             st.title("Demo 1")
             _LOREM_IPSUM = [
@@ -54,7 +74,7 @@ def run():
     demo1_app = Demo1App()
     demo2_app = Demo2App(with_loader=False)
 
-    @multi_app.addapp(title="Home", is_home=True)
+    @multi_app.addapp(title="Home", app_type="home")
     def my_home():
         st.info('HOME')
         if st.button('Demo1', key="change-app_demo1"):

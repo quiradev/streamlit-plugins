@@ -16,12 +16,28 @@ if _RELEASE:
 else:
     _component_func = components.declare_component("nav_bar", url="http://localhost:3000")
 
-GAP_BETWEEN_COMPS = "1rem"
+GAP_BETWEEN_COMPS = 1
+
+major, minnor, bug = st.__version__.split('.')
+major, minnor, bug = int(major), int(minnor), int(bug)
+
+
+TOP_SIDE_ELEMENTS_MARGIN = 1.05
+TOP_SIDE_ELEMENTS_WIDTH = 4
+TOP_LINE_HEIGHT = 0.125
+MARGIN_SIDE_NARROW_DIFF = 2
+MARGIN_SIDE_NAVBAR = 0.5
+SCROLLBAR_WIDTH = 6  # px
+HEADER_HEIGHT = 3.75
+
+COLLAPSE_CONTROLL_CLASS = "collapsedControl"
+if major == 1:
+    if 36 < minnor <= 37:
+        COLLAPSE_CONTROLL_CLASS = "collapsedControl"
+    if minnor >= 38:
+        COLLAPSE_CONTROLL_CLASS = "stSidebarCollapsedControl"
 
 NAV_STYLE = f"""
-header[data-testid="stHeader"] {{
-    margin-right: 6px;
-}}
 div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"] {{
     height: 3.75rem;
 }}
@@ -34,11 +50,13 @@ iframe[title="{_component_func.name}"] {{
     width: 100%;
 }}
 div:has(> iframe[title="{_component_func.name}"]) {{
+    position: sticky;
     opacity: 1 !important;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 2.5rem;
+    padding: 0;
+    margin-top: calc(-1 * {GAP_BETWEEN_COMPS}rem);
 }}
 """
 
@@ -55,13 +73,6 @@ UNDER_NAV_STYLE = f"""
     .stApp > header {{
         border-bottom: 1px solid #c3c3c380;
     }}
-    div:has(> iframe[title="{_component_func.name}"]) {{
-        position: fixed;
-        z-index: 1000;
-        top: calc(3.75rem - 0.125rem);
-        padding: 0;
-        margin-top: calc((-1 * {GAP_BETWEEN_COMPS}));
-    }}
     div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"],
     iframe[title="{_component_func.name}"] {{
         position: relative;
@@ -70,40 +81,35 @@ UNDER_NAV_STYLE = f"""
         background-color: var(--background-color);
         /* box-shadow: none !important; */
     }}
+    div:has(> iframe[title="{_component_func.name}"]) {{
+        z-index: 1000;
+    }}
     @media (min-width: 576px) {{
         div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% + 10rem + 1rem - 1px);
-            margin-left: -5.5rem;
-            padding: 0 1.5rem;
+            width: 100%;
         }}
     }}
-    @media (max-width: 575px) {{
+    @media (max-width: 575.98px) {{
         div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100vw + 1rem - 7px);
-            margin-left: -1.5rem;
-            padding: 0 1.5rem;
+            width: 100%;
         }}
     }}
     @media (min-width: 768px) {{
         div:has(> iframe[title="{_component_func.name}"]) {{
-            position: sticky !important;
-            width: calc(100% + 8rem + 1rem - 1px);
-            margin-top: calc(-3rem + (-1 * {GAP_BETWEEN_COMPS}));
-            margin-left: -4.5rem;
-            padding: 0 0.5rem;
+            width: 100%;
         }}
     }}
 """
 
 UNDER_NAV_STICKY_STYLE = f"""
-    div:has(> iframe[title="{_component_func.name}"]) + div {{
-        margin-top: 2rem;
+    div:has(> iframe[title="{_component_func.name}"]) {{
+        top: calc({HEADER_HEIGHT}rem + 1rem);
     }}
 """
 
 UNDER_NAV_FIXED_STYLE = f"""
-    div:has(> iframe[title="{_component_func.name}"]) + div {{
-        margin-top: 2rem;
+    div:has(> iframe[title="{_component_func.name}"]) {{
+        top: calc({HEADER_HEIGHT}rem - 5px);
     }}
 """
 
@@ -112,144 +118,109 @@ NAV_TOP_STYLE = f"""
         background: transparent !important;
     }}
     div:has(> iframe[title="{_component_func.name}"]) {{
-        top: 0rem;
+        top: {TOP_LINE_HEIGHT}rem;
         z-index: 999990;
         padding: 0;
-        margin-top: calc((-1 * {GAP_BETWEEN_COMPS}));
     }}
     div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"],
     iframe[title="{_component_func.name}"] {{
         position: relative;
-        top: 0.125rem;
+        top: {TOP_LINE_HEIGHT}rem;
         border-top-right-radius: 0;
         border-top-left-radius: 0;
     }}
-    [data-testid="collapsedControl"] {{
-        /* flex-direction: column !important; */
+    [data-testid="{COLLAPSE_CONTROLL_CLASS}"] {{
         border-right: solid 1px #c3c3c380;
     }}
-    [data-testid="collapsedControl"]:has(> [data-testid="stLogoSpacer"]) {{
+    [data-testid="{COLLAPSE_CONTROLL_CLASS}"]:has(> [data-testid="stLogoSpacer"]) {{
         flex-direction: row !important;
     }}
-"""
-
-NAV_TOP_FIXED_LOGO_MARGIN = "0.7125em"
-NAV_TOP_FIXED_STYLE = f"""
-    div:has(> iframe[title="{_component_func.name}"]) {{
-        /* width: calc(100% - 6rem); */
-        /* left: 4.25rem; */
-    }}
-    @media (max-width: 768px) {{
-        div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 8rem);
-            left: 4.5rem;
-        }}
-    }}
-    @media(max-width: 575px) {{
-        div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 5em);
-            left: 0;
-        }}
-        body:has([data-testid="collapsedControl"] > img) div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 11rem);
-            left: 7.5rem;
-        }}
-        body:has([data-testid="collapsedControl"] > img:last-child) div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 9rem);
-            left: 5.125rem;
-        }}
-        body:has([data-testid="collapsedControl"] > [data-testid="stLogoSpacer"]) div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 7.75rem);
-            left: 4.125rem;
-        }}
-    }}
-    @media (min-width: 576px) {{
-        div:has(> iframe[title="{_component_func.name}"]) {{
-            width: 100%;
-            padding: 0;
-            margin-left: calc(-0.5rem - 0.5em);
-        }}
-        body:has([data-testid="collapsedControl"] > img:last-child) div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 1.25em);
-            margin-left: calc(-0.5rem + 0.75em);
-        }}
-        body:has([data-testid="collapsedControl"] > img) div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 3em);
-            margin-left: calc(-0.5rem + 3em);
-        }}
-        body:has([data-testid="collapsedControl"] > [data-testid="stLogoSpacer"]) div:has(> iframe[title="{_component_func.name}"]) {{
-            width: 100%;
-            margin-left: calc(-0.5rem - 0.125em);
-        }}
-    }}
     div:has(> iframe[title="{_component_func.name}"]) + div {{
         margin-top: 2rem;
     }}
-"""
-
-NAV_TOP_STICKY_LOGO_MARGIN = "1.25em"
-NAV_TOP_STICKY_STYLE = f"""
-    div:has(> iframe[title="{_component_func.name}"]) {{
-        width: calc(100% - 8.5rem);
-        left: calc(4.25rem + {NAV_TOP_STICKY_LOGO_MARGIN});
-    }}
-    @media (min-width: 576px) {{
-        div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - {NAV_TOP_STICKY_LOGO_MARGIN});
-            margin-left: -4.25rem;
-            padding: 0;
-        }}
-        body:has([data-testid="collapsedControl"] > img:last-child) div:has(> iframe[title="{_component_func.name}"]) {{
-           width: calc(100% - 2em);
-           left: 4.25em;
-        }}
-        body:has([data-testid="collapsedControl"] > img) div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 3.5em);
-            left: 7.5em;
-        }}
-        body:has([data-testid="collapsedControl"] > [data-testid="stLogoSpacer"]) div:has(> iframe[title="{_component_func.name}"]) {{
-            width: 100%;
-            left: 4.25rem;
-        }}
-    }}
-    @media(max-width: 575px) {{
-        div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 5rem);
-            left: 0;
-        }}
-        body:has([data-testid="collapsedControl"] > img:last-child) div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 9.215em);
-            left: 5.25rem;
-        }}
-        body:has([data-testid="collapsedControl"] > img) div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 11em);
-            left: 7.5rem;
-        }}
-        body:has([data-testid="collapsedControl"] > [data-testid="stLogoSpacer"]) div:has(> iframe[title="{_component_func.name}"]) {{
-            width: calc(100% - 8rem);
-            left: 4.25rem;
-        }}
-    }}
-    div:has(> iframe[title="{_component_func.name}"]) + div {{
-        margin-top: 2rem;
-    }}
-"""
-
-VERTICAL_ST_STYLE = """
-    header {
-        position: static;
-    }
     
-    [data-testid="stToolbar"] {
+    /* AJUSTE DEL ANCHO */
+    @media (min-width: 576px) {{
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - {MARGIN_SIDE_NAVBAR}rem + {SCROLLBAR_WIDTH}px);
+        }}
+        [data-layout="narrow"] div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - {MARGIN_SIDE_NAVBAR}rem + {SCROLLBAR_WIDTH}px - 2 * {MARGIN_SIDE_NARROW_DIFF}rem);
+            left: calc({TOP_SIDE_ELEMENTS_MARGIN}rem + {TOP_SIDE_ELEMENTS_WIDTH}rem);
+        }}
+        [data-layout="narrow"]:has(> [data-testid="stSidebar"][aria-expanded="true"]) div:has(> iframe[title="{_component_func.name}"]) {{
+            left: 0;
+        }}
+    }}
+    @media(max-width: 575.98px) {{
+        div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 2*({TOP_SIDE_ELEMENTS_WIDTH}rem + {MARGIN_SIDE_NAVBAR}rem));
+            left: calc({TOP_SIDE_ELEMENTS_MARGIN}rem + {TOP_SIDE_ELEMENTS_WIDTH}rem + {MARGIN_SIDE_NAVBAR}rem);
+        }}
+        [data-layout="narrow"] div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - 2*({TOP_SIDE_ELEMENTS_WIDTH}rem + {MARGIN_SIDE_NAVBAR}rem - {MARGIN_SIDE_NARROW_DIFF}rem));
+            left: calc({TOP_SIDE_ELEMENTS_MARGIN}rem + {TOP_SIDE_ELEMENTS_WIDTH}rem + {MARGIN_SIDE_NAVBAR}rem);
+        }}
+        [data-layout="wide"]:not(:has(> [data-testid="{COLLAPSE_CONTROLL_CLASS}"])) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: calc(100% - {TOP_SIDE_ELEMENTS_WIDTH}rem);
+            left: 0;
+        }}
+        [data-layout="narrow"]:not(:has(> [data-testid="{COLLAPSE_CONTROLL_CLASS}"])) div:has(> iframe[title="{_component_func.name}"]) {{
+            width: 100%;
+            margin-left: calc(-1*({MARGIN_SIDE_NARROW_DIFF}rem));
+            left: 0;
+        }}
+    }}
+"""
+
+NAV_TOP_FIXED_STYLE = f"""
+"""
+
+NAV_TOP_STICKY_STYLE = f"""
+"""
+
+VERTICAL_ST_STYLE = f"""
+    header {{
+        position: static;
+    }}
+    @media(max-width: 575px) {{
+        body:has( [data-testid="{COLLAPSE_CONTROLL_CLASS}"] > [data-testid="stLogo"]) [data-testid="stHeader"] {{
+            height: 5.75rem;
+        }}
+    }}
+    [data-testid="{COLLAPSE_CONTROLL_CLASS}"], [data-testid="stToolbar"] {{
+        max-width: {TOP_SIDE_ELEMENTS_WIDTH}rem;
+        width: {TOP_SIDE_ELEMENTS_WIDTH}rem;
+        backdrop-filter: blur(5px);
+        max-height: 3rem;
+    }}
+    [data-testid="stToolbar"] {{
         display: flex;
         flex-direction: column-reverse;
         flex-wrap: nowrap;
         align-items: flex-end;
         border-left: solid 1px #c3c3c380;
-    }
-    
-    [data-testid="stStatusWidget"] {
-        position: absolute;
+        justify-content: flex-end;
+        overflow: visible;
+        
+        /* AJUSTE DEL LATERAL */
+        right: calc({TOP_SIDE_ELEMENTS_MARGIN}rem + {SCROLLBAR_WIDTH}px);
+    }}
+    [data-testid="{COLLAPSE_CONTROLL_CLASS}"] {{
+        flex-direction: column !important;
+        justify-content: flex-start;
+        
+        /* AJUSTE DEL LATERAL */
+        left: {TOP_SIDE_ELEMENTS_MARGIN}rem;
+    }}
+    [data-testid="{COLLAPSE_CONTROLL_CLASS}"]:has([data-testid="stLogoSpacer"]) {{
+        flex-direction: column-reverse !important;
+    }}
+    [data-testid="{COLLAPSE_CONTROLL_CLASS}"] [data-testid="stLogoSpacer"] {{
+        display: none;
+    }}
+    [data-testid="stStatusWidget"] {{
+        position: relative;
         right: 0;
         top: 100%;
         margin-top: 1rem;
@@ -258,21 +229,20 @@ VERTICAL_ST_STYLE = """
         padding: 0.5em;
         border: 1px solid #dcdcdc2e;
         border-radius: 5px;
-    }
+    }}
     
-    [data-testid="stToolbar"] > [data-testid="stToolbarActions"] {
+    [data-testid="stToolbar"] > [data-testid="stToolbarActions"] {{
         display: flex;
         -webkit-box-align: center;
         align-items: flex-end;
         flex-direction: column;
         flex-wrap: nowrap;
-    }
+    }}
 """
 
 STICKY_NAV_STYLE = f"""
     div:has(> iframe[title="{_component_func.name}"]) {{
-        position: sticky;
-        padding-top: 0.5rem !important;
+        
     }}
     div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"],
     iframe[title="{_component_func.name}"] {{
@@ -281,9 +251,11 @@ STICKY_NAV_STYLE = f"""
     }}
 """
 FIXED_NAV_STYLE = f"""
+.stMainBlockContainer {{
+    padding-top: 3rem;
+}}
 div:has(> iframe[title="{_component_func.name}"]) {{
-    position: sticky; /* Fixed with custom width */
-    /* margin-top: calc(-6rem + (-1 * {GAP_BETWEEN_COMPS})); */
+    margin-bottom: 1rem;
 }}
 div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"],
 iframe[title="{_component_func.name}"] {{
@@ -392,7 +364,8 @@ def st_navbar(
     option_menu=False,
     default_app_selected_id=None,
     override_app_selected_id=None,
-    reclick_load=True
+    reclick_load=True,
+    input_styles: str = None
 ):
     # if key not in st.session_state:
     #     st.session_state[key] = None
@@ -492,7 +465,8 @@ def st_navbar(
     if hide_streamlit_markers:
         style += HIDE_ST_STYLE
 
-    st.markdown(f"<style>\n{style}\n<style>", unsafe_allow_html=True)
+    input_styles = input_styles or ""
+    st.markdown(f"<style>\n{input_styles}\n{style}\n<style>", unsafe_allow_html=True)
     component_value = _component_func(
         menu_definition=menu_definition, key=key, home=home_data, fvalue=force_value,
         login=login_data, override_theme=override_theme, use_animation=use_animation,

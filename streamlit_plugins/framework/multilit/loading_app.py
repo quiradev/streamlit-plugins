@@ -1,6 +1,7 @@
 import traceback
 
 import streamlit as st
+from streamlit.runtime.scriptrunner import RerunException, StopException
 
 from streamlit_plugins.framework.multilit.app_template import MultiHeadApp
 from streamlit_plugins.components.loader import LoadersLib, Loader
@@ -18,14 +19,20 @@ class LoadingApp(MultiHeadApp):
                 if hasattr(app_target, "title"):
                     status_msg = app_target.title
 
-            loader = Loader(loader_container=self.loader_container, text=status_msg, loader_name=LoadersLib.book_loader)
+            loader = Loader(loader_container=self.loader_container, text=status_msg or "", loader_name=LoadersLib.book_loader)
             try:
                 loader.run_loader()
                 with self.app_container:
                     app_target.run()
             finally:
                 loader.stop_loader()
+                ...
 
+        except RerunException as e:
+            st.rerun()
+        except StopException as e:
+            ...
         except Exception as e:
-            st.error(f"Error details: {e}")
+            ...
+            # st.error(f"Error details: {e}")
             traceback.print_exc()

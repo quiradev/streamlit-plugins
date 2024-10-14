@@ -4458,7 +4458,6 @@ class Loader:
             with self.loader_container:
                 self.display_element.empty()
 
-
     def __enter__(self):
         self.run_loader()
 

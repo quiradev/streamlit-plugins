@@ -22,7 +22,10 @@ class MultiHeadApp(ABC):
 
     def __init__(self, with_loader=None):
         self._id = None
+        self.access_level = None
         self.with_loader = with_loader
+        self.session_state = None
+        self.parent_app = None
 
     def get_id(self):
         return self._id
@@ -52,43 +55,14 @@ class MultiHeadApp(ABC):
         self.session_state = session_state
         self.parent_app = parent_app
 
-    def set_access(self, allow_access=0, access_user='', cache_access=False):
-        """
-        Set the access permission and the assigned username for that access during the current session.
-        Parameters
-        -----------
-        allow_access: int, 0
-            Value indicating if access has been granted, can be used to create levels of permission.
-        access_user: str, None
-            The username the access has been granted to for this session.
-        cache_access: bool, False
-            Save these access details to a browser cookie so the user will auto login when they visit next time.
-        """
-
-        # self.parent_app.set_access(allow_access,access_user,cache_access)
-
-        # Set the global access flag
-        self.session_state.allow_access = allow_access
-
-        # Also, who are we letting in..
-        self.session_state.current_user = access_user
-
-    def check_access(self):
+    def check_access(self, actual_level: int) -> bool:
         """
         Check the access permission and the assigned user for the running session.
-
-        Returns
-        ---------
-        tuple: access_level, username
-
         """
+        if self.access_level is None:
+            return True
 
-        username = None
-
-        if hasattr(self.session_state, 'current_user'):
-            username = str(self.session_state.current_user)
-
-        return int(self.session_state.allow_access), username
+        return self.access_level >= actual_level
 
     def do_redirect(self, redirect_target_app=None):
         """
