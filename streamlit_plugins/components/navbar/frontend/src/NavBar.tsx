@@ -3,7 +3,7 @@ import React, { ReactNode, useState, useEffect, useCallback } from "react";
 import { useRenderData } from "./NavBarProvider";
 import NavItem from "./NavItem.jsx";
 import NavSubItem from "./NavSubItem.jsx";
-import "./bootstrap.min.css";
+// import "./bootstrap.min.css";
 
 interface MenuItem {
   icon: string;

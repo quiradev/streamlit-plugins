@@ -12,10 +12,6 @@ nav.navbar {
     align-items: stretch;
 }
 
-.hori-selector .left, .hori-selector .right{
-    display: none;
-}
-
 .dropdown-toggle:after {
     display: inline-block;
     margin-left: .255em;
@@ -99,9 +95,6 @@ nav.navbar {
     scale: 1.5 1;
 }
 
-.hori-selector {
-    transition: none;
-}
 
 .navbar-mainbg {
     height: 3.75rem;
@@ -275,51 +268,6 @@ nav.navbar:before {
   #complexnavbarSupportedContent .active>a:not(:only-child):after {
     transform: rotate(90deg);
   }
-  /*
-  .hori-selector{
-    display:inline-block;
-    position:absolute;
-    height: 100%;
-    top: 0px;
-    left: 0px;
-    transition-duration:0.2s;
-    transition-timing-function: cubic-bezier(0.23, -0.18, 0.09, 0.52);
-    background-color: var(--option_active);
-    border-radius: 15px;
-    margin-top: 0px;
-  }
-  .hori-selector .right,
-  .hori-selector .left{
-    position: absolute;
-    width: 25px;
-    height: 25px;
-    background-color: var(--option_active);
-    bottom: 10px;
-  }
-  .hori-selector .right{
-    right: -25px;
-  }
-  .hori-selector .left{
-    left: -25px;
-  }
-  .hori-selector .right:before,
-  .hori-selector .left:before{
-    content: '';
-      position: absolute;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background-color: var(--menu_background);
-  }
-  .hori-selector .right:before{
-    bottom: 0;
-      right: -25px;
-  }
-  .hori-selector .left:before{
-    bottom: 0;
-      left: -25px;
-  }
-  */
 
 
   /* @media(min-width: 992px){ */
@@ -352,32 +300,6 @@ nav.navbar:before {
     & #complexnavbarSupportedContent ul li a {
       padding: 0.5rem;
     }
-    /*
-    .hori-selector{
-      margin-top: 0px;
-
-      border-radius: 15px;
-    }
-    .hori-selector .left,
-    .hori-selector .right{
-      right: 0px;
-    }
-    .hori-selector .left{
-      top: -25px;
-      left: auto;
-    }
-    .hori-selector .right{
-      bottom: -25px;
-    }
-    .hori-selector .left:before{
-      left: -25px;
-      top: -25px;
-    }
-    .hori-selector .right:before{
-      bottom: -25px;
-      left: -25px;
-    }
-    */
     & #complexnavbarSupportedContent {
         top: 3.5rem;
     }

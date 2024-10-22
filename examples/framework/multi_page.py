@@ -85,6 +85,9 @@ def run():
     multi_app.add_app(title="Demo1", app=demo1_app, icon=None)
     multi_app.add_app(title="Demo2", app=demo2_app, icon=None)
 
+    @multi_app.addapp(title="Account", app_type="account")
+    def my_home():
+
     multi_app.get_nav_transition()
 
     # st.logo(

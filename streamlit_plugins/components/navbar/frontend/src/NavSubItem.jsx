@@ -1,5 +1,5 @@
 import React from "react"
-import "./bootstrap.min.css"
+// import "./bootstrap.min.css"
 
 const NavSubItem = (props) => {
   let menu_subitem = props.subitem;

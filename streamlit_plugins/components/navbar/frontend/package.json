@@ -10,8 +10,8 @@
     "nodemon": "^2.0.22",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
-    "react-bootstrap-icons": "^1.5.0",
-    "streamlit-component-lib": "^2.0.0"
+    "streamlit-component-lib": "^2.0.0",
+    "@popperjs/core": "^2.11.6"
   },
   "devDependencies": {
     "@babel/plugin-transform-private-property-in-object": "^7.24.7",

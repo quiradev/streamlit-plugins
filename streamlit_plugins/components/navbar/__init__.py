@@ -6,8 +6,8 @@ import streamlit.components.v1 as components
 from streamlit.navigation.page import StreamlitPage
 
 # _RELEASE = os.getenv("RELEASE", "").upper() != "DEV"
-_RELEASE = True
-# _RELEASE = False
+# _RELEASE = True
+_RELEASE = False
 
 if _RELEASE:
     absolute_path = os.path.dirname(os.path.abspath(__file__))
@@ -288,6 +288,27 @@ HIDE_ST_STYLE = """
     }
 """
 
+
+VERTICAL_NAV_STYLE = f"""
+.stAppViewContainer {{
+    margin-left: 4rem;
+}}
+data-testid="stSidebarCollapsedControl" {{
+    margin-left: 4rem;
+}}
+div:has(> iframe[title="{_component_func.name}"]) {{
+    position: fixed;
+    height: 100vh;
+    top: 0;
+    margin: 0;
+    left: 0;
+    width: 4rem;
+}}
+iframe[title="{_component_func.name}"]) {{
+    height: 100vh;
+}}
+"""
+
 # TODO: Hay que poner margenes en el iframe para que no ocupe el 100% de ancho si es menor la pantalla a 575
 
 MATERIAL_ICON_HOME = ":material/home:"
@@ -359,7 +380,7 @@ def build_menu_from_st_pages(
 def st_navbar(
     menu_definition: list[dict], first_select=0, key="NavBarComponent", home_name=None, login_name=None,
     override_theme=None, sticky_nav=True, hide_streamlit_markers=True,
-    position_mode: Literal["top", "under"] = 'under',
+    position_mode: Literal["top", "under", "side"] = 'under',
     force_value=None, use_animation=True,
     option_menu=False,
     default_app_selected_id=None,
@@ -471,6 +492,7 @@ def st_navbar(
         menu_definition=menu_definition, key=key, home=home_data, fvalue=force_value,
         login=login_data, override_theme=override_theme, use_animation=use_animation,
         override_app_selected_id=override_app_selected_id,
+        position_mode=position_mode,
         default=default_app_selected_id, default_app_selected_id=default_app_selected_id,
         reclick_load=reclick_load
     )

@@ -6,10 +6,11 @@ import { BaseProvider, LightTheme } from "baseui"
 import { Client as Styletron } from "styletron-engine-atomic"
 import { Provider as StyletronProvider } from "styletron-react"
 
+import { createPopper } from '@popperjs/core';
+
 // import { useRenderData } from "./NavBarProvider";
 import NavItem from "./NavItem.jsx";
 import NavSubItem from "./NavSubItem.jsx";
-import "./bootstrap.min.css";
 
 // Initialize our Styletron engine
 const engine = new Styletron()
@@ -31,12 +32,15 @@ interface OverrideTheme {
   option_active: string;
 }
 
+type PositionMode = "top" | "under" | "side";
+
 interface PythonArgs {
   menu_definition: MenuItem[];
   home: MenuItem;
   login: MenuItem;
   use_animation: boolean;
   override_theme: OverrideTheme;
+  position_mode: PositionMode;
   default_app_selected_id: string;
   override_app_selected_id?: string;
   reclick_load?: boolean;
@@ -76,6 +80,8 @@ class StreamlitComponentBase<S = {}> extends React.PureComponent<
 
 class NativeNavBar extends StreamlitComponentBase<State> {
     theme: Theme;
+    maxNavBarWidth: number = 0;
+    resizeTimeout: NodeJS.Timeout | null = null;
 
     public constructor(props: ComponentProps) {
         super(props);
@@ -141,14 +147,15 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // );
 
         // useEffect resize
-        this.handleResize();
+        // this.handleResize();
+        this.calculateMaxNavBarWidth();
         window.addEventListener("resize", this.handleResize);
 
         // useEffect functions to detect clicks outside the iframe
         window.addEventListener("blur", this.handleBlur);
         document.addEventListener("click", this.handleClickOutside);
 
-        // Streamlit.setFrameHeight();
+        Streamlit.setFrameHeight();
     }
 
     public componentDidUpdate = (prevProps: ComponentProps, prevState: State, snapshot?: any): void => {
@@ -214,6 +221,38 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     }
 
     /* Functions definition */
+    private calculateMaxNavBarWidth = () => {
+        const navbar$ = document.querySelector('nav.navbar') as HTMLElement;
+        if (navbar$ === null) return;
+
+        const container$ = navbar$.querySelector("#complexnavbarSupportedContent") as HTMLElement;
+        if (container$ === null) return;
+
+        const listItems$ = container$.querySelectorAll(":scope > ul > li") as NodeListOf<HTMLElement>;
+        if (listItems$.length === 0) return;
+
+        container$.style.display = "block";
+
+        let totalWidth = 0;
+        listItems$.forEach((li) => {
+            totalWidth += li.clientWidth;
+        });
+
+        this.maxNavBarWidth = totalWidth;
+    }
+    private checkNavbarOverflow = () => {
+        const navbar$ = document.querySelector('nav.navbar') as HTMLElement;
+        if (navbar$ === null) return;
+
+        let navBarWidth = navbar$.clientWidth;
+
+        if (navBarWidth < this.maxNavBarWidth) {
+            navbar$.classList.add('collapsed');
+        } else {
+            navbar$.classList.remove('collapsed');
+        }
+    };
+
     private handleClickOutside = (event: MouseEvent) => {
         if (!document.hasFocus()) {
             this.setState(
@@ -243,66 +282,16 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             () => this.delayed_resize(50)
         );
     };
-    private checkNavbarOverflow = () => {
-        const navbar$ = document.querySelector('nav.navbar') as HTMLElement;
-        if (navbar$ === null) return;
-
-        const container$ = navbar$.querySelector("#complexnavbarSupportedContent") as HTMLElement;
-        if (container$ === null) return;
-        // Cambio el style
-        container$.style.display = "block";
-
-        const pagesList$ = navbar$.querySelector("#complexnavbarSupportedContent > ul.navbar-nav") as HTMLElement;
-        if (pagesList$ === null) return;
-
-        let navBarWidth = 0;
-        // Si tiene collapsed lo calcula y si no lo coje de clientWidth
-        if (navbar$.classList.contains('collapsed') || pagesList$.clientWidth === 0) {
-            // Itero por cada elemento de la lista
-            for (let i = 0; i < pagesList$.children.length; i++) {
-                const element$ = pagesList$.children[i];
-                // Tengo que mirar de cada li, los hijos de li > a
-                // y sumar el ancho de cada elemento ademas del ancho del after de a
-                let spans$ = element$.querySelectorAll("& > a > span");
-                if (spans$.length === 0) continue;
-
-                spans$.forEach((a$) => {
-                    navBarWidth += a$.clientWidth;
-                });
-                // Si el element$ tiene la clase dropdown sumo el ancho del :after
-                if (element$.classList.contains("dropdown")) {
-                    // Obtengo el  pseudoelemento :after
-                    const anchorDropDown$ = element$.querySelector(".dropdown-toggle");
-                    if (anchorDropDown$ === null) continue;
-
-                    const after$ = window.getComputedStyle(anchorDropDown$, ":after");
-                    let dropDownWidth = parseFloat(after$.width);
-                    if (dropDownWidth) navBarWidth += dropDownWidth;
-                }
-            }
-        }
-        else {
-            navBarWidth = pagesList$.clientWidth;
-        }
-        container$.style.display = "none";
-
-        if (pagesList$.scrollWidth > navBarWidth) {
-            navbar$.classList.add('collapsed');
-        } else {
-            navbar$.classList.remove('collapsed');
-        }
-    };
 
     private handleResize = () => {
-        let lastHeight = document.body.scrollHeight;
-        const step_resize = () => {
-            Streamlit.setFrameHeight();
-            if (lastHeight !== document.body.scrollHeight) requestAnimationFrame(step_resize);
-        };
-        this.checkNavbarOverflow();
-        Streamlit.setFrameHeight();
-        requestAnimationFrame(step_resize);
+        if (this.resizeTimeout) {
+            clearTimeout(this.resizeTimeout);
+        }
+        this.resizeTimeout = setTimeout(() => {
+            this.checkNavbarOverflow();
+        }, 200);
 
+        Streamlit.setFrameHeight();
     };
 
     private delayed_resize = (wait_time: number): NodeJS.Timeout => {
