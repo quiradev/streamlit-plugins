@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Literal, Callable
 
 import streamlit as st
@@ -37,7 +38,7 @@ if major == 1:
     if minnor >= 38:
         COLLAPSE_CONTROLL_CLASS = "stSidebarCollapsedControl"
 
-NAV_STYLE = f"""
+NAV_TOP_UNDER_STYLE = f"""
 div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"] {{
     height: 3.75rem;
 }}
@@ -241,9 +242,6 @@ VERTICAL_ST_STYLE = f"""
 """
 
 STICKY_NAV_STYLE = f"""
-    div:has(> iframe[title="{_component_func.name}"]) {{
-        
-    }}
     div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"],
     iframe[title="{_component_func.name}"] {{
         box-shadow: 0 0px 10px 5px #00000012;
@@ -289,12 +287,29 @@ HIDE_ST_STYLE = """
 """
 
 
-VERTICAL_NAV_STYLE = f"""
+SIDE_NAV_STYLE = f"""
 .stAppViewContainer {{
     margin-left: 4rem;
 }}
 data-testid="stSidebarCollapsedControl" {{
     margin-left: 4rem;
+}}
+div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"] {{
+    height: 100vh !important;
+}}
+div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"], iframe[title="{_component_func.name}"] {{
+    outline: 1px solid #c3c3c380;
+    border-radius: 5px;
+    width: 4rem;
+}}
+div:has(> iframe[title="{_component_func.name}"]) {{
+    position: sticky;
+    opacity: 1 !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    margin-top: calc(-1 * {GAP_BETWEEN_COMPS}rem);
 }}
 div:has(> iframe[title="{_component_func.name}"]) {{
     position: fixed;
@@ -303,9 +318,11 @@ div:has(> iframe[title="{_component_func.name}"]) {{
     margin: 0;
     left: 0;
     width: 4rem;
+    z-index: 9999999;
 }}
 iframe[title="{_component_func.name}"]) {{
-    height: 100vh;
+    height: 300px;
+    min-height: 100vh;
 }}
 """
 
@@ -388,8 +405,8 @@ def st_navbar(
     reclick_load=True,
     input_styles: str = None
 ):
-    # if key not in st.session_state:
-    #     st.session_state[key] = None
+    if key not in st.session_state:
+        st.session_state[f"{key}-state"] = "idle"
 
     # first_select = math.floor(first_select / 10)
 
@@ -460,7 +477,7 @@ def st_navbar(
 
     # print()
     # print(f"FROM Override Multi: {override_app_selected_id}")
-    style = NAV_STYLE
+    style = NAV_TOP_UNDER_STYLE
 
     if position_mode == 'under':
         style += UNDER_NAV_STYLE
@@ -468,20 +485,23 @@ def st_navbar(
             style += UNDER_NAV_STICKY_STYLE
         else:
             style += UNDER_NAV_FIXED_STYLE
-    else:
+    elif position_mode == 'top':
         style += NAV_TOP_STYLE
         style += VERTICAL_ST_STYLE
         if sticky_nav:
             style += NAV_TOP_STICKY_STYLE
         else:
             style += NAV_TOP_FIXED_STYLE
+    elif position_mode == 'side':
+        style += SIDE_NAV_STYLE
 
-    if sticky_nav:
-        style += STICKY_NAV_STYLE
-        if position_mode == 'top':
-            style += NAV_TOP_STICKY_STYLE
-    else:
-        style += FIXED_NAV_STYLE
+    if position_mode in ['top', 'under']:
+        if sticky_nav:
+            style += STICKY_NAV_STYLE
+            if position_mode == 'top':
+                style += NAV_TOP_STICKY_STYLE
+        else:
+            style += FIXED_NAV_STYLE
 
     if hide_streamlit_markers:
         style += HIDE_ST_STYLE
@@ -490,13 +510,18 @@ def st_navbar(
     st.markdown(f"<style>\n{input_styles}\n{style}\n<style>", unsafe_allow_html=True)
     component_value = _component_func(
         menu_definition=menu_definition, key=key, home=home_data, fvalue=force_value,
-        login=login_data, override_theme=override_theme, use_animation=use_animation,
+        login=login_data, override_theme=override_theme,
         override_app_selected_id=override_app_selected_id,
         position_mode=position_mode,
         default=default_app_selected_id, default_app_selected_id=default_app_selected_id,
         reclick_load=reclick_load
     )
-    # print(f"FROM Navbar: {component_value}")
+    print(f"FROM Navbar: {component_value}")
+
+    if match := re.search("::(nav-close|nav-open)::", component_value):
+        print("Change size", match.group(1))
+        st.session_state[f"{key}-state"] = "resize"
+        # st.rerun()
 
     if component_value is None:
         component_value = default_app_selected_id

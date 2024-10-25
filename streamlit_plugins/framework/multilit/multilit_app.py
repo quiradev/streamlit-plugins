@@ -627,7 +627,17 @@ class MultiApp:
                     margin-bottom: 1rem;
                 }}
                 """
-
+            if self._navbar_mode == "side":
+                styles = f"""
+                .stMainBlockContainer {{
+                    padding-top: 1rem !important;
+                }}
+                {self._st_navbar_parent_selector} {{
+                    /* position: sticky; */
+                    top: 0;
+                    z-index: 9999999;
+                }}
+                """
         if self._within_fragment:
             new_app_id = self._fragment_navbar(menu_data, styles=styles)
         else:

@@ -11,7 +11,7 @@ except ImportError:
 st.set_page_config(layout="wide")
 
 if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+    st.session_state.logged_in = True
 
 if "app_id" not in st.session_state:
     st.session_state.app_id = None
@@ -22,14 +22,15 @@ if "active_app_id" not in st.session_state:
 USER = "admin"
 PASSWORD = "admin"
 
+positions = ["top", "under", "side"]
 
 def my_sidebar():
     with st.sidebar:
         st.write("Logged in:", st.session_state.logged_in)
         position_mode = st.radio(
             "Navbar position mode",
-            ["top", "under"],
-            index=0 if st.session_state.get("position_mode", "top") == "top" else 1,
+            positions,
+            index=positions.index(st.session_state.get("position_mode", "top")),
         )
         sticky_nav = st.checkbox(
             "Sticky navbar", value=st.session_state.get("sticky_nav", True)
@@ -129,7 +130,7 @@ if st.session_state.logged_in:
         position_mode=position_mode,  # top or subtop
     )
 
-    if position_mode == "under":
+    if position_mode != "top":
         my_heading()
 
 if not st.session_state.logged_in and app_id != "app_login":

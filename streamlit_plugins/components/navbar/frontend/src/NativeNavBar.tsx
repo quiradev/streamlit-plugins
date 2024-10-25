@@ -38,7 +38,6 @@ interface PythonArgs {
   menu_definition: MenuItem[];
   home: MenuItem;
   login: MenuItem;
-  use_animation: boolean;
   override_theme: OverrideTheme;
   position_mode: PositionMode;
   default_app_selected_id: string;
@@ -82,6 +81,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     theme: Theme;
     maxNavBarWidth: number = 0;
     resizeTimeout: NodeJS.Timeout | null = null;
+    key: string;
 
     public constructor(props: ComponentProps) {
         super(props);
@@ -90,7 +90,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         let selectedAppId = args.default_app_selected_id;
         let expandState = false;
         let selectedSubMenu = null;
-        let blockState = "none";
+        let blockState = "nav-close";
         let expandSubMenu = false;
 
         if (args.override_app_selected_id) {
@@ -137,6 +137,9 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             }
         }
         this.theme = theme;
+
+        this.key = this.props.args.key;
+        if (this.key === undefined) this.key = `${Date.now()}`;
     }
 
     public componentDidMount = () => {
@@ -148,7 +151,9 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         // useEffect resize
         // this.handleResize();
-        this.calculateMaxNavBarWidth();
+        if (this.props.args.position_mode !== "side") {
+            this.calculateMaxNavBarWidth();
+        }
         window.addEventListener("resize", this.handleResize);
 
         // useEffect functions to detect clicks outside the iframe
@@ -222,26 +227,27 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
     /* Functions definition */
     private calculateMaxNavBarWidth = () => {
-        const navbar$ = document.querySelector('nav.navbar') as HTMLElement;
+        const navbar$ = document.querySelector(`nav.navbar#navbar-${this.key}`) as HTMLElement;
         if (navbar$ === null) return;
 
-        const container$ = navbar$.querySelector("#complexnavbarSupportedContent") as HTMLElement;
+        const container$ = navbar$.querySelector(".navbar-wrapper") as HTMLElement;
         if (container$ === null) return;
 
         const listItems$ = container$.querySelectorAll(":scope > ul > li") as NodeListOf<HTMLElement>;
         if (listItems$.length === 0) return;
 
-        container$.style.display = "block";
+        container$.classList.add("nav-open");
 
         let totalWidth = 0;
         listItems$.forEach((li) => {
             totalWidth += li.clientWidth;
         });
 
+        container$.classList.remove("nav-open");
         this.maxNavBarWidth = totalWidth;
     }
     private checkNavbarOverflow = () => {
-        const navbar$ = document.querySelector('nav.navbar') as HTMLElement;
+        const navbar$ = document.querySelector(`nav.navbar#navbar-${this.key}`) as HTMLElement;
         if (navbar$ === null) return;
 
         let navBarWidth = navbar$.clientWidth;
@@ -261,7 +267,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                     selectedSubMenu: this.state.selectedSubMenu,
                     expandState: false,
                     expandSubMenu: false,
-                    blockState: "none",
+                    blockState: "nav-close",
                     fromClick: false
                 },
                 () => this.delayed_resize(50)
@@ -276,7 +282,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: false,
                 expandSubMenu: false,
-                blockState: "none",
+                blockState: "nav-close",
                 fromClick: false
             },
             () => this.delayed_resize(50)
@@ -284,12 +290,14 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     };
 
     private handleResize = () => {
-        if (this.resizeTimeout) {
-            clearTimeout(this.resizeTimeout);
+        if (this.props.args.position_mode !== "side") {
+            if (this.resizeTimeout) {
+                clearTimeout(this.resizeTimeout);
+            }
+            this.resizeTimeout = setTimeout(() => {
+                this.checkNavbarOverflow();
+            }, 200);
         }
-        this.resizeTimeout = setTimeout(() => {
-            this.checkNavbarOverflow();
-        }, 200);
 
         Streamlit.setFrameHeight();
     };
@@ -333,7 +341,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             menuItems.unshift(args.home);
         }
         if (args.login) {
-            menuItems.push({ ...args.login, style: { marginLeft: "auto" }, dataset: { login: true } });
+            menuItems.push({ ...args.login, dataset: { login: true } });
         }
         return menuItems;
     };
@@ -346,7 +354,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 selectedSubMenu: null,
                 expandState: false,
                 expandSubMenu: false,
-                blockState: "none",
+                blockState: "nav-close",
                 fromClick: true
             },
             () => {
@@ -392,16 +400,20 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     );
 
     private toggleNav = (): void => {
+        let expandState = this.state.expandState ? "nav-close" : "nav-open"
         this.setState(
             {
                 selectedAppId: this.state.selectedAppId,
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: !this.state.expandState,
                 expandSubMenu: false,
-                blockState: this.state.expandState ? "none" : "block",
+                blockState: expandState,
                 fromClick: false
             },
-            () => this.handleResize()
+            () => {
+                this.handleResize();
+                Streamlit.setComponentValue(`::${expandState}::`);
+            }
         );
     };
 
@@ -409,7 +421,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         const isActive = item.id === this.state.selectedAppId;
         const hasIcon = item.icon ? true : false;
 
-        let iconMarkup;
+        let iconMarkup = <span className="icon-placeholder"></span>;
 
         // Determinar si se usa <i> o <span> para el icono
         if (hasIcon) {
@@ -449,7 +461,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                     data-html="true"
                     title={item.ttip}
                 >
-                    {hasIcon && iconMarkup}
+                    {iconMarkup}
                     <span>{item.label}</span>
                 </a>
                 <ul key={key * 103} className={`dropdown-menu ${this.state.selectedSubMenu === item.id && this.state.expandSubMenu ? "show" : ""}`}>
@@ -511,34 +523,28 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         const args: PythonArgs = this.props.args;
 
         const menuItems = this.addHomeLogin();
-        const menuLook = args.use_animation ? "complexnavbarSupportedContent" : "navbarSupportedContent";
+        const positionMode = args.position_mode;
 
-        // const selector = args.use_animation ? (
-        //   <div className="hori-selector">
-        //     <div className="left"></div>
-        //     <div className="right"></div>
-        //   </div>
-        // ) : null;
-
+        const navbarId = `navbar-${this.key}`
         return (
             <StyletronProvider value={engine}>
                 <BaseProvider theme={LightTheme}>
                     <div key={args.key}>
                         {this.applyTheme()}
-                        <nav className="navbar navbar-expand-custom navbar-mainbg w-100 py-0 py-md-0">
-                        <button
-                            className="navbar-toggler"
-                            type="button"
-                            onClick={this.toggleNav}
-                            aria-expanded={this.state.expandState}
-                        >
-                            <span className="material-symbols-rounded text-color">menu</span>
-                        </button>
-                        <div id={menuLook} className="navbar-collapse" style={{ display: this.state.blockState }}>
-                            <ul className="navbar-nav py-0">
-                            {menuItems.map((item: MenuItem, index: number) => this.createMenu(item, index))}
-                            </ul>
-                        </div>
+                        <nav id={navbarId} className={`navbar navbar-expand-custom navbar-mainbg w-100 py-0 py-md-0 ${positionMode}`}>
+                            <button
+                                className="navbar-toggler"
+                                type="button"
+                                onClick={this.toggleNav}
+                                aria-expanded={this.state.expandState}
+                            >
+                                <span className="material-symbols-rounded text-color">menu</span>
+                            </button>
+                            <div className={`navbar-collapse navbar-wrapper ${this.state.blockState}`}>
+                                <ul className="navbar-nav py-0">
+                                {menuItems.map((item: MenuItem, index: number) => this.createMenu(item, index))}
+                                </ul>
+                            </div>
                         </nav>
                     </div>
                 </BaseProvider>

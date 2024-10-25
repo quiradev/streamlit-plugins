@@ -12,6 +12,17 @@ nav.navbar {
     align-items: stretch;
 }
 
+nav.navbar-mainbg.side {
+    width: 4rem;
+    height: 100vh;
+}
+
+nav.navbar-mainbg.top,
+nav.navbar-mainbg.under{
+    width: 100%;
+    height: 3.75rem;
+}
+
 .dropdown-toggle:after {
     display: inline-block;
     margin-left: .255em;
@@ -20,28 +31,44 @@ nav.navbar {
     border: none;
 }
 
-#complexnavbarSupportedContent {
+.navbar-wrapper {
     width: 100%;
     position: absolute;
 }
 
-#complexnavbarSupportedContent .nav-item > a:not(:only-child):after {
+nav.navbar:not(.side) .navbar-wrapper.nav-close {
+    display: none;
+}
+
+nav.navbar.side:has( .navbar-wrapper.nav-open) {
+    width: 10rem;
+}
+
+.navbar-wrapper, .navbar-wrapper.nav-open {
+    display: block;
+}
+
+.navbar-wrapper .nav-item .icon-placeholder {
+    width: 24px;
+}
+
+.navbar-wrapper .nav-item > a:not(:only-child):after {
     font-family: monospace;
 }
 
-#complexnavbarSupportedContent li.nav-item:has(ul.show) {
+.navbar-wrapper li.nav-item:has(ul.show) {
     background: var(--option_active_translucent);
 }
-#complexnavbarSupportedContent li.nav-item:has(ul.show) > a {
+.navbar-wrapper li.nav-item:has(ul.show) > a {
     color: var(--txc_active) !important;
 }
 
-#complexnavbarSupportedContent li.nav-item:has(ul.show) > a:after {
+.navbar-wrapper li.nav-item:has(ul.show) > a:after {
     -webkit-transform: rotate(90deg);
      transform: rotate(90deg)
 }
 
-#complexnavbarSupportedContent .nav-item:not(:has(ul.show)) > a:after {
+.navbar-wrapper .nav-item:not(:has(ul.show)) > a:after {
     transform: none;
 }
 
@@ -96,15 +123,11 @@ nav.navbar {
 }
 
 
-.navbar-mainbg {
-    height: 3.75rem;
-}
-
-#complexnavbarSupportedContent li {
+.navbar-wrapper li {
     position: initial;
 }
 
-#complexnavbarSupportedContent li.active {
+.navbar-wrapper li.active {
     position: relative;
 }
 
@@ -117,11 +140,11 @@ ul li a .icon {
     margin-right: 0.5rem;
     font-style: normal;
 }
-#complexnavbarSupportedContent ul.navbar-nav li a span {
+.navbar-wrapper ul.navbar-nav li a span {
     white-space: nowrap;
 }
 
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item a {
+.navbar-wrapper ul.navbar-nav li.nav-item a {
     background-color: transparent;
     color: var(--txc_inactive);
     border-radius: 0px;
@@ -133,63 +156,66 @@ ul li a .icon {
 }
 
 
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item:hover,
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item ul.dropdown-menu > li:hover,
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(a:active),
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(a:focus),
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(a:focus-visible) {
+.navbar-wrapper ul.navbar-nav li.nav-item:hover,
+.navbar-wrapper ul.navbar-nav li.nav-item ul.dropdown-menu > li:hover,
+.navbar-wrapper ul.navbar-nav li.nav-item:has(a:active),
+.navbar-wrapper ul.navbar-nav li.nav-item:has(a:focus),
+.navbar-wrapper ul.navbar-nav li.nav-item:has(a:focus-visible) {
     background: var(--option_active_translucent);
 }
 
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item ul.show > li:hover > a {
+.navbar-wrapper ul.navbar-nav li.nav-item ul.show > li:hover > a {
     color: var(--txc_active) !important;
 }
 
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item > a:active,
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item > a:focus,
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item > a:focus-visible,
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item ul.dropdown-menu > li > a:active,
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item ul.dropdown-menu > li > a:focus,
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item ul.dropdown-menu > li > a:focus-visible {
+.navbar-wrapper ul.navbar-nav li.nav-item > a:active,
+.navbar-wrapper ul.navbar-nav li.nav-item > a:focus,
+.navbar-wrapper ul.navbar-nav li.nav-item > a:focus-visible,
+.navbar-wrapper ul.navbar-nav li.nav-item ul.dropdown-menu > li > a:active,
+.navbar-wrapper ul.navbar-nav li.nav-item ul.dropdown-menu > li > a:focus,
+.navbar-wrapper ul.navbar-nav li.nav-item ul.dropdown-menu > li > a:focus-visible {
     color: var(--txc_active) !important;
 }
 
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item > a:hover,
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item > a:hover a {
+.navbar-wrapper ul.navbar-nav li.nav-item > a:hover,
+.navbar-wrapper ul.navbar-nav li.nav-item > a:hover a {
     color: var(--txc_active) !important;
 }
 
-#complexnavbarSupportedContent li.nav-item > a {
+.navbar-wrapper li.nav-item > a {
    border: none;
 }
 
 
-#complexnavbarSupportedContent > ul.navbar-nav > li {
+.navbar-wrapper > ul.navbar-nav > li {
     border-bottom: 0.25rem solid transparent;
 }
 
-#complexnavbarSupportedContent li.nav-item > a {
+.navbar-wrapper li.nav-item > a {
     border-left: 0.25rem solid transparent;
 }
-#complexnavbarSupportedContent li.nav-item[data-login="true"] > a {
+.navbar-wrapper li.nav-item[data-login="true"] {
+    margin-left: auto;
+}
+.navbar-wrapper li.nav-item[data-login="true"] > a {
     border-left: none;
     border-right: 0.25rem solid transparent;
 }
 
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active) > a,
-#complexnavbarSupportedContent ul.navbar-nav li.active > a {
+.navbar-wrapper ul.navbar-nav li.nav-item:has(li.active) > a,
+.navbar-wrapper ul.navbar-nav li.active > a {
     color: var(--option_active);
 }
-#complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active),
-#complexnavbarSupportedContent > ul.navbar-nav > li.active {
+.navbar-wrapper ul.navbar-nav li.nav-item:has(li.active),
+.navbar-wrapper > ul.navbar-nav > li.active {
     border-bottom: 0.25rem solid var(--option_active);
 }
 
-#complexnavbarSupportedContent li.nav-item li.active > a {
+.navbar-wrapper li.nav-item li.active > a {
     /* background: var(--option_active_translucent); */
     border-left: 0.25rem solid var(--option_active);
 }
-#complexnavbarSupportedContent li.nav-item li.active[data-login="true"] > a {
+.navbar-wrapper li.nav-item li.active[data-login="true"] > a {
     border-right: 0.25rem solid var(--option_active);
     border-left: none;
 }
@@ -225,19 +251,19 @@ nav.navbar:before {
     width: 100%;
   }
 
-  #complexnavbarSupportedContent ul{
+  .navbar-wrapper ul{
     padding: 0px;
     margin: 0px;
   }
-  #complexnavbarSupportedContent ul li a i{
+  .navbar-wrapper ul li a i{
     margin: 5px;
   }
-  #complexnavbarSupportedContent li {
+  .navbar-wrapper li {
     list-style-type: none;
     float: center;
     height: 100%;
   }
-  #complexnavbarSupportedContent ul li a{
+  .navbar-wrapper ul li a{
     color: var(--txc_inactive);
     text-decoration: none;
     font-size: auto;
@@ -248,13 +274,13 @@ nav.navbar:before {
     transition-timing-function: cubic-bezier(0.23, -0.18, 0.09, 0.52);
     position: relative;
   }
-  #complexnavbarSupportedContent>ul>li.active>a{
+  .navbar-wrapper>ul>li.active>a{
     color: var(--txc_active);
     background-color: transparent;
     /* transition: all 0.1s; */
     transition: none;
   }
-  #complexnavbarSupportedContent a:not(:only-child):after {
+  .navbar-wrapper a:not(:only-child):after {
     right: 5px;
     top: 0px;
     font-size: auto;
@@ -265,13 +291,14 @@ nav.navbar:before {
     font-weight: 900;
     transition: 0.1s;
   }
-  #complexnavbarSupportedContent .active>a:not(:only-child):after {
+  .navbar-wrapper .active>a:not(:only-child):after {
     transform: rotate(90deg);
   }
 
 
   /* @media(min-width: 992px){ */
-  nav.navbar:not(.collapsed) {
+  nav.navbar.top:not(.collapsed),
+  nav.navbar.under:not(.collapsed) {
     & {
         -ms-flex-flow: row wrap;
         flex-flow: row wrap;
@@ -296,25 +323,26 @@ nav.navbar:before {
 
 
   /*@media (max-width: 991px){*/
-  nav.navbar.collapsed {
-    & #complexnavbarSupportedContent ul li a {
+  nav.navbar.collapsed,
+  nav.navbar.side:not(.collapsed) {
+    & .navbar-wrapper ul li a {
       padding: 0.5rem;
     }
-    & #complexnavbarSupportedContent {
+    & .navbar-wrapper {
         top: 3.5rem;
     }
-    & #complexnavbarSupportedContent ul.navbar-nav li.nav-item.active > a,
-    & #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active) > a {
+    & .navbar-wrapper ul.navbar-nav li.nav-item.active > a,
+    & .navbar-wrapper ul.navbar-nav li.nav-item:has(li.active) > a {
        border-left: 4px solid var(--option_active);
        border-bottom: none;
     }
-    & #complexnavbarSupportedContent ul.navbar-nav li.nav-item.active[data-login="true"] > a,
-    & #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active[data-login="true"]) > a {
+    & .navbar-wrapper ul.navbar-nav li.nav-item.active[data-login="true"] > a,
+    & .navbar-wrapper ul.navbar-nav li.nav-item:has(li.active[data-login="true"]) > a {
         border-right: 4px solid var(--option_active);
         border-left: none;
     }
-    & #complexnavbarSupportedContent ul.navbar-nav li.nav-item:has(li.active),
-    & #complexnavbarSupportedContent > ul.navbar-nav > li.active {
+    & .navbar-wrapper ul.navbar-nav li.nav-item:has(li.active),
+    & .navbar-wrapper > ul.navbar-nav > li.active {
         border-bottom: none;
     }
     & .navbar-nav {
@@ -323,7 +351,7 @@ nav.navbar:before {
     }
   }
 
-#navbarSupportedContent{
+#navbarSupportedContent {
   position: relative;
 }
 
@@ -331,7 +359,7 @@ nav.navbar:before {
   padding: 0px;
   margin: 0px;
 }
-#complexnavbarSupportedContent ul li a i{
+.navbar-wrapper ul li a i{
   margin: 5px;
 }
 #navbarSupportedContent li {
