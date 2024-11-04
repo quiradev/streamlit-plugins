@@ -8,6 +8,10 @@ body {
     color: var(--text-color);
 }
 
+nav.navbar.side {
+    display: block;
+}
+
 nav.navbar {
     align-items: stretch;
 }
@@ -23,12 +27,21 @@ nav.navbar-mainbg.under{
     height: 3.75rem;
 }
 
-.dropdown-toggle:after {
+nav:not(.side) .dropdown-toggle:after,
+nav.side .nav-open .dropdown-toggle:after {
     display: inline-block;
     margin-left: .255em;
     vertical-align: .255em;
     content: ">";
     border: none;
+}
+
+nav.side .navbar-wrapper.nav-close  ul.navbar-nav li.nav-item a {
+    justify-content: center;
+}
+
+nav.side .dropdown-toggle:after {
+    content: unset;
 }
 
 .navbar-wrapper {
@@ -75,6 +88,7 @@ nav.navbar.side:has( .navbar-wrapper.nav-open) {
 .navbar-nav>li>.dropdown-menu {
     position: absolute;
     width: 100%;
+    min-width: unset;
     left: 0;
     top: 100%;
     background-color: var(--secondary-background-color);
@@ -82,6 +96,10 @@ nav.navbar.side:has( .navbar-wrapper.nav-open) {
     border: none;
     /*border-radius: 15px; */
     border-radius: 0;
+}
+
+nav.side .navbar-nav>li>.dropdown-menu {
+    position: relative;
 }
 
 .navbar-toggler {
@@ -140,6 +158,10 @@ ul li a .icon {
     margin-right: 0.5rem;
     font-style: normal;
 }
+nav.side .navbar-wrapper.nav-close ul li a .icon {
+    margin-right: 0;
+}
+
 .navbar-wrapper ul.navbar-nav li a span {
     white-space: nowrap;
 }
@@ -194,12 +216,24 @@ ul li a .icon {
 .navbar-wrapper li.nav-item > a {
     border-left: 0.25rem solid transparent;
 }
-.navbar-wrapper li.nav-item[data-login="true"] {
+nav:not(.side) .navbar-wrapper li.nav-item[data-login="true"] {
     margin-left: auto;
 }
-.navbar-wrapper li.nav-item[data-login="true"] > a {
+nav.side .navbar-wrapper li.nav-item[data-login="true"] {
+    margin-top: 1rem;
+}
+nav:not(.side) .navbar-wrapper li.nav-item[data-login="true"] > a {
     border-left: none;
     border-right: 0.25rem solid transparent;
+}
+
+nav.side .navbar-wrapper.nav-close > ul.navbar-nav > li.nav-item > a > span:not(.icon),
+nav.side .navbar-wrapper.nav-close > ul.navbar-nav > li.nav-item > ul > li > a > span:not(.icon) {
+    display: none;
+}
+
+nav.side .navbar-wrapper.nav-close > ul.navbar-nav > li.nav-item > ul > li:not(.active) > a {
+    border-left: 0.25rem solid transparent;
 }
 
 .navbar-wrapper ul.navbar-nav li.nav-item:has(li.active) > a,

@@ -99,7 +99,12 @@ history = st.Page("tools/history.py", title="History", icon=":material/history:"
 from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pages
 
 menu_data, menu_account_data, app_map = build_menu_from_st_pages(
-    {"Reports": [dashboard, bugs, alerts]}, {"Tools": [search, history]},
+    {
+        "name": "Reports", "subpages": [dashboard, bugs, alerts], "icon": ":material/assessment:"
+    },
+    {
+        "name": "Tools", "subpages": [search, history], "icon": ":material/extension:"
+    },
     login_app=login_page, account_app=account_page, settings_app=settings_page,
     logout_callback=logout,
 )

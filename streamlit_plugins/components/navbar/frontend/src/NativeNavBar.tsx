@@ -6,9 +6,9 @@ import { BaseProvider, LightTheme } from "baseui"
 import { Client as Styletron } from "styletron-engine-atomic"
 import { Provider as StyletronProvider } from "styletron-react"
 
-import { createPopper } from '@popperjs/core';
-
+// import { createPopper } from '@popperjs/core';
 // import { useRenderData } from "./NavBarProvider";
+
 import NavItem from "./NavItem.jsx";
 import NavSubItem from "./NavSubItem.jsx";
 
@@ -16,35 +16,35 @@ import NavSubItem from "./NavSubItem.jsx";
 const engine = new Styletron()
 
 interface MenuItem {
-  icon: string;
-  id: string;
-  label: string;
-  ttip?: string;
-  submenu?: MenuItem[];
-  style?: React.CSSProperties;
-  dataset?: object;
+    icon: string;
+    id: string;
+    label: string;
+    ttip?: string;
+    submenu?: MenuItem[];
+    style?: React.CSSProperties;
+    dataset?: object;
 }
 
 interface OverrideTheme {
-  menu_background: string;
-  txc_inactive: string;
-  txc_active: string;
-  option_active: string;
+    menu_background: string;
+    txc_inactive: string;
+    txc_active: string;
+    option_active: string;
 }
 
 type PositionMode = "top" | "under" | "side";
 
 interface PythonArgs {
-  menu_definition: MenuItem[];
-  home: MenuItem;
-  login: MenuItem;
-  override_theme: OverrideTheme;
-  position_mode: PositionMode;
-  default_app_selected_id: string;
-  override_app_selected_id?: string;
-  reclick_load?: boolean;
-  key?: string;
-  fvalue?: boolean;
+    menu_definition: MenuItem[];
+    home: MenuItem;
+    login: MenuItem;
+    override_theme: OverrideTheme;
+    position_mode: PositionMode;
+    default_app_selected_id: string;
+    override_app_selected_id?: string;
+    reclick_load?: boolean;
+    key?: string;
+    fvalue?: boolean;
 }
 
 // interface NavBarRenderData extends RenderData {
@@ -54,27 +54,24 @@ interface PythonArgs {
 // }
 
 interface State {
-  selectedAppId: string;
-  expandState: boolean;
-  selectedSubMenu: string | null;
-  expandSubMenu: boolean;
-  blockState: string;
-  fromClick: boolean;
+    selectedAppId: string;
+    expandState: boolean;
+    selectedSubMenu: string | null;
+    expandSubMenu: boolean;
+    navState: string;
+    fromClick: boolean;
 }
 
-class StreamlitComponentBase<S = {}> extends React.PureComponent<
-  ComponentProps,
-  S
-> {
-  public componentDidMount(): void {
-    // After we're rendered for the first time, tell Streamlit that our height has changed.
-    Streamlit.setFrameHeight();
-  }
+class StreamlitComponentBase<S = {}> extends React.PureComponent<ComponentProps, S> {
+    public componentDidMount(): void {
+        // After we're rendered for the first time, tell Streamlit that our height has changed.
+        Streamlit.setFrameHeight();
+    }
 
-  public componentDidUpdate(prevProps: ComponentProps, prevState: Readonly<S>, snapshot?: any): void {
-    // After we're updated, tell Streamlit that our height may have changed.
-    Streamlit.setFrameHeight();
-  }
+    public componentDidUpdate(prevProps: ComponentProps, prevState: Readonly<S>, snapshot?: any): void {
+        // After we're updated, tell Streamlit that our height may have changed.
+        Streamlit.setFrameHeight();
+    }
 }
 
 class NativeNavBar extends StreamlitComponentBase<State> {
@@ -82,6 +79,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     maxNavBarWidth: number = 0;
     resizeTimeout: NodeJS.Timeout | null = null;
     key: string;
+    state: State;
 
     public constructor(props: ComponentProps) {
         super(props);
@@ -90,7 +88,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         let selectedAppId = args.default_app_selected_id;
         let expandState = false;
         let selectedSubMenu = null;
-        let blockState = "nav-close";
+        let navState = "nav-close";
         let expandSubMenu = false;
 
         if (args.override_app_selected_id) {
@@ -105,7 +103,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             selectedSubMenu: selectedSubMenu,
             expandState: expandState,
             expandSubMenu: expandSubMenu,
-            blockState: blockState,
+            navState: navState,
             fromClick: false
         };
 
@@ -142,6 +140,92 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         if (this.key === undefined) this.key = `${Date.now()}`;
     }
 
+    postMessage(COI_method: string,
+        data?: {
+            navState?: string
+        }): boolean {
+        const { key } = this.props.args;
+        if (key == null || typeof key !== "string") {
+            throw new Error("Invalid key: key must be a string.");
+        }
+        window.parent.postMessage({ COI_method, key, ...data }, "*");
+
+        console.debug("postMessage from ", key, ": ", COI_method, data);
+        return true;
+    }
+    postRegister(navState: string): void {
+        this.postMessage("register", { navState });
+    }
+    // postUpdateConfig(): void {
+    //     let styles = this.styles;
+    //     let disable_scroll = this.disable_scroll;
+    //     this.postMessage("updateConfig", { styles, disable_scroll });
+    // }
+    
+    // Ejemplos para mas formas de comunicar
+
+    // postScroll(anchor_id: string): void {
+    //     this.postMessage("scroll", { anchor_id });
+    // }
+    
+    // postUpdateActiveAnchor(anchor_id: string): void {
+    //     const { auto_update_anchor } = this.getCleanedArgs();
+    //     if (auto_update_anchor)
+    //         this.postMessage("updateActiveAnchor", { anchor_id });
+    // }
+    postSidebarToggle(navState: string): void {
+        this.postMessage("sidebarToggle", { navState });
+    }
+
+
+    // Handle messages from COI
+    // Send and Recieved data with custom message not Streamlit Value
+    private handleMessage(event: MessageEvent) {
+        const { COMPONENT_method, key } = event.data;
+        // Check if message is for this component
+        if (COMPONENT_method == null || key == null) {
+            return;
+        }
+        if (key !== this.props.args.key) {
+            return;
+        }
+
+        console.debug("handleMessage", event.data);
+        // if (COMPONENT_method === "updateActiveAnchor") {
+        //     const { anchor_id, update_id } = event.data;
+        //     console.debug(key, "updateActiveAnchor: ", "Received updateActiveAnchor message with anchor_id: ", anchor_id, "update_id: ", update_id);
+        //     //validate anchor_id and debug error if invalid
+        //     if (anchor_id == null || typeof anchor_id !== "string") {
+        //         console.error("Invalid anchor_id: anchor_id must be a string.");
+        //         return;
+        //     }
+        //     //Validate updateId as number and debug error if invalid
+        //     if (update_id == null || typeof update_id !== "number") {
+        //         console.error("Invalid updateId: updateId must be a number.");
+        //         return;
+        //     }
+
+        //     const { auto_update_anchor } = this.getCleanedArgs();
+        //     //If auto_update_anchor is false, do not update the active anchor from external source
+        //     if (!auto_update_anchor) {
+        //         return;
+        //     }
+
+        //     //Check if the updateId is the latest
+        //     if (update_id > this.updateId) {
+        //         this.setState({ activeAnchorId: anchor_id });
+        //         console.debug(key, "updateActiveAnchor: ", "Updating `active` anchor to ", anchor_id);
+        //         this.updateId = update_id;
+        //     }
+        //     else {
+        //         console.debug("Ignoring updateActiveAnchor message with outdated updateId");
+        //     }
+
+        //     // Send back to Streamlit.
+        //     Streamlit.setComponentValue(anchor_id);
+        // }
+    }
+
     public componentDidMount = () => {
         // console.log(
         //     "DidMount",
@@ -160,7 +244,22 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         window.addEventListener("blur", this.handleBlur);
         document.addEventListener("click", this.handleClickOutside);
 
-        Streamlit.setFrameHeight();
+        // Se registran los eventos de COI
+        // Register component
+        if (this.props.args.position_mode !== "side") {
+        this.postRegister(this.state.navState);
+            // Send styles to COI
+            // this.postUpdateConfig();
+            // Tell COI to track anchors for visibility
+            // this.postTrackAnchors(anchor_ids);
+            // Set initial active anchor for component and COI
+            // this.setState({ activeAnchorId: initialAnchorId });
+            // this.postUpdateActiveAnchor(anchor_ids[0]);
+            this.postSidebarToggle(this.state.navState);
+            // Listen for messages from COI
+            // No se necesita recibir mensajes de streamlit al componente
+            // window.addEventListener("message", this.handleMessage.bind(this));
+        }
     }
 
     public componentDidUpdate = (prevProps: ComponentProps, prevState: State, snapshot?: any): void => {
@@ -200,7 +299,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                         selectedSubMenu: this.state.selectedSubMenu,
                         expandState: this.state.expandState,
                         expandSubMenu: this.state.expandSubMenu,
-                        blockState: this.state.blockState,
+                        navState: this.state.navState,
                         fromClick: false
                     },
                     () => {
@@ -260,6 +359,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     };
 
     private handleClickOutside = (event: MouseEvent) => {
+        // Si es modo side no se cierra el navbar
+        if (this.props.args.position_mode === "side") return;
         if (!document.hasFocus()) {
             this.setState(
                 {
@@ -267,7 +368,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                     selectedSubMenu: this.state.selectedSubMenu,
                     expandState: false,
                     expandSubMenu: false,
-                    blockState: "nav-close",
+                    navState: "nav-close",
                     fromClick: false
                 },
                 () => this.delayed_resize(50)
@@ -276,13 +377,15 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     };
 
     private handleBlur = () => {
+        // Si es modo side no se cierra el navbar
+        if (this.props.args.position_mode === "side") return;
         this.setState(
             {
                 selectedAppId: this.state.selectedAppId,
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: false,
                 expandSubMenu: false,
-                blockState: "nav-close",
+                navState: "nav-close",
                 fromClick: false
             },
             () => this.delayed_resize(50)
@@ -310,26 +413,26 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
     private containsEmojis = (input: string): boolean => {
         if (input) {
-        for (const c of input) {
-            const cHex = c.codePointAt(0);
-            if (cHex) {
-            const sHex = cHex.toString(16);
-            const lHex = sHex.length;
-            if (lHex > 3) {
-                const prefix = sHex.substring(0, 2);
+            for (const c of input) {
+                const cHex = c.codePointAt(0);
+                if (cHex) {
+                    const sHex = cHex.toString(16);
+                    const lHex = sHex.length;
+                    if (lHex > 3) {
+                        const prefix = sHex.substring(0, 2);
 
-                if (lHex === 5 && prefix === "1f") {
-                return true;
-                }
+                        if (lHex === 5 && prefix === "1f") {
+                            return true;
+                        }
 
-                if (lHex === 4) {
-                return (
-                    ["20", "21", "23", "24", "25", "26", "27", "2B", "29", "30", "32"].indexOf(prefix) > -1
-                );
+                        if (lHex === 4) {
+                            return (
+                                ["20", "21", "23", "24", "25", "26", "27", "2B", "29", "30", "32"].indexOf(prefix) > -1
+                            );
+                        }
+                    }
                 }
             }
-            }
-        }
         }
         return false;
     };
@@ -354,7 +457,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 selectedSubMenu: null,
                 expandState: false,
                 expandSubMenu: false,
-                blockState: "nav-close",
+                navState: "nav-close",
                 fromClick: true
             },
             () => {
@@ -369,7 +472,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         let expandSubMenu = this.state.expandSubMenu;
         if (this.state.selectedSubMenu === parentId) {
             expandSubMenu = !expandSubMenu;
-        } else {
+        }
+        else {
             expandSubMenu = true;
             selectedSubMenu = parentId;
         }
@@ -379,7 +483,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 selectedSubMenu: selectedSubMenu,
                 expandState: this.state.expandState,
                 expandSubMenu: expandSubMenu,
-                blockState: this.state.blockState,
+                navState: this.state.navState,
                 fromClick: false
             },
             () => this.handleResize()
@@ -389,30 +493,31 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
     private createSubMenu = (item: MenuItem, key: number): JSX.Element => (
         <NavSubItem
-        subitem={item}
-        menu_id={key}
-        submenu_toggle={this.toggleSubMenu}
-        click_on_app={this.clickOnApp}
-        parent_id={item.id}
-        key={key}
-        is_active={item.id === this.state.selectedAppId}
+            subitem={item}
+            menu_id={key}
+            submenu_toggle={this.toggleSubMenu}
+            click_on_app={this.clickOnApp}
+            parent_id={item.id}
+            key={key}
+            is_active={item.id === this.state.selectedAppId}
         />
     );
 
     private toggleNav = (): void => {
-        let expandState = this.state.expandState ? "nav-close" : "nav-open"
+        let navState = this.state.expandState ? "nav-close" : "nav-open"
         this.setState(
             {
                 selectedAppId: this.state.selectedAppId,
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: !this.state.expandState,
                 expandSubMenu: false,
-                blockState: expandState,
+                navState: navState,
                 fromClick: false
             },
             () => {
                 this.handleResize();
-                Streamlit.setComponentValue(`::${expandState}::`);
+                // Streamlit.setComponentValue(`::${navState}::`);
+                if (this.props.args.position_mode === "side") this.postSidebarToggle(navState);
             }
         );
     };
@@ -451,22 +556,22 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                     key={key * 100}
                     {...dataAttributes}
                 >
-                <a
-                    className="nav-link dropdown-toggle"
-                    href={"#_sub" + key}
-                    key={"sub1_" + key}
-                    onClick={() => this.toggleSubMenu(item.id)}
-                    data-toggle="tooltip"
-                    data-placement="top"
-                    data-html="true"
-                    title={item.ttip}
-                >
-                    {iconMarkup}
-                    <span>{item.label}</span>
-                </a>
-                <ul key={key * 103} className={`dropdown-menu ${this.state.selectedSubMenu === item.id && this.state.expandSubMenu ? "show" : ""}`}>
-                    {item.submenu.map((subitem: MenuItem, subindex: number) => this.createSubMenu(subitem, subindex))}
-                </ul>
+                    <a
+                        className="nav-link dropdown-toggle"
+                        href={"#_sub" + key}
+                        key={"sub1_" + key}
+                        onClick={() => this.toggleSubMenu(item.id)}
+                        data-toggle="tooltip"
+                        data-placement="top"
+                        data-html="true"
+                        title={item.ttip}
+                    >
+                        {iconMarkup}
+                        <span>{item.label}</span>
+                    </a>
+                    <ul key={key * 103} className={`dropdown-menu ${this.state.selectedSubMenu === item.id && this.state.expandSubMenu ? "show" : ""}`}>
+                        {item.submenu.map((subitem: MenuItem, subindex: number) => this.createSubMenu(subitem, subindex))}
+                    </ul>
                 </li>
             );
         }
@@ -497,15 +602,15 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         const overrideTheme = args.override_theme;
         if (overrideTheme) {
-        mergedTheme.menu_background = overrideTheme.menu_background || mergedTheme.menu_background;
-        mergedTheme.txc_inactive = overrideTheme.txc_inactive || mergedTheme.txc_inactive;
-        mergedTheme.txc_active = overrideTheme.txc_active || mergedTheme.txc_active;
-        mergedTheme.option_active = overrideTheme.option_active || mergedTheme.option_active;
+            mergedTheme.menu_background = overrideTheme.menu_background || mergedTheme.menu_background;
+            mergedTheme.txc_inactive = overrideTheme.txc_inactive || mergedTheme.txc_inactive;
+            mergedTheme.txc_active = overrideTheme.txc_active || mergedTheme.txc_active;
+            mergedTheme.option_active = overrideTheme.option_active || mergedTheme.option_active;
         }
 
         return (
-        <style>
-            {`
+            <style>
+                {`
             :root {
                 --menu_background: ${mergedTheme.menu_background};
                 --txc_inactive: ${mergedTheme.txc_inactive};
@@ -515,7 +620,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 --option_active_translucent: ${this.theme.primaryColor}38;
             }
             `}
-        </style>
+            </style>
         );
     };
 
@@ -531,7 +636,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 <BaseProvider theme={LightTheme}>
                     <div key={args.key}>
                         {this.applyTheme()}
-                        <nav id={navbarId} className={`navbar navbar-expand-custom navbar-mainbg w-100 py-0 py-md-0 ${positionMode}`}>
+                        <nav id={navbarId} className={`navbar navbar-expand-custom navbar-mainbg py-0 py-md-0 ${positionMode}`}>
                             <button
                                 className="navbar-toggler"
                                 type="button"
@@ -540,9 +645,9 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                             >
                                 <span className="material-symbols-rounded text-color">menu</span>
                             </button>
-                            <div className={`navbar-collapse navbar-wrapper ${this.state.blockState}`}>
+                            <div className={`navbar-collapse navbar-wrapper ${this.state.navState}`}>
                                 <ul className="navbar-nav py-0">
-                                {menuItems.map((item: MenuItem, index: number) => this.createMenu(item, index))}
+                                    {menuItems.map((item: MenuItem, index: number) => this.createMenu(item, index))}
                                 </ul>
                             </div>
                         </nav>

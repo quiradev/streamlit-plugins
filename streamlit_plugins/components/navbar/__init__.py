@@ -1,4 +1,3 @@
-import os
 import re
 from typing import Literal, Callable
 
@@ -6,16 +5,13 @@ import streamlit as st
 import streamlit.components.v1 as components
 from streamlit.navigation.page import StreamlitPage
 
-# _RELEASE = os.getenv("RELEASE", "").upper() != "DEV"
-# _RELEASE = True
-_RELEASE = False
+from .config import dev_url, build_path, _RELEASE
+from .inject_script import inject_crossorigin_interface, instantiate_crossorigin_interface
 
 if _RELEASE:
-    absolute_path = os.path.dirname(os.path.abspath(__file__))
-    build_path = os.path.join(absolute_path, "frontend", "build")
-    _component_func = components.declare_component("nav_bar", path=build_path)
+    _component_func = components.declare_component("nav_bar", path=str(build_path))
 else:
-    _component_func = components.declare_component("nav_bar", url="http://localhost:3000")
+    _component_func = components.declare_component("nav_bar", url=dev_url)
 
 GAP_BETWEEN_COMPS = 1
 
@@ -288,11 +284,10 @@ HIDE_ST_STYLE = """
 
 
 SIDE_NAV_STYLE = f"""
-.stAppViewContainer {{
+/* Inject COI */
+.stAppViewContainer, [data-testid="stSidebarCollapsedControl"] {{
     margin-left: 4rem;
-}}
-data-testid="stSidebarCollapsedControl" {{
-    margin-left: 4rem;
+    /* transition: margin-left 0.5s ease; */
 }}
 div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"] {{
     height: 100vh !important;
@@ -300,7 +295,9 @@ div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"] {{
 div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"], iframe[title="{_component_func.name}"] {{
     outline: 1px solid #c3c3c380;
     border-radius: 5px;
-    width: 4rem;
+    width: 100%;
+    height: 100vh !important;
+    box-shadow: 10px 0 10px -5px #04040470;
 }}
 div:has(> iframe[title="{_component_func.name}"]) {{
     position: sticky;
@@ -316,13 +313,17 @@ div:has(> iframe[title="{_component_func.name}"]) {{
     height: 100vh;
     top: 0;
     margin: 0;
+    margin-top: 0.125rem;
     left: 0;
     width: 4rem;
-    z-index: 9999999;
+    z-index: 999999;
 }}
-iframe[title="{_component_func.name}"]) {{
-    height: 300px;
-    min-height: 100vh;
+body.nav-open .stAppViewContainer,
+body.nav-open [data-testid="stSidebarCollapsedControl"] {{
+    margin-left: 10rem;
+}}
+body.nav-open div:has(> iframe[title="{_component_func.name}"]) {{
+    width: 10rem;
 }}
 """
 
@@ -346,14 +347,17 @@ def build_menu_from_st_pages(
     app_map = {}
     for page in pages:
         if isinstance(page, dict):
-            for label, sub_pages in page.items():
-                submenu, _, sub_app_map = build_menu_from_st_pages(*sub_pages)
-                menu.append({
-                    'id': label.lower().replace(" ", "_"),
-                    'label': label,
-                    'submenu': submenu
-                })
-                app_map.update(sub_app_map)
+            name = page["name"]
+            sub_pages = page["subpages"]
+            icon = page.get("icon", None)
+            submenu, _, sub_app_map = build_menu_from_st_pages(*sub_pages)
+            menu.append({
+                'id': name.lower().replace(" ", "_"),
+                'label': name,
+                'submenu': submenu,
+                'icon': icon,
+            })
+            app_map.update(sub_app_map)
         elif isinstance(page, StreamlitPage):
             app_id = page.url_path
             if not app_id:
@@ -405,7 +409,11 @@ def st_navbar(
     reclick_load=True,
     input_styles: str = None
 ):
-    if key not in st.session_state:
+    # https://github.com/SnpM/streamlit-scroll-navigation
+    inject_crossorigin_interface()
+    instantiate_crossorigin_interface(key)
+
+    if f"{key}-state" not in st.session_state:
         st.session_state[f"{key}-state"] = "idle"
 
     # first_select = math.floor(first_select / 10)
@@ -470,6 +478,9 @@ def st_navbar(
     if override_app_selected_id:
         default_app_selected_id = override_app_selected_id
 
+    if f"{key}-app" not in st.session_state:
+        st.session_state[f"{key}-app"] = default_app_selected_id
+
     # if key not in st.session_state:
     #     override_app_selected_id = default_app_selected_id
     # elif st.session_state[key] is None:
@@ -521,7 +532,10 @@ def st_navbar(
     if match := re.search("::(nav-close|nav-open)::", component_value):
         print("Change size", match.group(1))
         st.session_state[f"{key}-state"] = "resize"
+        component_value = st.session_state[f"{key}-app"]
         # st.rerun()
+    else:
+        st.session_state[f"{key}-app"] = component_value
 
     if component_value is None:
         component_value = default_app_selected_id
