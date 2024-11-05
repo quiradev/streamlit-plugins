@@ -6,8 +6,8 @@ def run():
     with st.sidebar:
         position_mode = st.radio(
             "Navbar position mode",
-            ["top", "under"],
-            index=0 if st.session_state.get("position_mode", "top") == "top" else 1,
+            ["top", "under", "side"],
+            # index=0 if st.session_state.get("position_mode", "top") == "top" else 1,
         )
         sticky_nav = st.checkbox(
             "Sticky navbar", value=st.session_state.get("sticky_nav", True)
@@ -85,8 +85,8 @@ def run():
     multi_app.add_app(title="Demo1", app=demo1_app, icon=None)
     multi_app.add_app(title="Demo2", app=demo2_app, icon=None)
 
-    @multi_app.addapp(title="Account", app_type="account")
-    def my_home():
+    # @multi_app.addapp(title="Account", app_type="account")
+    # def my_home():
 
     multi_app.get_nav_transition()
 

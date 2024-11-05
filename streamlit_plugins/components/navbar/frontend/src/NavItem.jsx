@@ -5,6 +5,7 @@ const NavItem = (props) => {
   let menu_item = props.menuitem;
   let is_active = props.is_active;
   let menu_id = props.menu_id;
+  let position_mode = props.position_mode;
   const submenu_toggle = props.submenu_toggle;
   const click_on_app = props.click_on_app;
   const dataAttributes = props.dataAttributes;
@@ -50,26 +51,32 @@ const NavItem = (props) => {
     const label = item.label;
     const hasIcon = item.icon ? true : false;
 
-    let iconMarkup;
+    // Me quedo con la primera letra de label para el icono
+    let iconContent = ""
+    if (position_mode === "side") {
+        iconContent = item.label.charAt(0).toUpperCase()
+    }
+    let iconMarkup = <span className="icon icon-placeholder">{iconContent}</span>;
 
     // Determinar si se usa <i> o <span> para el icono
     if (hasIcon) {
-      const regex = /:material\/(\w+):/gm;
-      const m = regex.exec(item.icon);
-      if (m !== null) {
-        const symbol = m[1];
-        iconMarkup = <span className="material-symbols-rounded icon">{symbol}</span>;
-      } else {
-        const iconClass = containsEmojis(item.icon) ? "icon" : `${item.icon} icon`;
-        const iconTxt = containsEmojis(item.icon) ? item.icon : "";
-        iconMarkup = <i className={iconClass}>{iconTxt}</i>;
-      }
+        const regex = /:material\/(\w+):/gm;
+        const m = regex.exec(item.icon);
+        if (m !== null) {
+            const symbol = m[1];
+            iconMarkup = <span className="material-symbols-rounded icon">{symbol}</span>;
+        }
+        else {
+            const iconClass = this.containsEmojis(item.icon) ? "icon" : `${item.icon} icon`;
+            const iconTxt = this.containsEmojis(item.icon) ? item.icon : "";
+            iconMarkup = <i className={iconClass}>{iconTxt}</i>;
+        }
     }
 
     return (
       <li style={item.style || {}} className={`nav-item py-0 ${is_active ? "active": ""}`} key={kid} {...dataAttributes}>
         <a className="nav-link" href={"#" + kid} onClick={()=>onSelect(ret_id)} data-toggle="tooltip" data-placement="top" data-html="true" title={item.ttip}>
-          {hasIcon && iconMarkup}
+          {iconMarkup}
           <span>{label}</span>
         </a>
       </li>

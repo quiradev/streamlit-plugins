@@ -27,11 +27,14 @@ MARGIN_SIDE_NAVBAR = 0.5
 SCROLLBAR_WIDTH = 6  # px
 HEADER_HEIGHT = 3.75
 
+APP_VIEWER_SELECTOR = ".stAppViewContainer"
 COLLAPSE_CONTROLL_CLASS = "collapsedControl"
 if major == 1:
     if 36 < minnor <= 37:
+        APP_VIEWER_SELECTOR = '[data-testid="stAppViewContainer"]'
         COLLAPSE_CONTROLL_CLASS = "collapsedControl"
     if minnor >= 38:
+        APP_VIEWER_SELECTOR = ".stAppViewContainer"
         COLLAPSE_CONTROLL_CLASS = "stSidebarCollapsedControl"
 
 NAV_TOP_UNDER_STYLE = f"""
@@ -285,7 +288,7 @@ HIDE_ST_STYLE = """
 
 SIDE_NAV_STYLE = f"""
 /* Inject COI */
-.stAppViewContainer, [data-testid="stSidebarCollapsedControl"] {{
+{APP_VIEWER_SELECTOR}, [data-testid="{COLLAPSE_CONTROLL_CLASS}"] {{
     margin-left: 4rem;
     /* transition: margin-left 0.5s ease; */
 }}
@@ -297,7 +300,7 @@ div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"], if
     border-radius: 5px;
     width: 100%;
     height: 100vh !important;
-    /* box-shadow: 10px 0 10px -5px #04040470; */
+    box-shadow: 5px 0 10px -5px #00000012;
 }}
 div:has(> iframe[title="{_component_func.name}"]) {{
     position: sticky;
@@ -318,8 +321,8 @@ div:has(> iframe[title="{_component_func.name}"]) {{
     width: 4rem;
     z-index: 999999;
 }}
-body.nav-open .stAppViewContainer,
-body.nav-open [data-testid="stSidebarCollapsedControl"] {{
+body.nav-open {APP_VIEWER_SELECTOR},
+body.nav-open [data-testid="{COLLAPSE_CONTROLL_CLASS}"] {{
     margin-left: 10rem;
 }}
 body.nav-open div:has(> iframe[title="{_component_func.name}"]) {{

@@ -454,10 +454,10 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         this.setState(
             {
                 selectedAppId: itemId,
-                selectedSubMenu: null,
-                expandState: false,
-                expandSubMenu: false,
-                navState: "nav-close",
+                selectedSubMenu: this.state.selectedSubMenu,
+                expandState: this.state.expandState,
+                expandSubMenu: this.state.expandSubMenu,
+                navState: this.state.navState,
                 fromClick: true
             },
             () => {
@@ -510,7 +510,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 selectedAppId: this.state.selectedAppId,
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: !this.state.expandState,
-                expandSubMenu: false,
+                expandSubMenu: this.props.args.position_mode === "side" ? this.state.expandSubMenu : false,
                 navState: navState,
                 fromClick: false
             },
@@ -526,7 +526,12 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         const isActive = item.id === this.state.selectedAppId;
         const hasIcon = item.icon ? true : false;
 
-        let iconMarkup = <span className="icon-placeholder"></span>;
+        // Me quedo con la primera letra de label para el icono en mayuscula
+        let iconContent = ""
+        if (this.props.args.position_mode === "side") {
+            iconContent = item.label.charAt(0).toUpperCase()
+        }
+        let iconMarkup = <span className="icon icon-placeholder">{iconContent}</span>;
 
         // Determinar si se usa <i> o <span> para el icono
         if (hasIcon) {
@@ -580,6 +585,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 <NavItem
                     menuitem={item}
                     menu_id={key}
+                    position_mode={this.props.args.position_mode}
                     is_active={isActive}
                     submenu_toggle={this.toggleSubMenu}
                     click_on_app={this.clickOnApp}
