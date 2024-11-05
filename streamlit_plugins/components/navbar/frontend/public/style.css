@@ -9,7 +9,9 @@ body {
 }
 
 nav.navbar.side {
-    display: block;
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: column;
 }
 
 nav.navbar {
@@ -44,7 +46,7 @@ nav.side .dropdown-toggle:after {
     content: unset;
 }
 
-.navbar-wrapper {
+nav.collapsed .navbar-wrapper {
     width: 100%;
     position: absolute;
 }
@@ -108,8 +110,9 @@ nav.side .navbar-nav>li>.dropdown-menu {
     position: relative;
     left: 0.5rem;
     height: 2.5rem;
+    display: flex;
     top: 0.5rem;
-    margin: 0.25rem 0.125rem;
+    /* margin: 0.25rem 0.125rem; */
     padding: 0;
     font-size: 1rem;
     background-color: transparent;
@@ -117,6 +120,11 @@ nav.side .navbar-nav>li>.dropdown-menu {
     line-height: 1;
     border-radius: 0.25rem;
     outline: none !important;
+}
+
+nav.side .navbar-toggler {
+    position: relative;
+    top: 1rem;
 }
 
 .navbar-toggler span {
@@ -127,14 +135,20 @@ nav.side .navbar-nav>li>.dropdown-menu {
     align-items: center;
 }
 
-.navbar-toggler:hover {
+.navbar-toggler > span:hover,
+.theme-toggler > span:hover {
     background: var(--secondary-background-color);
 }
-.navbar-toggler:focus {
+.navbar-toggler:focus > span,
+.theme-toggler:focus > span {
     box-shadow: var(--option_active_translucent) 0px 0px 0px 0.1rem
 }
+.theme-toggler:focus {
+    outline: none;
+}
 
-.navbar-toggler:focus-visible {
+.navbar-toggler:focus-visible > span,
+.theme-toggler:focus-visible > span {
     box-shadow: var(--secondary-background-color) 0px 0px 0px 0.1rem
 }
 
@@ -451,4 +465,23 @@ nav.navbar.side {
     color: var(--txc_active);
     background-color: var(--option_active);
     border-radius: 15px;
+}
+
+.theme-toggler {
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+}
+nav.side .theme-toggler {
+    position: relative;
+    bottom: 2rem;
+}
+.theme-toggler > span {
+    padding: 0.5rem;
+}
+
+.theme-toggler:hover > span {
+    background: var(--secondary-background-color);
 }

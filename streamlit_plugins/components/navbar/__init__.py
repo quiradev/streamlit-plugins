@@ -4,6 +4,7 @@ from typing import Literal, Callable
 import streamlit as st
 import streamlit.components.v1 as components
 from streamlit.navigation.page import StreamlitPage
+from streamlit.runtime.scriptrunner import get_script_run_ctx
 
 from .config import dev_url, build_path, _RELEASE
 from .inject_script import inject_crossorigin_interface, instantiate_crossorigin_interface
@@ -416,6 +417,8 @@ def st_navbar(
     inject_crossorigin_interface()
     instantiate_crossorigin_interface(key)
 
+    ctx = get_script_run_ctx(suppress_warning=True)
+
     # first_select = math.floor(first_select / 10)
 
     override_theme = override_theme or {
@@ -525,6 +528,7 @@ def st_navbar(
         reclick_load=reclick_load
     )
     print(f"FROM Navbar: {component_value}")
+    st._config.set_option("server.headless", True)
 
     if component_value is None:
         component_value = default_app_selected_id
