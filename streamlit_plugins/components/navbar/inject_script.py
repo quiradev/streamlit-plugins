@@ -11,7 +11,7 @@ def inject_crossorigin_interface():
 
     # Load text content of COI
     if _RELEASE:
-        interface_script_path = build_path / "CrossOriginInterface.min.js"
+        interface_script_path = build_path / "CrossOriginInterface.js"
         with open(interface_script_path) as reader:
             content = reader.read()
     else:

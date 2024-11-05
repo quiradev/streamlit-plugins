@@ -30,7 +30,7 @@ def my_sidebar():
         position_mode = st.radio(
             "Navbar position mode",
             positions,
-            index=positions.index(st.session_state.get("position_mode", "top")),
+            # index=positions.index(st.session_state.get("position_mode", "top")),
         )
         sticky_nav = st.checkbox(
             "Sticky navbar", value=st.session_state.get("sticky_nav", True)
@@ -85,6 +85,10 @@ def logout():
     st.session_state.active_app_id = None
     st.rerun()
 
+st.logo(
+    image="https://streamlit.io/images/brand/streamlit-logo-primary-colormark-darktext.svg",
+    icon_image="https://streamlit.io/images/brand/streamlit-mark-color.png"
+)
 
 login_page = st.Page(login, title="Log in", icon=":material/login:")
 account_page = st.Page(account, title="Account", icon=":material/account_circle:")
@@ -110,10 +114,6 @@ menu_data, menu_account_data, app_map = build_menu_from_st_pages(
 )
 st.session_state["app_map"] = app_map
 
-st.logo(
-    image="https://streamlit.io/images/brand/streamlit-logo-primary-colormark-darktext.svg",
-    icon_image="https://streamlit.io/images/brand/streamlit-mark-color.png"
-)
 my_sidebar()
 
 position_mode = st.session_state.get("position_mode", "top")

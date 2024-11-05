@@ -297,7 +297,7 @@ div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"], if
     border-radius: 5px;
     width: 100%;
     height: 100vh !important;
-    box-shadow: 10px 0 10px -5px #04040470;
+    /* box-shadow: 10px 0 10px -5px #04040470; */
 }}
 div:has(> iframe[title="{_component_func.name}"]) {{
     position: sticky;
@@ -413,9 +413,6 @@ def st_navbar(
     inject_crossorigin_interface()
     instantiate_crossorigin_interface(key)
 
-    if f"{key}-state" not in st.session_state:
-        st.session_state[f"{key}-state"] = "idle"
-
     # first_select = math.floor(first_select / 10)
 
     override_theme = override_theme or {
@@ -478,9 +475,6 @@ def st_navbar(
     if override_app_selected_id:
         default_app_selected_id = override_app_selected_id
 
-    if f"{key}-app" not in st.session_state:
-        st.session_state[f"{key}-app"] = default_app_selected_id
-
     # if key not in st.session_state:
     #     override_app_selected_id = default_app_selected_id
     # elif st.session_state[key] is None:
@@ -528,14 +522,6 @@ def st_navbar(
         reclick_load=reclick_load
     )
     print(f"FROM Navbar: {component_value}")
-
-    if match := re.search("::(nav-close|nav-open)::", component_value):
-        print("Change size", match.group(1))
-        st.session_state[f"{key}-state"] = "resize"
-        component_value = st.session_state[f"{key}-app"]
-        # st.rerun()
-    else:
-        st.session_state[f"{key}-app"] = component_value
 
     if component_value is None:
         component_value = default_app_selected_id
