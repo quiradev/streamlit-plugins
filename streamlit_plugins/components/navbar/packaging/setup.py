@@ -4,7 +4,7 @@ from pathlib import Path
 
 from setuptools import setup, find_packages
 
-with open(os.path.join(Path(__file__).parent / 'README.md'), encoding='utf-8') as f:
+with open(os.path.join(Path(__file__).parent.parent / 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 # Se leen los requirements de requirements.txt

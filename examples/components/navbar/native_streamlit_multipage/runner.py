@@ -9,7 +9,7 @@ streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append("http://loca
 #     async def get(self) -> None:
 #         self.write(
 #             {
-#                 "allowedOrigins": _DEFAULT_ALLOWED_MESSAGE_ORIGINS.copy(),
+#                 "allowedOrigins": _DEFAULT_+ALLOWED_MESSAGE_ORIGINS.copy(),
 #                 "useExternalAuthToken": False,
 #                 # Default host configuration settings.
 #                 "enableCustomParentMessages": True,
