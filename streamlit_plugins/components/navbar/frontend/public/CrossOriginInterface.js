@@ -8,6 +8,7 @@ class CrossOriginInterface {
             console.error('CrossOriginInterface instance already exists with key', key);
             return CrossOriginInterface.instances[key];
         }
+
         CrossOriginInterface.instances[key] = this;
         // this.sortedAnchors = [];
         // this.trackedAnchors = new Set();
@@ -22,6 +23,12 @@ class CrossOriginInterface {
         // this.enroute = false;
         this.navState = "nav-open";
         window.addEventListener("message", this.handleMessage.bind(this));
+
+        let themeInfo = localStorage.getItem('stPluginsActiveTheme-/-v1');
+        if (themeInfo) {
+            const {name: nt, themeInput: et} = JSON.parse(tt);
+            this.themeToggle(themeInput);
+        }
     }
 
     register(component, navState)     {
@@ -54,7 +61,8 @@ class CrossOriginInterface {
         const data = {
             stCommVersion: 1,
             type: "SET_CUSTOM_THEME_CONFIG",
-            themeInfo: theme
+            themeInfo: theme,
+            themeName: "Custom"
         }
         const themeInfo = {
             "name": "Custom",
@@ -63,6 +71,7 @@ class CrossOriginInterface {
         // Se guarda en el Local Storage el tema seleccionado
         // con clave stActiveTheme-/-v1 y valor theme
         localStorage.setItem('stActiveTheme-/-v1', JSON.stringify(themeInfo));
+        localStorage.setItem('stPluginsActiveTheme-/-v1', JSON.stringify(themeInfo));
         // Se comunica con el padre
         window.parent.postMessage(data, "*");
     }
@@ -302,10 +311,13 @@ class CrossOriginInterface {
             case 'themeToggle':
                 const { theme } = event.data;
                 this.themeToggle(theme);
-
+                break;
+            
             case 'sidebarToggle':
                 const { navState } = event.data;
                 this.sidebarToggle(navState);
+                break;
+
             break;
                 default:
                 console.error('Unknown method', COI_method);
