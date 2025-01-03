@@ -3,6 +3,7 @@ import json
 import os.path
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
 from typing import List
 
 import streamlit as st
@@ -20,49 +21,50 @@ class TaskState(Enum):
 
 
 if __name__ == '__main__':
-    with open("data.json", "r", encoding="utf8") as reader:
+    with open(str(Path(__file__).parent / "data.json"), "r", encoding="utf8") as reader:
         data = json.load(reader)
-        task_id = data.get("task_id", 1)
-        task = [
-            LSTaskNER(
-                id=task.get("id"),
-                text=task.get("text"),
-                annotations=[
-                    ResultLSNER(
-                        start=ann.get("start"),
-                        end=ann.get("end"),
-                        text=ann.get("text"),
-                        labels=ann.get("labels")
-                    )
-                    for ann in task.get("annotations", [])
-                ],
-                predictions=[]
-            )
-            for task in data.get("tasks", [])
-            if (
-                task.get("state") == TaskState.PENDING.value and
-                task.get("id") == task_id
-            )
-        ]
-        if task:
-            task = task[0]
-
-        else:
-            st.write("No pending task")
+        task_id = data["actual_task"]
 
     col1, col2 = st.columns(2)
     prev_task = col1.button(label="<-")
     next_task = col2.button(label="->")
-
     if next_task or prev_task:
-        with open("data.json", "w", encoding="utf8") as writer:
+        with open(str(Path(__file__).parent / "data.json"), "w", encoding="utf8") as writer:
             if next_task:
                 task_id += 1
             if prev_task:
                 task_id -= 1
 
             data["actual_task"] = task_id
-            writer.write(json.dumps(data, indent=2))
+            writer.write(json.dumps(data, indent=2, ensure_ascii=False))
+    
+    task_id = data.get("actual_task", 1)
+    task = [
+        LSTaskNER(
+            id=task.get("id"),
+            text=task.get("text"),
+            annotations=[
+                ResultLSNER(
+                    start=ann.get("start"),
+                    end=ann.get("end"),
+                    text=ann.get("text"),
+                    labels=ann.get("labels")
+                )
+                for ann in task.get("annotations", [])
+            ],
+            predictions=[]
+        )
+        for task in data.get("tasks", [])
+        if (
+            task.get("state") == TaskState.PENDING.value and
+            task.get("id") == task_id
+        )
+    ]
+    if task:
+        task = task[0]
+
+    else:
+        st.write("No pending task")
 
     labels = ['PER', 'ORG', 'NAME', 'SURNAME']
 

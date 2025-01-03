@@ -1,4 +1,4 @@
-streamlit>=1.36.0
+streamlit>=1.41.0
 
 # Multilit
 compress-pickle>=2.1.0
