@@ -32,6 +32,42 @@ interface OverrideTheme {
     option_active: string;
 }
 
+interface ThemeExtended extends Theme {
+    // base: string;
+    // primaryColor: string;
+    // backgroundColor: string; 
+    // secondaryBackgroundColor: string;
+    // textColor: string;
+    // font: string;
+    
+    // Parámetros adicionales marcados con *
+    widgetBackgroundColor?: string;
+    widgetBorderColor?: string;
+    skeletonBackgroundColor?: string;
+    bodyFont?: string;
+    codeFont?: string;
+    fontFaces?: Array<{
+        family: string;
+        url: string;
+        weight: number;
+    }>;
+    radii?: {
+        checkboxRadius: number;
+        baseWidgetRadius: number;
+    };
+    fontSizes?: {
+        tinyFontSize: number;
+        smallFontSize: number;
+        baseFontSize: number;
+    };
+}
+
+interface ThemeData {
+    name: string;
+    icon: string;
+    themeInfo: ThemeExtended;
+}
+
 type PositionMode = "top" | "under" | "side";
 
 interface PythonArgs {
@@ -45,6 +81,8 @@ interface PythonArgs {
     reclick_load?: boolean;
     key?: string;
     fvalue?: boolean;
+    // Si se pasa una lista de ThemeInfo se muestra el boton de cambio de tema dependiendo del numero de elementos
+    themes_data?: ThemeData[];
 }
 
 // interface NavBarRenderData extends RenderData {
@@ -60,7 +98,7 @@ interface State {
     expandSubMenu: boolean;
     navState: string;
     fromClick: boolean;
-    themeState: string;
+    themeIndex: number;
 }
 
 class StreamlitComponentBase<S = {}> extends React.PureComponent<ComponentProps, S> {
@@ -81,6 +119,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     resizeTimeout: NodeJS.Timeout | null = null;
     key: string;
     state: State;
+
+    themes_data: ThemeData[] = [];
 
     public constructor(props: ComponentProps) {
         super(props);
@@ -106,7 +146,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             expandSubMenu: expandSubMenu,
             navState: navState,
             fromClick: false,
-            themeState: "light"
+            themeIndex: 0
         };
 
 
@@ -140,12 +180,15 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         this.key = this.props.args.key;
         if (this.key === undefined) this.key = `${Date.now()}`;
+
+        // Loads themes from python args. If not, use default themes
+        this.themes_data = args.themes_data || this.themes_data;
     }
 
     postMessage(COI_method: string,
         data?: {
             navState?: string,
-            theme?: Object,
+            theme_data?: ThemeData,
         }): boolean {
         const { key } = this.props.args;
         if (key == null || typeof key !== "string") {
@@ -179,7 +222,13 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     postSidebarToggle(navState: string): void {
         this.postMessage("sidebarToggle", { navState });
     }
-
+    postThemeToggle(theme_data: ThemeData): void {
+        this.saveTheme(theme_data);
+        this.postMessage("themeToggle", { theme_data });
+    }
+    private saveTheme(theme_data: ThemeData): void {
+        localStorage.setItem('stPluginsActiveTheme-/-v1', JSON.stringify(theme_data));
+    }
 
     // Handle messages from COI
     // Send and Recieved data with custom message not Streamlit Value
@@ -250,7 +299,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // Se registran los eventos de COI
         // Register component
         if (this.props.args.position_mode !== "side") {
-        this.postRegister(this.state.navState);
+            this.postRegister(this.state.navState);
             // Send styles to COI
             // this.postUpdateConfig();
             // Tell COI to track anchors for visibility
@@ -262,6 +311,20 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             // Listen for messages from COI
             // No se necesita recibir mensajes de streamlit al componente
             // window.addEventListener("message", this.handleMessage.bind(this));
+        }
+
+        // Loads themes from python args. If not, use default themes
+        this.themes_data = this.props.args.themes_infos || this.themes_data;
+
+        let theme_data_raw = localStorage.getItem('stPluginsActiveTheme-/-v1');
+        if (theme_data_raw) {
+            let theme_data = JSON.parse(theme_data_raw);
+            // Se busca en los themes_info actuales si existe el theme guardado y si no se inicia a 0 el indice
+            // y se carga el theme 0 del array de themes_info, sino se deja el de streamlit, es decir no se hace nada
+            let themeIndex = this.themes_data.findIndex((theme) => theme.name === theme_data.name);
+            if (themeIndex === -1) themeIndex = 0;
+            this.setState({ themeIndex: themeIndex });
+            this.postThemeToggle(this.themes_data[themeIndex]);
         }
     }
 
@@ -285,7 +348,6 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // );
 
         if (prevArgDefault !== argDefault || prevArgOverride !== argOverride) {
-
             selectedAppId = this.state.selectedAppId;
 
             // console.log(
@@ -304,7 +366,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                         expandSubMenu: this.state.expandSubMenu,
                         navState: this.state.navState,
                         fromClick: false,
-                        themeState: this.state.themeState
+                        themeIndex: this.state.themeIndex
                     },
                     () => {
                         this.handleResize();
@@ -313,6 +375,12 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 );
             }
         }
+
+        // Loads themes from python args. If not, use default themes
+        this.themes_data = this.props.args.themes_data || this.themes_data;
+        // Se busca en los themes_info actuales si existe el theme guardado y si no se inicia a 0 el indice
+        // y se carga el theme 0 del array de themes_info, sino se deja el de streamlit, es decir no se hace nada
+        this.saveTheme(this.themes_data[this.state.themeIndex]);
     }
 
     public componentWillUnmount = () => {
@@ -374,7 +442,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                     expandSubMenu: false,
                     navState: "nav-close",
                     fromClick: false,
-                    themeState: this.state.themeState
+                    themeIndex: this.state.themeIndex
                 },
                 () => this.delayed_resize(50)
             );
@@ -392,7 +460,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 expandSubMenu: false,
                 navState: "nav-close",
                 fromClick: false,
-                themeState: this.state.themeState
+                themeIndex: this.state.themeIndex
             },
             () => this.delayed_resize(50)
         );
@@ -465,7 +533,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 expandSubMenu: this.state.expandSubMenu,
                 navState: this.state.navState,
                 fromClick: true,
-                themeState: this.state.themeState
+                themeIndex: this.state.themeIndex
             },
             () => {
                 this.handleResize();
@@ -492,7 +560,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 expandSubMenu: expandSubMenu,
                 navState: this.state.navState,
                 fromClick: false,
-                themeState: this.state.themeState
+                themeIndex: this.state.themeIndex
             },
             () => this.handleResize()
         );
@@ -521,7 +589,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 expandSubMenu: this.props.args.position_mode === "side" ? this.state.expandSubMenu : false,
                 navState: navState,
                 fromClick: false,
-                themeState: this.state.themeState
+                themeIndex: this.state.themeIndex
             },
             () => {
                 this.handleResize();
@@ -530,53 +598,14 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             }
         );
     };
-    private themeToggle = (): void => {
-        let themeInfo = {};
-        if (this.state.themeState === "light") {
-            this.setState({ themeState: "dark" });
-            themeInfo = {
-                "primaryColor": "#D1CCBD",
-                "backgroundColor": "#423E2E",
-                "secondaryBackgroundColor": "#2D3419",
-                "textColor": "#D7FF94",
-                "base": "dark",
-                "font": 2,
-                "linkText": "hsla(209, 100%, 59%, 1)",
-                "fadedText05": "rgba(250, 250, 250, 0.1)",
-                "fadedText10": "rgba(250, 250, 250, 0.2)",
-                "fadedText20": "rgba(250, 250, 250, 0.3)",
-                "fadedText40": "rgba(250, 250, 250, 0.4)",
-                "fadedText60": "rgba(250, 250, 250, 0.6)",
-                "bgMix": "rgba(26, 28, 36, 1)",
-                "darkenedBgMix100": "hsla(228, 16%, 72%, 1)",
-                "darkenedBgMix25": "rgba(172, 177, 195, 0.25)",
-                "darkenedBgMix15": "rgba(172, 177, 195, 0.15)",
-                "lightenedBg05": "hsla(220, 24%, 10%, 1)"
-            }
-        } else {
-            this.setState({ themeState: "light" });
 
-            themeInfo = {
-                "primaryColor": "#00BD00",
-                "backgroundColor": "#FDFEFE",
-                "secondaryBackgroundColor": "#D2ECCD",
-                "textColor": "#050505",
-                "base": "light",
-                "font": 0,
-                "linkText": "hsla(209, 100%, 59%, 1)",
-                "fadedText05": "rgba(250, 250, 250, 0.1)",
-                "fadedText10": "rgba(250, 250, 250, 0.2)",
-                "fadedText20": "rgba(250, 250, 250, 0.3)",
-                "fadedText40": "rgba(250, 250, 250, 0.4)",
-                "fadedText60": "rgba(250, 250, 250, 0.6)",
-                "bgMix": "rgba(26, 28, 36, 1)",
-                "darkenedBgMix100": "hsla(228, 16%, 72%, 1)",
-                "darkenedBgMix25": "rgba(172, 177, 195, 0.25)",
-                "darkenedBgMix15": "rgba(172, 177, 195, 0.15)",
-                "lightenedBg05": "hsla(220, 24%, 10%, 1)"
-            }
-        }
-        this.postMessage("themeToggle", { theme: themeInfo });
+    private themeToggle = (): void => {
+        this.setState({ 
+            themeIndex: (this.state.themeIndex + 1) % this.themes_data.length 
+        },
+        () => {
+            this.postThemeToggle(this.themes_data[this.state.themeIndex]);
+        });
     }
 
     private createMenu = (item: MenuItem, key: number): JSX.Element => {
@@ -653,7 +682,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         }
     };
 
-    private applyTheme = (): ReactNode => {
+    private applyNavTheme = (): ReactNode => {
         const args: PythonArgs = this.props.args;
 
         const mergedTheme = {
@@ -692,14 +721,16 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         const menuItems = this.addHomeLogin();
         const positionMode = args.position_mode;
-        const themeIcon = this.state.themeState === "light" ? "brightness_2" : "wb_sunny";
+        const currentTheme = this.themes_data[this.state.themeIndex];
+        const themeIcon = currentTheme?.icon || "format_paint";
+        const themeTooltip = currentTheme?.name || "Toogle theme";
 
         const navbarId = `navbar-${this.key}`
         return (
             <StyletronProvider value={engine}>
                 <BaseProvider theme={LightTheme}>
                     <div key={args.key}>
-                        {this.applyTheme()}
+                        {this.applyNavTheme()}
                         <nav id={navbarId} className={`navbar navbar-expand-custom navbar-mainbg py-0 py-md-0 ${positionMode}`}>
                             <button
                                 className="navbar-toggler"
@@ -714,13 +745,16 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                                     {menuItems.map((item: MenuItem, index: number) => this.createMenu(item, index))}
                                 </ul>
                             </div>
-                            <button
-                                className="theme-toggler"
-                                type="button"
-                                onClick={this.themeToggle}
-                            >
-                                <span className="material-symbols-rounded text-color">{themeIcon}</span>
-                            </button>
+                            {this.themes_data && this.themes_data.length > 0 && (
+                                <button
+                                    className="theme-toggler"
+                                    type="button"
+                                    onClick={this.themeToggle}
+                                    title={themeTooltip}
+                                >
+                                    <span className="material-symbols-rounded text-color">{themeIcon}</span>
+                                </button>
+                            )}
                         </nav>
                     </div>
                 </BaseProvider>

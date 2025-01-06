@@ -5,7 +5,7 @@ class CrossOriginInterface {
     static instances = {};
     constructor(key) {
         if (CrossOriginInterface.instances[key]) {
-            console.error('CrossOriginInterface instance already exists with key', key);
+            console.info('CrossOriginInterface instance already exists with key', key);
             return CrossOriginInterface.instances[key];
         }
 
@@ -23,12 +23,6 @@ class CrossOriginInterface {
         // this.enroute = false;
         this.navState = "nav-open";
         window.addEventListener("message", this.handleMessage.bind(this));
-
-        let themeInfo = localStorage.getItem('stPluginsActiveTheme-/-v1');
-        if (themeInfo) {
-            const {name: nt, themeInput: et} = JSON.parse(tt);
-            this.themeToggle(themeInput);
-        }
     }
 
     register(component, navState)     {
@@ -52,7 +46,7 @@ class CrossOriginInterface {
         }
     }
 
-    themeToggle(theme) {
+    themeToggle(theme_data, themeName="Custom") {
         // Se lanza un post message a la ventana principal con el tema seleccionado
         // El evento tiene un data con este formato
         // {"stCommVersion":1,"type":"SET_THEME_CONFIG","themeInfo":{"primaryColor":"#ff4b4b","backgroundColor":"#0e1117","secondaryBackgroundColor":"#262730","textColor":"#fafafa","base":"dark","font":"\"Source Sans Pro\", sans-serif","linkText":"hsla(209, 100%, 59%, 1)","fadedText05":"rgba(250, 250, 250, 0.1)","fadedText10":"rgba(250, 250, 250, 0.2)","fadedText20":"rgba(250, 250, 250, 0.3)","fadedText40":"rgba(250, 250, 250, 0.4)","fadedText60":"rgba(250, 250, 250, 0.6)","bgMix":"rgba(26, 28, 36, 1)","darkenedBgMix100":"hsla(228, 16%, 72%, 1)","darkenedBgMix25":"rgba(172, 177, 195, 0.25)","darkenedBgMix15":"rgba(172, 177, 195, 0.15)","lightenedBg05":"hsla(220, 24%, 10%, 1)"}}
@@ -61,17 +55,17 @@ class CrossOriginInterface {
         const data = {
             stCommVersion: 1,
             type: "SET_CUSTOM_THEME_CONFIG",
-            themeInfo: theme,
-            themeName: "Custom"
+            // type: "SET_THEME_CONFIG", // No funciona solo si el origen es el mismo Streamlit
+            themeInfo: theme_data.themeInfo,
+            themeName: theme_data.name || themeName
         }
-        const themeInfo = {
-            "name": "Custom",
-            "themeInput": theme
+        let themeInput = {
+            "name": themeName,
+            "themeInput": theme_data.themeInfo
         };
         // Se guarda en el Local Storage el tema seleccionado
         // con clave stActiveTheme-/-v1 y valor theme
-        localStorage.setItem('stActiveTheme-/-v1', JSON.stringify(themeInfo));
-        localStorage.setItem('stPluginsActiveTheme-/-v1', JSON.stringify(themeInfo));
+        localStorage.setItem('stActiveTheme-/-v1', JSON.stringify(themeInput));
         // Se comunica con el padre
         window.parent.postMessage(data, "*");
     }
@@ -309,8 +303,8 @@ class CrossOriginInterface {
             //     const { anchor_id: updateAnchorId } = event.data;
             //     this.updateActiveAnchor(updateAnchorId);
             case 'themeToggle':
-                const { theme } = event.data;
-                this.themeToggle(theme);
+                const { theme_data } = event.data;
+                this.themeToggle(theme_data);
                 break;
             
             case 'sidebarToggle':

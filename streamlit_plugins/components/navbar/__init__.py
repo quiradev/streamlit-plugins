@@ -247,6 +247,7 @@ STICKY_NAV_STYLE = f"""
         border-radius: 5px;
     }}
 """
+
 FIXED_NAV_STYLE = f"""
 .stMainBlockContainer {{
     padding-top: 3rem;
@@ -284,7 +285,6 @@ HIDE_ST_STYLE = """
         display: none;
     }
 """
-
 
 SIDE_NAV_STYLE = f"""
 /* Inject COI */
@@ -337,6 +337,105 @@ MATERIAL_ICON_LOGIN = ":material/login:"
 MATERIAL_ICON_LOGOUT = ":material/logout:"
 MATERIAL_ICON_USER_CIRCLE = ":material/account_circle:"
 
+DEFAULT_CUSTOM_THEMES = [
+    {
+        "name": "dark",
+        "icon": "brightness_2",
+        "themeInfo": {
+            "base": 1,
+            "primaryColor": "#079E5A",
+            "backgroundColor": "#423E2E",
+            "secondaryBackgroundColor": "#2D3419", 
+            "textColor": "#D7FF94",
+            "font": 2,
+            # Nuevos parámetros
+            "widgetBackgroundColor": "#625625",
+            "widgetBorderColor": "#079E5A",
+            "skeletonBackgroundColor": "#545B3C",
+            "bodyFont": '"Victor Mono Italic", Source Sans Pro, sans-serif',
+            "codeFont": '"Victor Mono", Source Code Pro, monospace',
+            "fontFaces": [
+                {
+                    "family": "Inter",
+                    "url": "https://rsms.me/inter/font-files/Inter-Regular.woff2?v=3.19",
+                    "weight": 400
+                },
+                # Victor Mono Regular (400)
+                {
+                    "family": "Victor Mono",
+                    "url": "https://rubjo.github.io/victor-mono/fonts/VictorMono-Regular.80e21ec6.woff",
+                    "weight": 400
+                },
+                # Victor Mono Italic (400)
+                {
+                    "family": "Victor Mono Italic", 
+                    "url": "https://rubjo.github.io/victor-mono/fonts/VictorMono-Italic.ab9b5a67.woff",
+                    "weight": 400,
+                }
+            ],
+            "radii": {
+                "checkboxRadius": 3,
+                "baseWidgetRadius": 6
+            },
+            "fontSizes": {
+                "tinyFontSize": 10,
+                "smallFontSize": 12,
+                "baseFontSize": 14
+            }
+        }
+    },
+    {
+        "name": "light",
+        "icon": "wb_sunny",
+        "themeInfo": {
+            "base": 0,
+            "primaryColor": "#00BD00",
+            "backgroundColor": "#FDFEFE",
+            "secondaryBackgroundColor": "#D2ECCD",
+            "textColor": "#050505",
+            "font": 0,
+            # Nuevos parámetros
+            "widgetBackgroundColor": "#FFFFFF",
+            "widgetBorderColor": "#D3DAE8",
+            "skeletonBackgroundColor": "#CCDDEE",
+            "bodyFont": "Inter, Source Sans Pro, sans-serif",
+            "codeFont": "Apercu Mono, Source Code Pro, monospace",
+            "fontFaces": [
+                {
+                    "family": "Inter",
+                    "url": "https://rsms.me/inter/font-files/Inter-Regular.woff2?v=3.19",
+                    "weight": 400
+                }
+            ],
+            "radii": {
+                "checkboxRadius": 3,
+                "baseWidgetRadius": 6
+            },
+            "fontSizes": {
+                "tinyFontSize": 10,
+                "smallFontSize": 12,
+                "baseFontSize": 14
+            }
+        }
+    }
+]
+
+DEFAULT_THEMES = [
+    {
+        "name": "light",
+        "icon": "wb_sunny",
+        "themeInfo": {
+            "base": 0
+        }
+    },
+    {
+        "name": "dark",
+        "icon": "brightness_2",
+        "themeInfo": {
+            "base": 1
+        }
+    }
+]
 
 def build_menu_from_st_pages(
     *pages: StreamlitPage | dict,
@@ -402,7 +501,7 @@ def build_menu_from_st_pages(
 
 
 def st_navbar(
-    menu_definition: list[dict], first_select=0, key="NavBarComponent", home_name=None, login_name=None,
+    menu_definition: list[dict], first_select=0, home_name=None, login_name=None,
     override_theme=None, sticky_nav=True, hide_streamlit_markers=True,
     position_mode: Literal["top", "under", "side"] = 'under',
     force_value=None, use_animation=True,
@@ -410,7 +509,9 @@ def st_navbar(
     default_app_selected_id=None,
     override_app_selected_id=None,
     reclick_load=True,
-    input_styles: str = None
+    input_styles: str = None,
+    themes_data: list[dict] = DEFAULT_THEMES,
+    key="NavBarComponent",
 ):
     # https://github.com/SnpM/streamlit-scroll-navigation
     inject_crossorigin_interface()
@@ -519,15 +620,17 @@ def st_navbar(
     input_styles = input_styles or ""
     st.markdown(f"<style>\n{input_styles}\n{style}\n<style>", unsafe_allow_html=True)
     component_value = _component_func(
-        menu_definition=menu_definition, key=key, home=home_data, fvalue=force_value,
-        login=login_data, override_theme=override_theme,
-        override_app_selected_id=override_app_selected_id,
+        menu_definition=menu_definition, home=home_data, login=login_data,
+        override_theme=override_theme,
         position_mode=position_mode,
-        default=default_app_selected_id, default_app_selected_id=default_app_selected_id,
-        reclick_load=reclick_load
+        default_app_selected_id=default_app_selected_id,
+        override_app_selected_id=override_app_selected_id,
+        reclick_load=reclick_load,
+        key=key, fvalue=force_value,
+        themes_data=themes_data,
+        default=default_app_selected_id,
     )
-    print(f"FROM Navbar: {component_value}")
-    st._config.set_option("server.headless", True)
+    # print(f"FROM Navbar: {component_value}")
 
     if component_value is None:
         component_value = default_app_selected_id

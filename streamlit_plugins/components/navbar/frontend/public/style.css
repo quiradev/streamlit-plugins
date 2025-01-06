@@ -19,7 +19,7 @@ nav.navbar {
 }
 
 nav.navbar-mainbg.side {
-    width: 4rem;
+    width: 100%;
     height: 100vh;
 }
 
@@ -56,7 +56,7 @@ nav.navbar:not(.side) .navbar-wrapper.nav-close {
 }
 
 nav.navbar.side:has( .navbar-wrapper.nav-open) {
-    width: 10rem;
+    width: 100%;
 }
 
 .navbar-wrapper, .navbar-wrapper.nav-open {
@@ -255,10 +255,6 @@ nav:not(.side) .navbar-wrapper li.nav-item[data-login="true"] > a {
 nav.side .navbar-wrapper.nav-close > ul.navbar-nav > li.nav-item > a > span:not(.icon),
 nav.side .navbar-wrapper.nav-close > ul.navbar-nav > li.nav-item > ul > li > a > span:not(.icon) {
     display: none;
-}
-
-nav.side .navbar-wrapper.nav-close > ul.navbar-nav > li.nav-item > ul > li:not(.active) > a {
-    border-left: 0.25rem solid transparent;
 }
 
 .navbar-wrapper ul.navbar-nav li.nav-item:has(li.active) > a,
