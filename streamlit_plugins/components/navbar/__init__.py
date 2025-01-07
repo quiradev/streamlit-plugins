@@ -504,15 +504,18 @@ def st_navbar(
     menu_definition: list[dict], first_select=0, home_name=None, login_name=None,
     override_theme=None, sticky_nav=True, hide_streamlit_markers=True,
     position_mode: Literal["top", "under", "side"] = 'under',
-    force_value=None, use_animation=True,
+    force_value=None,
     option_menu=False,
     default_app_selected_id=None,
     override_app_selected_id=None,
     reclick_load=True,
     input_styles: str = None,
-    themes_data: list[dict] = DEFAULT_THEMES,
+    themes_data: list[dict] = None,
     key="NavBarComponent",
 ):
+    if themes_data is None:
+        themes_data = DEFAULT_THEMES
+
     # https://github.com/SnpM/streamlit-scroll-navigation
     inject_crossorigin_interface()
     instantiate_crossorigin_interface(key)
@@ -523,7 +526,6 @@ def st_navbar(
 
     override_theme = override_theme or {
         "menu_background": "var(--background-color)",
-        # "menu_background": "transparent",
         "txc_inactive": "var(--text-color)",
         "txc_active": "var(--text-color)",
         "option_active": "var(--primary-color)",
