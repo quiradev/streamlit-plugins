@@ -29,7 +29,7 @@ setup(
     author_email='v.quilonr@gmail.com',
     author='Victor Quilon Ranera',
     packages=find_packages(include=["streamlit_plugins.components.label_studio", "streamlit_plugins.components.label_studio.*"]),
-    python_requires='>=3.9',
+    python_requires='>=3.10',
     install_requires=requirements,
     include_package_data=True,
     package_data={
@@ -38,7 +38,6 @@ setup(
     classifiers=[
         'Intended Audience :: Developers',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
     ],

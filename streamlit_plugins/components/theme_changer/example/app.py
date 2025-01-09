@@ -18,6 +18,6 @@ st.caption("Just push the button to change the theme! On the client side, of cou
 # specify the primary menu definition
 st_theme_changer()
 
-st_theme_changer(key="", render_mode="pill")
+st_theme_changer(render_mode="pills")
 
 

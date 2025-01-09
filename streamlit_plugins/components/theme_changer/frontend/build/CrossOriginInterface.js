@@ -10,20 +10,19 @@ class CrossOriginInterface {
         this.key = key;
     }
 
-    themeToggle(themeData, themeIndex, themeName="Custom") {
-        const theme_data = themeData[themeIndex];
+    themeToggle(themeData, themeName="Custom") {
 
         // Se crea el data
         const data = {
             stCommVersion: 1,
             type: "SET_CUSTOM_THEME_CONFIG",
             // type: "SET_THEME_CONFIG", // No funciona solo si el origen es el mismo Streamlit
-            themeInfo: theme_data.themeInfo,
-            themeName: theme_data.name || themeName
+            themeInfo: themeData.themeInfo,
+            themeName: themeData.name || themeName
         }
         let themeInput = {
             "name": themeName,
-            "themeInput": theme_data.themeInfo
+            "themeInput": themeData.themeInfo
         };
         // Se guarda en el Local Storage el tema seleccionado
         // con clave stActiveTheme-/-v1 y valor theme
@@ -33,9 +32,9 @@ class CrossOriginInterface {
     }
 }
 
-function changeThemeWithCOI(key, themeData, themeIndex) {
+function changeThemeWithCOI(key, themeData) {
     console.info("Theme Changed");
     theme_coi = new CrossOriginInterface(key);
-    theme_coi.themeToggle(themeData, themeIndex);
+    theme_coi.themeToggle(themeData);
 }
 window.changeThemeWithCOI = changeThemeWithCOI;

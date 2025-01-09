@@ -2,6 +2,7 @@ import json
 
 import streamlit.components.v1 as components
 
+from .entity import ThemeInput
 from .config import build_path
 
 
@@ -33,12 +34,12 @@ if (!window.parent.COI_injected) {{
     )
 
 
-def change_theme_coi(key, theme_data, theme_index):
-    theme_data_raw = json.dumps(theme_data)
+def change_theme_coi(key, theme_data: ThemeInput):
+    theme_data_raw = theme_data.model_dump_json(exclude_none=True, exclude_unset=True, exclude_defaults=True)
     components.html(
         f"""<script>
-    frameElement.parentElement.style.display = 'none';
-    window.parent.changeThemeWithCOI('{key}', {theme_data_raw}, {theme_index});
+    // frameElement.parentElement.style.display = 'none';
+    window.parent.changeThemeWithCOI('{key}', {theme_data_raw});
     </script>""",
         height=0,
         width=0,
