@@ -104,7 +104,7 @@ from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pa
 
 menu_data, menu_account_data, app_map = build_menu_from_st_pages(
     {
-        "name": "Reports", "subpages": [dashboard, bugs, alerts], "icon": ":material/assessment:"
+        "name": "Reports", "subpages": [dashboard, bugs, alerts], "icon": ":material/assessment:", "ttip": "Reports"
     },
     {
         "name": "Tools", "subpages": [search, history], "icon": ":material/extension:"

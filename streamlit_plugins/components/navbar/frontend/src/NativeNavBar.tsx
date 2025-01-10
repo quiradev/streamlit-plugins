@@ -738,7 +738,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                                 onClick={this.toggleNav}
                                 aria-expanded={this.state.expandState}
                             >
-                                <span className="material-symbols-rounded text-color">menu</span>
+                                <span className="material-symbols-rounded text-color menu-closed">menu</span>
+                                <span className="material-symbols-rounded text-color menu-open">menu_open</span>
                             </button>
                             <div className={`navbar-collapse navbar-wrapper ${this.state.navState}`}>
                                 <ul className="navbar-nav py-0">

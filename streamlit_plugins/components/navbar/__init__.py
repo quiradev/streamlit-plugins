@@ -43,9 +43,7 @@ div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"] {{
 }}
 div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"],
 iframe[title="{_component_func.name}"] {{
-    # box-sizing: content-box;
-    # border: 1px solid #9e9e9e;
-    outline: 1px solid #c3c3c380;
+    outline: 1px solid #c3c3c326;
     border-radius: 5px;
     width: 100%;
 }}
@@ -71,7 +69,7 @@ UNDER_NAV_STYLE = f"""
         padding-bottom: 4rem;
     }}
     .stApp > header {{
-        border-bottom: 1px solid #c3c3c380;
+        border-bottom: 1px solid #c3c3c326;
     }}
     div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"],
     iframe[title="{_component_func.name}"] {{
@@ -296,7 +294,7 @@ div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"] {{
     height: 100vh !important;
 }}
 div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"], iframe[title="{_component_func.name}"] {{
-    outline: 1px solid #c3c3c380;
+    outline: 1px solid #c3c3c326;
     border-radius: 5px;
     width: 100%;
     height: 100vh !important;
@@ -452,12 +450,14 @@ def build_menu_from_st_pages(
             name = page["name"]
             sub_pages = page["subpages"]
             icon = page.get("icon", None)
+            ttip = page.get("ttip", name)
             submenu, _, sub_app_map = build_menu_from_st_pages(*sub_pages)
             menu.append({
                 'id': name.lower().replace(" ", "_"),
                 'label': name,
                 'submenu': submenu,
                 'icon': icon,
+                'ttip': ttip,
             })
             app_map.update(sub_app_map)
         elif isinstance(page, StreamlitPage):

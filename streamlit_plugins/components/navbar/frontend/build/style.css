@@ -9,15 +9,17 @@ body {
 }
 
 nav.navbar.side {
-    display: block;
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: column;
 }
 
 nav.navbar {
-    align-items: stretch;
+    align-items: center;
 }
 
 nav.navbar-mainbg.side {
-    width: 4rem;
+    width: 100%;
     height: 100vh;
 }
 
@@ -44,17 +46,22 @@ nav.side .dropdown-toggle:after {
     content: unset;
 }
 
-.navbar-wrapper {
+nav.collapsed:not(.side) .navbar-wrapper {
     width: 100%;
     position: absolute;
+}
+
+nav.side .navbar-wrapper {
+    width: 100%;
 }
 
 nav.navbar:not(.side) .navbar-wrapper.nav-close {
     display: none;
 }
 
-nav.navbar.side:has( .navbar-wrapper.nav-open) {
-    width: 10rem;
+
+nav.navbar.side .navbar-wrapper {
+    flex-grow: 1;
 }
 
 .navbar-wrapper, .navbar-wrapper.nav-open {
@@ -107,9 +114,10 @@ nav.side .navbar-nav>li>.dropdown-menu {
 .navbar-toggler {
     position: relative;
     left: 0.5rem;
-    height: 2.5rem;
-    top: 0.5rem;
-    margin: 0.25rem 0.125rem;
+    /* height: 2.5rem; */
+    display: flex;
+    /* top: 0.5rem; */
+    /* margin: 0.25rem 0.125rem; */
     padding: 0;
     font-size: 1rem;
     background-color: transparent;
@@ -119,22 +127,51 @@ nav.side .navbar-nav>li>.dropdown-menu {
     outline: none !important;
 }
 
-.navbar-toggler span {
-    padding: 0.4rem;
+
+nav.side .navbar-toggler, nav.side .theme-toggler {
+    position: relative;
+    left: -0.125rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    padding: 0;
+}
+nav.side .navbar-toggler {
+    display: block;
+}
+
+nav .navbar-toggler[aria-expanded="true"] > span.menu-closed {
+    display: none;
+}
+nav .navbar-toggler[aria-expanded="false"] > span.menu-open {
+    display: none;
+}
+
+nav.navbar.side:has(.navbar-wrapper.nav-open) > .navbar-toggler, nav.navbar.side:has(.navbar-wrapper.nav-open) > .navbar-toggler > span {
+    width: 100%;
+}
+
+nav.side .theme-toggler {
+    margin-bottom: 2rem;
 }
 
 .navbar-nav {
     align-items: center;
 }
 
-.navbar-toggler:hover {
+.navbar-toggler > span:hover,
+.theme-toggler > span:hover {
     background: var(--secondary-background-color);
 }
-.navbar-toggler:focus {
+.navbar-toggler:focus > span,
+.theme-toggler:focus > span {
     box-shadow: var(--option_active_translucent) 0px 0px 0px 0.1rem
 }
+.theme-toggler:focus {
+    outline: none;
+}
 
-.navbar-toggler:focus-visible {
+.navbar-toggler:focus-visible > span,
+.theme-toggler:focus-visible > span {
     box-shadow: var(--secondary-background-color) 0px 0px 0px 0.1rem
 }
 
@@ -243,10 +280,6 @@ nav.side .navbar-wrapper.nav-close > ul.navbar-nav > li.nav-item > ul > li > a >
     display: none;
 }
 
-nav.side .navbar-wrapper.nav-close > ul.navbar-nav > li.nav-item > ul > li:not(.active) > a {
-    border-left: 0.25rem solid transparent;
-}
-
 .navbar-wrapper ul.navbar-nav li.nav-item:has(li.active) > a,
 .navbar-wrapper ul.navbar-nav li.active > a {
     color: var(--option_active);
@@ -270,7 +303,7 @@ nav.side .navbar-wrapper li.nav-item li.active > a {
     border-left: none;
 }
 
-nav.navbar:before {
+nav.navbar:not(.side):before {
     content: "";
     position: absolute;
     width: 100%;
@@ -451,4 +484,22 @@ nav.navbar.side {
     color: var(--txc_active);
     background-color: var(--option_active);
     border-radius: 15px;
+}
+
+.theme-toggler {
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border-radius: 0.5rem;
+}
+
+.theme-toggler > span, .navbar-toggler > span {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+}
+
+.theme-toggler:hover > span {
+    background: var(--secondary-background-color);
 }
