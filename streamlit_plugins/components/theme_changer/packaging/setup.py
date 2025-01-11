@@ -28,7 +28,10 @@ setup(
     long_description_content_type="text/markdown",
     author_email='v.quilonr@gmail.com',
     author='Victor Quilon Ranera',
-    packages=find_packages(include=["streamlit_plugins.extension", "streamlit_plugins.extension.*", "streamlit_plugins.components.theme_changer", "streamlit_plugins.components.theme_changer.*"]),
+    packages=find_packages(include=[
+        "streamlit_plugins.extension", "streamlit_plugins.extension.*",
+        "streamlit_plugins.components.theme_changer", "streamlit_plugins.components.theme_changer.*"
+    ]),
     python_requires='>=3.10',
     install_requires=requirements,
     include_package_data=True,

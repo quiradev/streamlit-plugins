@@ -1,35 +1,52 @@
-# Change Theme (on client Side!)
+# Change Theme (on the Client Side!)
+
+## Code example
+```python
+import streamlit as st
+
+from streamlit_plugins.components.theme_changer import st_theme_changer
+
+st.title("Theme Changer Component")
+st.caption("Just push the button to change the theme! On the client side, of course.")
+# specify the primary menu definition
+st_theme_changer()
+
+st_theme_changer(render_mode="pills")
+```
+
 
 ## Custom Config
 
-The name of the theme cannot be "Dark" or "Light", because are reserved for the base themes in streamlit.
+The theme name can’t be "Dark" or "Light" since those are reserved for the default Streamlit themes.
 
-## All theme configuracions (CSS props)
+## All Theme Configurations (CSS Properties)
+
 ### Theme Configuration Table
 
-Below is a description of the theme configuration parameters and their functionality:
+Here’s an overview of the theme configuration options and what they do:
 
-| **Key**                     | **Value**                                                                                  | **Description**                                                                                   |
-|-----------------------------|--------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| `primaryColor`              | `"#1A6CE7"`                                                                               | `primaryColor` defines the accent color most often used throughout a Streamlit app. A few examples of Streamlit widgets that use `primaryColor` include `st.checkbox`, `st.slider`, and `st.text_input` (when focused).                   |
-| `backgroundColor`           | `"#FFFFFF"`                                                                               | Defines the background color used in the main content area of your app.                                                            |
-| `secondaryBackgroundColor`  | `"#F5F5F5"`                                                                               | This color is used where a second background color is needed for added contrast. Most notably, it is the sidebar's background color. It is also used as the background color for most interactive widgets.          |
-| `textColor`                 | `"#1A1D21"`                                                                               | This option controls the text color for most of your Streamlit app.                                            |
-| `font`                      | `0` `1` `2` `"sans serif" ` `"serif"` `"monospace"`                                                                                      | Selects the font used in your Streamlit app. Valid values are `"sans serif"`, `"serif"`, and `"monospace"`. This option defaults to `"sans serif"` if unset or invalid.                             |
-| `base`                      | `light` `dark` `0` `1`                                                                                       | An easy way to define custom themes that make small changes to one of the preset Streamlit themes is to use the base option.                         |
-| *`widgetBackgroundColor`     | `"#FFFFFF"`                                                                               | The background color of widgets (e.g., inputs, sliders).                                          |
-| *`widgetBorderColor`         | `"#D3DAE8"`                                                                               | The border color for widgets and interactive elements.                                            |
-| *`skeletonBackgroundColor`   | `"#CCDDEE"`                                                                               | The background color used for loading skeletons (placeholders).                                   |
-| *`bodyFont`                  | `"Inter", "Source Sans Pro", sans-serif`                                                  | The default font used for body text throughout the application.                                   |
-| *`codeFont`                  | `"Apercu Mono", "Source Code Pro", monospace`                                             | The font used for displaying code elements or monospaced text.                                    |
-| *`fontFaces`                 | Array of font families with URLs and weights                                              | Defines custom fonts, including font-family, URL location, and weight (e.g., Inter, Apercu Mono). |
-| *`radii.checkboxRadius`      | `3`                                                                                       | The border radius for checkboxes, defining their rounded corners.                                 |
-| *`radii.baseWidgetRadius`    | `6`                                                                                       | The border radius for widgets like buttons or inputs.                                             |
-| *`fontSizes.tinyFontSize`    | `10`                                                                                      | The font size for tiny text elements, usually for subtle labels or captions.                      |
-| *`fontSizes.smallFontSize`   | `12`                                                                                      | The font size for small text elements, such as secondary descriptions.                            |
-| *`fontSizes.baseFontSize`    | `14`                                                                                      | The base font size used for standard text.                                                        |
-| *`fontFaces`                 | [Default Props](#font-faces-details-fontfaces-)                                           | The base font families used for dark and light base theme                                         |
+| **Key**                     | **Value**                                                                      | **Description**                                                                                   |
+|-----------------------------|--------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| `primaryColor`              | `"#1A6CE7"`                                                                    | The main accent color used throughout your app. For example, widgets like `st.checkbox`, `st.slider`, and `st.text_input` (when focused) use this color.                   |
+| `backgroundColor`           | `"#FFFFFF"`                                                                    | The main background color of your app.                                                           |
+| `secondaryBackgroundColor`  | `"#F5F5F5"`                                                                    | Used as a secondary background color, like for the sidebar or interactive widgets.               |
+| `textColor`                 | `"#1A1D21"`                                                                    | Controls the text color for most elements in your app.                                            |
+| `font`                      | `0` `1` `2` [`"sans serif" ` `"serif"` `"monospace"`]                          | Sets the font used in your app. Options are `"sans serif"`, `"serif"`, or `"monospace"`. Defaults to `"sans serif"` if unset.                             |
+| `base`                      | `0` `1` [`light` `dark`]                                                       | Lets you create custom themes by slightly modifying one of the preset Streamlit themes.          |
+| *`widgetBackgroundColor`     | `"#FFFFFF"`                                                                    | Background color for widgets like inputs or sliders.                                              |
+| *`widgetBorderColor`         | `"#D3DAE8"`                                                                    | Border color for widgets and interactive elements.                                                |
+| *`skeletonBackgroundColor`   | `"#CCDDEE"`                                                                    | Background color for loading placeholders (skeletons).                                            |
+| *`bodyFont`                  | `"Inter", "Source Sans Pro", sans-serif`                                       | Default font for body text.                                                                       |
+| *`codeFont`                  | `"Apercu Mono", "Source Code Pro", monospace`                                  | Font used for code or monospaced text.                                                            |
+| *`fontFaces`                 | [Array of font families with URLs and weights](#font-faces-details-fontfaces-) | Custom fonts, including font-family, URL, and weight (e.g., Inter, Apercu Mono).                  |
+| *`radii.checkboxRadius`      | `3`                                                                            | Border radius for checkboxes.                                                                     |
+| *`radii.baseWidgetRadius`    | `6`                                                                            | Border radius for widgets like buttons or inputs.                                                 |
+| *`fontSizes.tinyFontSize`    | `10`                                                                           | Font size for tiny text (e.g., labels).                                                           |
+| *`fontSizes.smallFontSize`   | `12`                                                                           | Font size for small text, like secondary descriptions.                                             |
+| *`fontSizes.baseFontSize`    | `14`                                                                           | Base font size for regular text.                                                                  |
 
+> The parameters marked with a * are new in Streamlit’s configuration. You can tweak them to adjust fonts and font sizes.  
+> Properties with a `.` in their names are part of nested objects. Details about these nested objects are provided below.
 
 ### Font Faces Details `"fontFaces": [...]`
 
@@ -42,67 +59,48 @@ Below is a description of the theme configuration parameters and their functiona
 | `Apercu Mono`    | `https://app.snowflake.com/static/e903ae189d31a97e231e.woff2`                                  | 500        | Medium weight of the Apercu Mono font.  |
 | `Apercu Mono`    | `https://app.snowflake.com/static/32447307374154c88bc0.woff2`                                  | 700        | Bold weight of the Apercu Mono font.    |
 
-
 ### Theme Configuration: Properties and Data Types
-
-The following table outlines the configuration properties, their expected types, and descriptions based on the provided validation logic:
-
-| **Property**                | **Type**             | **Description**                                                                                   |
-|-----------------------------|----------------------|---------------------------------------------------------------------------------------------------|
-| `primaryColor`              | `string`            | The primary color for accent elements (e.g., buttons, active components).                        |
-| `secondaryBackgroundColor`  | `string`            | The background color for secondary containers or sidebars.                                        |
-| `backgroundColor`           | `string`            | The main background color for the application.                                                   |
-| `textColor`                 | `string`            | The color for primary text elements across the application.                                       |
-| `font`                      | `enum` (0, 1, 2)    | The font family to use: `0` (SANS_SERIF), `1` (SERIF), `2` (MONOSPACE).                          |
-| `base`                      | `enum` (0, 1)       | The base theme to use: `0` (LIGHT), `1` (DARK).                                                  |
-| `widgetBackgroundColor`     | `string`            | The background color for widgets like inputs or sliders.                                          |
-| `widgetBorderColor`         | `string`            | The border color for widgets and interactive elements.                                            |
-| `radii`                     | `object`            | An object defining radii for elements such as checkboxes and widgets.                            |
-| `bodyFont`                  | `string`            | The font used for body text in the application.                                                  |
-| `codeFont`                  | `string`            | The font used for displaying code or monospaced text.                                             |
-| `fontFaces`                 | `array of objects`  | An array of font-face definitions, including family, URL, and weight.                            |
-| `fontSizes`                 | `object`            | An object defining font sizes for various text elements (e.g., tiny, small, base).               |
-| `skeletonBackgroundColor`   | `string`            | The background color for loading skeletons (placeholders).                                       |
 
 ### Enum Descriptions
 
 #### Font Family (`font`)
-- `0` (SANS_SERIF): Standard sans-serif font family.
-- `1` (SERIF): Standard serif font family.
-- `2` (MONOSPACE): Monospaced font family, typically used for code.
+- `0` (SANS_SERIF): Standard sans-serif font family.  
+- `1` (SERIF): Standard serif font family.  
+- `2` (MONOSPACE): Monospaced font family, often for code.  
 
 #### Base Theme (`base`)
-- `0` (LIGHT): Light-themed base configuration.
-- `1` (DARK): Dark-themed base configuration.
+- `0` (LIGHT): Light base theme.  
+- `1` (DARK): Dark base theme.  
 
 ### Nested Object Details
 
 #### `radii`
 | **Sub-Property**      | **Type** | **Description**                                      |
 |-----------------------|----------|------------------------------------------------------|
-| `checkboxRadius`      | `number` | Radius for checkboxes, defining rounded corners.     |
-| `baseWidgetRadius`    | `number` | Radius for widgets such as buttons or input fields.  |
+| `checkboxRadius`      | `number` | Radius for checkboxes.                               |
+| `baseWidgetRadius`    | `number` | Radius for widgets like buttons or inputs.           |
 
 #### `fontSizes`
 | **Sub-Property**      | **Type** | **Description**                                      |
 |-----------------------|----------|------------------------------------------------------|
-| `tinyFontSize`        | `number` | Font size for tiny text elements.                   |
-| `smallFontSize`       | `number` | Font size for small text elements.                  |
-| `baseFontSize`        | `number` | Default font size for standard text.                |
+| `tinyFontSize`        | `number` | Font size for tiny text.                             |
+| `smallFontSize`       | `number` | Font size for small text.                            |
+| `baseFontSize`        | `number` | Default font size for regular text.                  |
 
-This table ensures clarity in understanding and validating the properties for `CustomThemeConfig`.
+---
 
-# Using query paths url options to change the theme between light and dark
-- `?embed_options=light_theme`
-- `?embed_options=dark_theme`
+### Workaround for Switching Themes Without Custom Components
 
-# Using local Storage persistance
-- `stActiveTheme-/-v1`
+You can use query parameters in the URL to switch between light and dark themes. However, this requires a page reload and won’t allow custom themes. Examples:
 
-Automatically saves the current theme change it
+- `?embed_options=light_theme`  
+- `?embed_options=dark_theme`  
 
-# Override base "Dark" or "Light" theme
-### JSON Base Configuration for Streamlit Dark Theme
+---
+
+### Override Base "Dark" or "Light" Themes
+
+Currently, you can’t override the default "Dark" or "Light" themes directly in Streamlit. Until the Streamlit team releases support for the `SET_CUSTOM_THEME_CONFIG` event, you’re limited to modifying the available properties listed above.
 
 ```json
 {

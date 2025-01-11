@@ -121,8 +121,10 @@ DEFAULT_THEMES = {
 
 
 def st_theme_changer(
-        themes_data: dict[str, ThemeInput] = None,
-        render_mode: Literal["button", "pills"] = "button",
+    themes_data: dict[str, ThemeInput] = None,
+    render_mode: Literal["button", "pills"] = "button",
+    rerun_whole_st: bool = False,
+    timeout_rendering_theme_change: float = 0.2
 ):
     """
     A Streamlit component to change the theme of the app.
@@ -178,9 +180,12 @@ def st_theme_changer(
             st.session_state[f"{KEY}_theme_index"] = theme_index
 
             change_theme_coi(KEY, themes_data[theme_index])
-            time.sleep(0.2)
+            time.sleep(timeout_rendering_theme_change)
             # TODO: How to prevent to make a rerun and change button icon without rerun?
-            st.rerun(scope="fragment")
+            if rerun_whole_st:
+                st.rerun()
+            else:
+                st.rerun(scope="fragment")
 
     @st.fragment
     def pills_mode():
@@ -206,8 +211,11 @@ def st_theme_changer(
             if theme_index != new_theme_index:
                 st.session_state[f"{KEY}_theme_index"] = new_theme_index
                 change_theme_coi(KEY, themes_data[new_theme_index])
-                time.sleep(0.2)
-                st.rerun(scope="fragment")
+                time.sleep(timeout_rendering_theme_change)
+                if rerun_whole_st:
+                    st.rerun()
+                else:
+                    st.rerun(scope="fragment")
 
     if render_mode == "button":
         button_mode()
