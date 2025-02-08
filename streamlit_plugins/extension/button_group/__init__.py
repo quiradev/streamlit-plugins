@@ -27,11 +27,11 @@ def st_button_group(
     key: str = "button_group",
 ):
     i_key = 0
-    if f"{key}_{i_key}__check" in st.session_state:
-        # Exist a button with this value
-        if st.session_state[f"{key}_{i_key}__check"]:
-            i_key += 1
-            st.session_state[f"{key}_{i_key}__check"] = False
+    # if f"{key}_{i_key}__check" in st.session_state:
+    #     # Exist a button with this value
+    #     if st.session_state[f"{key}_{i_key}__check"]:
+    #         i_key += 1
+    #         st.session_state[f"{key}_{i_key}__check"] = False
 
     unique_key = f"{key}_{i_key}"
 
@@ -93,7 +93,7 @@ def st_button_group(
             params["default"] = get_default_indices(indexable_options, st.session_state.get(f"{unique_key}__prev_value", default))
         with view:
             res = st._main._button_group(**params)
-            st.session_state[f"{unique_key}__check"] = True
+            # st.session_state[f"{unique_key}__check"] = True
 
     elif selection_mode == "single" and keep_selection == "never_visible":
         view = st.empty()
@@ -102,11 +102,11 @@ def st_button_group(
             params["default"] = None
         with view:
             res = st._main._button_group(**params)
-            st.session_state[f"{unique_key}__check"] = True
+            # st.session_state[f"{unique_key}__check"] = True
 
     else:
         res = st._main._button_group(**params)
-        st.session_state[f"{unique_key}__check"] = True
+        # st.session_state[f"{unique_key}__check"] = True
 
     if selection_mode == "multi":
         return res.value

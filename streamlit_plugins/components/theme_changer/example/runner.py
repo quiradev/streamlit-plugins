@@ -1,4 +1,5 @@
 import os.path
+from pathlib import Path
 import sys
 
 import streamlit
@@ -14,10 +15,10 @@ if __name__ == '__main__':
     sys.path.append(os.path.abspath(os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
     )))
-    real_script = "app.py"
+    real_script = Path(__file__).parent / "app.py"
     _config.set_option("browser.gatherUsageStats", False)
     _config.set_option("server.headless", True)
     # _config.set_option("server.port", 8502)
     args = []
 
-    bootstrap.run(real_script, False, args, flag_options={})
+    bootstrap.run(str(real_script), False, args, flag_options={})

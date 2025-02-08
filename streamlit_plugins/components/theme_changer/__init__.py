@@ -16,7 +16,7 @@ import streamlit as st
 from typing import Literal
 
 from .inject_script import inject_crossorigin_interface, change_theme_coi
-from .entity import ThemeInput, ThemeInfo
+from .entity import ThemeInput, ThemeInfo, ThemeBaseLight, ThemeBaseDark
 
 KEY = "ThemeChangerComponent"
 
@@ -26,43 +26,20 @@ DEFAULT_CUSTOM_THEMES = {
         order=1,
         icon="brightness_2",
         themeInfo=ThemeInfo(
-            base=1,
-            primaryColor="#079E5A",
-            backgroundColor="#423E2E",
-            secondaryBackgroundColor="#2D3419",
-            textColor="#D7FF94",
-            font=2,
-            widgetBackgroundColor="#625625",
-            widgetBorderColor="#079E5A",
-            skeletonBackgroundColor="#545B3C",
-            bodyFont='"Victor Mono Italic", Source Sans Pro, sans-serif',
-            codeFont='"Victor Mono", Source Code Pro, monospace',
-            fontFaces=[
-                {
-                    "family": "Inter",
-                    "url": "https://rsms.me/inter/font-files/Inter-Regular.woff2?v=3.19",
-                    "weight": 400
-                },
-                {
-                    "family": "Victor Mono",
-                    "url": "https://rubjo.github.io/victor-mono/fonts/VictorMono-Regular.80e21ec6.woff",
-                    "weight": 400
-                },
-                {
-                    "family": "Victor Mono Italic",
-                    "url": "https://rubjo.github.io/victor-mono/fonts/VictorMono-Italic.ab9b5a67.woff",
-                    "weight": 400,
-                }
-            ],
-            radii={
-                "checkboxRadius": 3,
-                "baseWidgetRadius": 6
-            },
-            fontSizes={
-                "tinyFontSize": 10,
-                "smallFontSize": 12,
-                "baseFontSize": 14
-            }
+            base=ThemeBaseLight.base,
+            primaryColor=ThemeBaseLight.primaryColor,
+            backgroundColor=ThemeBaseLight.backgroundColor,
+            secondaryBackgroundColor=ThemeBaseLight.secondaryBackgroundColor,
+            textColor=ThemeBaseLight.textColor,
+            font=ThemeBaseLight.font,
+            widgetBackgroundColor=ThemeBaseLight.widgetBackgroundColor,
+            widgetBorderColor=ThemeBaseLight.widgetBorderColor,
+            skeletonBackgroundColor=ThemeBaseLight.skeletonBackgroundColor,
+            bodyFont=ThemeBaseLight.bodyFont,
+            codeFont=ThemeBaseLight.codeFont,
+            fontFaces=ThemeBaseLight.fontFaces,
+            radii=ThemeBaseLight.radii,
+            fontSizes=ThemeBaseLight.fontSizes
         )
     ),
     "light": ThemeInput(
@@ -70,33 +47,20 @@ DEFAULT_CUSTOM_THEMES = {
         order=2,
         icon="wb_sunny",
         themeInfo=ThemeInfo(
-            base=0,
-            primaryColor="#00BD00",
-            backgroundColor="#FDFEFE",
-            secondaryBackgroundColor="#D2ECCD",
-            textColor="#050505",
-            font=0,
-            widgetBackgroundColor="#FFFFFF",
-            widgetBorderColor="#D3DAE8",
-            skeletonBackgroundColor="#CCDDEE",
-            bodyFont="Inter, Source Sans Pro, sans-serif",
-            codeFont="Apercu Mono, Source Code Pro, monospace",
-            fontFaces=[
-                {
-                    "family": "Inter",
-                    "url": "https://rsms.me/inter/font-files/Inter-Regular.woff2?v=3.19",
-                    "weight": 400
-                }
-            ],
-            radii={
-                "checkboxRadius": 3,
-                "baseWidgetRadius": 6
-            },
-            fontSizes={
-                "tinyFontSize": 10,
-                "smallFontSize": 12,
-                "baseFontSize": 14
-            }
+            base=ThemeBaseDark.base,
+            primaryColor=ThemeBaseDark.primaryColor,
+            backgroundColor=ThemeBaseDark.backgroundColor,
+            secondaryBackgroundColor=ThemeBaseDark.secondaryBackgroundColor,
+            textColor=ThemeBaseDark.textColor,
+            font=ThemeBaseDark.font,
+            widgetBackgroundColor=ThemeBaseDark.widgetBackgroundColor,
+            widgetBorderColor=ThemeBaseDark.widgetBorderColor,
+            skeletonBackgroundColor=ThemeBaseDark.skeletonBackgroundColor,
+            bodyFont=ThemeBaseDark.bodyFont,
+            codeFont=ThemeBaseDark.codeFont,
+            fontFaces=ThemeBaseDark.fontFaces,
+            radii=ThemeBaseDark.radii,
+            fontSizes=ThemeBaseDark.fontSizes
         )
     )
 }
@@ -121,10 +85,12 @@ DEFAULT_THEMES = {
 
 
 def st_theme_changer(
-    themes_data: dict[str, ThemeInput] = None,
-    render_mode: Literal["button", "pills"] = "button",
+    themes_data: dict[str, ThemeInput] | None = None,
+    render_mode: Literal["init", "change", "next", "button", "pills"] = "button",
+    default_init_theme_name: str | None = None,
     rerun_whole_st: bool = False,
-    timeout_rendering_theme_change: float = 0.2
+    timeout_rendering_theme_change: float = 0.2,
+    key: str = "default",
 ):
     """
     A Streamlit component to change the theme of the app.
@@ -134,14 +100,15 @@ def st_theme_changer(
     if KEY not in st.session_state:
         st.session_state[KEY] = True
 
-    i = 0
-    if f"{KEY}_{i}_{render_mode}_check" in st.session_state:
-        # Exist a button with this value
-        if st.session_state[f"{KEY}_{i}_{render_mode}_check"]:
-            i += 1
-            st.session_state[f"{KEY}_{i}_{render_mode}_check"] = False
+    # i = 0
+    # if render_mode != "none":
+    #     if f"{KEY}_{i}_{render_mode}_check" in st.session_state:
+    #         # Exist a button with this value
+    #         if st.session_state[f"{KEY}_{i}_{render_mode}_check"]:
+    #             i += 1
+    #             st.session_state[f"{KEY}_{i}_{render_mode}_check"] = False
 
-    unique_key = f"{KEY}_{i}"
+    unique_key = f"{KEY}_{key}"
     # -------------------------
 
     if themes_data is None:
@@ -155,11 +122,41 @@ def st_theme_changer(
     if f"{KEY}_theme_index" not in st.session_state:
         st.session_state[f"{KEY}_theme_index"] = theme_names[0]
 
-    if "COI_injected" not in st.session_state:
+    if f"{KEY}_COI_injected" not in st.session_state:
         inject_crossorigin_interface()
-        st.session_state["COI_injected"] = True
-        change_theme_coi(KEY, themes_data[st.session_state[f"{KEY}_theme_index"]])
+        st.session_state[f"{KEY}_COI_injected"] = True
+
+        st_void = st.empty()
+        with st_void:
+            change_theme_coi(KEY, themes_data[st.session_state[f"{KEY}_theme_index"]])
         time.sleep(0.1)  # Ensure enough time for client to load the script
+        st_void.empty()
+
+    render_init_condition = (render_mode == "init" and not st.session_state.get(f"{KEY}_init", False))
+
+    if render_init_condition or render_mode == "change":
+        st.session_state[f"{KEY}_init"] = True
+        default_init_theme_name = default_init_theme_name or st.session_state[f"{KEY}_theme_index"]
+        if default_init_theme_name not in theme_names:
+            raise StreamlitAPIException(f"change_none_theme_index must be in {theme_names}")
+
+        st.session_state[f"{KEY}_theme_index"] = default_init_theme_name
+    
+    elif render_mode == "next":
+        next_theme_index = theme_names[(theme_names.index(st.session_state[f"{KEY}_theme_index"]) + 1) % len(theme_names)]
+        st.session_state[f"{KEY}_theme_index"] = next_theme_index
+    
+    if render_mode in ["change", "next"] or render_init_condition:
+        st_void = st.empty()
+        with st_void:
+            change_theme_coi(KEY, themes_data[st.session_state[f"{KEY}_theme_index"]])
+
+            if render_mode == "next" or render_mode == "change":
+                if rerun_whole_st:
+                    st.rerun()
+        
+        time.sleep(0.1)  # Ensure enough time for client to load the script
+        st_void.empty()
 
     # -------------------------
 
@@ -168,15 +165,15 @@ def st_theme_changer(
         theme_index: str = st.session_state[f"{KEY}_theme_index"]
         change_theme = st.button(
             icon=themes_data[theme_index].icon, label="Change Theme",
-            key=f"{unique_key}_button"
+            key=f"{unique_key}_{render_mode}"
         )
-        st.session_state[f"{unique_key}_{i}_button_check"] = True
+        # st.session_state[f"{unique_key}_{render_mode}_check"] = True
 
         if change_theme:
             current_key = theme_names[theme_names.index(theme_index)]
             next_key = theme_names[(theme_names.index(current_key) + 1) % len(theme_names)]
             theme_index = next_key
-            print(f"Changing theme to {themes_data[theme_index].name}")
+            # print(f"Changing theme to {themes_data[theme_index].name}")
             st.session_state[f"{KEY}_theme_index"] = theme_index
 
             change_theme_coi(KEY, themes_data[theme_index])
@@ -201,13 +198,12 @@ def st_theme_changer(
             style="pills", selection_visualization="only_selected",
             keep_selection="always_visible",
             selection_mode="single",
-            key=f"{unique_key}_pills",
+            key=f"{unique_key}_{render_mode}",
         )
-        st.session_state[f"{unique_key}_{i}_pills_check"] = True
+        # st.session_state[f"{unique_key}_{render_mode}_check"] = True
 
         if new_theme_index:
             theme_index: str = st.session_state[f"{KEY}_theme_index"]
-            # new_theme_index = st.session_state[f"{unique_key}_pills"]
             if theme_index != new_theme_index:
                 st.session_state[f"{KEY}_theme_index"] = new_theme_index
                 change_theme_coi(KEY, themes_data[new_theme_index])
@@ -217,9 +213,14 @@ def st_theme_changer(
                 else:
                     st.rerun(scope="fragment")
 
+    # -------------------------
+
     if render_mode == "button":
         button_mode()
 
-    if render_mode == "pills":
-        with st.sidebar:
-            pills_mode()
+    elif render_mode == "pills":
+        pills_mode()
+
+
+def get_active_theme_key() -> str | None:
+    return st.session_state.get(f"{KEY}_theme_index", None)

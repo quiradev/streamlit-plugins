@@ -11,8 +11,7 @@ except ModuleNotFoundError:
     from streamlit.runtime.scriptrunner_utils.script_requests import ScriptRequestType, RerunData
 
 import streamlit.components.v1 as components
-
-from streamlit_plugins.components.navbar import st_navbar, HEADER_HEIGHT
+from streamlit_plugins.components.navbar import st_navbar, HEADER_HEIGHT, build_menu_from_st_pages
 from streamlit_plugins.framework.multilit.wrapper_class import Templateapp
 from .app_template import MultiHeadApp
 from .loading_app import LoadingApp
@@ -402,32 +401,35 @@ class MultiApp:
         number_of_sections = int(self._login_app is not None) + len(self._complex_nav.keys())
 
         if self._use_navbar:
-            menu_data = []
-            for i, nav_section_id in enumerate(self._complex_nav):
-                menu_item = None
-                if nav_section_id not in [self._home_label[0], self._logout_label[0]]:
-                    submenu_items = []
-                    for app_item_id in self._complex_nav[nav_section_id]:
-                        menu_item = {
-                            'id': app_item_id,
-                            'label': self._navbar_pointers[app_item_id][0],
-                            'icon': self._navbar_pointers[app_item_id][1]
-                        }
-                        if len(self._complex_nav[nav_section_id]) > 1:
-                            submenu_items.append(menu_item)
-
-                    if len(submenu_items) > 0:
-                        menu_item = {
-                            'id': nav_section_id,
-                            'label': self._navbar_pointers[nav_section_id][0],
-                            'icon': self._navbar_pointers[nav_section_id][1],
-                            'submenu': submenu_items
-                        }
-
-                    if menu_item is not None:
-                        menu_data.append(menu_item)
+            # menu_data = []
+            # for i, nav_section_id in enumerate(self._complex_nav):
+            #     menu_item = None
+            #     if nav_section_id not in [self._home_label[0], self._logout_label[0]]:
+            #         submenu_items = []
+            #         for app_item_id in self._complex_nav[nav_section_id]:
+            #             menu_item = {
+            #                 'id': app_item_id,
+            #                 'label': self._navbar_pointers[app_item_id][0],
+            #                 'icon': self._navbar_pointers[app_item_id][1]
+            #             }
+            #             if len(self._complex_nav[nav_section_id]) > 1:
+            #                 submenu_items.append(menu_item)
+            #
+            #         if len(submenu_items) > 0:
+            #             menu_item = {
+            #                 'id': nav_section_id,
+            #                 'label': self._navbar_pointers[nav_section_id][0],
+            #                 'icon': self._navbar_pointers[nav_section_id][1],
+            #                 'submenu': submenu_items
+            #             }
+            #
+            #         if menu_item is not None:
+            #             menu_data.append(menu_item)
 
             # Add logout button and kick to login action
+
+            menu_data = st.session_state.get("menu_data")
+
             if self._login_app is not None:
                 # if self.session_state.current_user is not None:
                 #    self._logout_label = '{} : {}'.format(self.session_state.current_user.capitalize(),self._logout_label)
@@ -532,7 +534,7 @@ class MultiApp:
         new_app_id = st_navbar(
             menu_definition=menu_data, key="mainMultilitMenuComplex", home_name=home_nav,
             override_theme=self._navbar_theme, login_name=login_nav,
-            use_animation=self._navbar_animation, hide_streamlit_markers=self._hide_streamlit_markers,
+            hide_streamlit_markers=self._hide_streamlit_markers,
             default_app_selected_id=override_app_selected_id or self.session_state.selected_app,
             override_app_selected_id=override_app_selected_id,
             sticky_nav=self._navbar_sticky, position_mode=self._navbar_mode, reclick_load=True,
@@ -858,6 +860,7 @@ class MultiApp:
                     del query_params['page']
                 else:
                     self.session_state.url_nav_app = None
+
     def enable_guest_access(self, guest_access_level=1, guest_username='guest'):
         """
         This method will auto login a guest user when the app is secured with a login app, this will allow fora guest user to by-pass the login app and gain access to the other apps that the assigned access level will allow.

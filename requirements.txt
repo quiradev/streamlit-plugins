@@ -5,3 +5,4 @@ compress-pickle>=2.1.0
 bokeh >= 3.1.1
 validators >= 0.22.0
 pandas >= 2.2.0
+pydantic

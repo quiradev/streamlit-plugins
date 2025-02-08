@@ -35,7 +35,7 @@ if (!window.parent.COI_injected) {{
 
 
 def change_theme_coi(key, theme_data: ThemeInput):
-    theme_data_raw = theme_data.model_dump_json(exclude_none=True, exclude_unset=True, exclude_defaults=True)
+    theme_data_raw = theme_data.model_dump_json(exclude_none=True)
     components.html(
         f"""<script>
     // frameElement.parentElement.style.display = 'none';
