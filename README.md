@@ -77,7 +77,7 @@ with st.sidebar:
 
 The above code only will change between the light/dark themes by default in streamlit. But here is the `game changer`, on in that case the `theme changer`, not only you can change between the defaults, YOU CAN DEFINE YOUR OWN THEMES, yes, more than 2. All the properties you can change are defined here. [Theme props](/streamlit_plugins/components/theme_changer/README.md)
 
-![Customizable theme app](https://raw.githubusercontent.com/quiradev/streamlit-plugins/main/resources/theme_changer_customizable.mp4)
+![Customize Theme App](https://raw.githubusercontent.com/quiradev/streamlit-plugins/main/resources/theme_changer_customizable_small.gif)
 
 ```python
 from streamlit_plugins.components.theme_changer import st_theme_changer
