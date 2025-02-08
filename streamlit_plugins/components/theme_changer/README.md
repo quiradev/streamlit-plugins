@@ -20,7 +20,10 @@ The theme name can’t be "Dark" or "Light" since those are reserved for the def
 
 ### Editable custom theme app
 
-![Editable Theme Changer App](https://raw.githubusercontent.com/quiradev/streamlit-plugins/main/resources/theme_changer_customizable.mp4)
+<video width="320" height="240" controls>
+  <source src="https://github/quiradev/streamlit-plugins/raw/main/resources/theme_changer_customizable.mp4" type="video/mp4">
+  Not supported
+</video>
 
 ```python
 import streamlit as st
