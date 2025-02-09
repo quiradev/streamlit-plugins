@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import atexit
 import time
 from enum import Enum, auto
@@ -4405,9 +4406,25 @@ def get_loader(loader_name, **kwargs) -> tuple[str, str, str]:
         return book_loader(**kwargs)
 
 
-class Loader:
-    def __init__(self, loader_container=None, text='', loader_name: LoadersLib = LoadersLib.book_loader, height=256,
-                 index=0, primary_color=None):
+class BaseLoader(ABC):
+    def __init__(self):
+        atexit.register(self.stop_loader)
+    
+    @abstractmethod
+    def run_loader(self):
+        pass
+
+    @abstractmethod
+    def stop_loader(self):
+        pass
+
+class Loader(BaseLoader):
+    def __init__(self,
+        loader_container=None, text='', loader_name: LoadersLib = LoadersLib.book_loader, height=256,
+        index=0, primary_color=None
+    ):
+        super().__init__()
+
         if loader_container is None:
             loader_container = st.container()
 

@@ -437,8 +437,8 @@ DEFAULT_THEMES = [
 
 def build_menu_from_st_pages(
     *pages: StreamlitPage | dict,
-    login_app: StreamlitPage = None, logout_callback: Callable = None, account_app: StreamlitPage = None,
-    settings_app: StreamlitPage = None
+    login_app: StreamlitPage | None = None, logout_callback: Callable | None = None, account_app: StreamlitPage | None = None,
+    settings_app: StreamlitPage | None = None
 ) -> tuple[list[dict], dict, dict[str, StreamlitPage]]:
     if login_app and not logout_callback:
         raise ValueError("You must provide a logout callback if you provide a login app")
@@ -501,7 +501,7 @@ def build_menu_from_st_pages(
 
 
 def st_navbar(
-    menu_definition: list[dict], first_select=0, home_name=None, login_name=None,
+    menu_definition: list[dict], first_select=0, home_name: str | dict | None = None, login_name=None,
     override_theme=None, sticky_nav=True, hide_streamlit_markers=True,
     position_mode: Literal["top", "under", "side"] = 'under',
     force_value=None,
@@ -509,8 +509,8 @@ def st_navbar(
     default_app_selected_id=None,
     override_app_selected_id=None,
     reclick_load=True,
-    input_styles: str = None,
-    themes_data: list[dict] = None,
+    input_styles: str | None = None,
+    themes_data: list[dict]| None = None,
     key="NavBarComponent",
 ):
     if themes_data is None:
@@ -520,7 +520,7 @@ def st_navbar(
     inject_crossorigin_interface()
     instantiate_crossorigin_interface(key)
 
-    ctx = get_script_run_ctx(suppress_warning=True)
+    # ctx = get_script_run_ctx(suppress_warning=True)
 
     # first_select = math.floor(first_select / 10)
 
@@ -531,6 +531,7 @@ def st_navbar(
         "option_active": "var(--primary-color)",
     }
 
+    home_data = {}
     if type(home_name) is str:
         home_data = {'id': "app_home", 'label': home_name, 'icon': MATERIAL_ICON_HOME, 'ttip': home_name}
     else:

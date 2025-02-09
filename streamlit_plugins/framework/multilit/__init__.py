@@ -1,2 +1,2 @@
-from .multilit_app import MultiApp
-from .app_template import MultiHeadApp
+from .multilit import Multilit
+from .app_wrapper import STPageWrapper
