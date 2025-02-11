@@ -20,7 +20,7 @@ class STPageWrapper(ABC):
         self.loading_engine = loading_engine
         self.parent_app = None
         self.st_page = st_page
-        self.title = None
+        self.title: str = st_page.title
 
     def has_loading(self):
         if self.with_loader is None:
@@ -31,20 +31,6 @@ class STPageWrapper(ABC):
     def run(self):
         self.st_page._can_be_called = True
         self.st_page.run()
-
-    # def assign_session(self, session_state, parent_app):
-    #     """
-    #     This method is called when the app is added to a Multilit application to gain access to the global session state.
-
-    #     Parameters
-    #     ------------
-    #     session_state:
-    #         The session state as created by the parent application.
-
-    #     """
-
-    #     self.session_state = session_state
-    #     self.parent_app = parent_app
 
     def check_access(self, actual_level: int) -> bool:
         """

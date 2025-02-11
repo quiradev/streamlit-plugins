@@ -50,3 +50,13 @@ window.parent.instantiateCrossOriginInterface('{key}');
         height=0,
         width=0,
     )
+
+def set_page_id_visual(key: str, page_id: str):
+    components.html(
+        f"""<script>
+    // frameElement.parentElement.style.display = 'none';
+    window.parent.instantiateCrossOriginInterface('{key}').postSetPageId("{page_id}");
+    </script>""",
+        height=0,
+        width=0,
+    )

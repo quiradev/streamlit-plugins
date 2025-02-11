@@ -1,9 +1,6 @@
 import streamlit
-from streamlit.elements.widgets.button_group import SingleOrMultiSelectSerde, V
-from streamlit.errors import StreamlitAPIException
-from streamlit.string_util import validate_material_icon
 from streamlit.web.server.routes import _DEFAULT_ALLOWED_MESSAGE_ORIGINS
-from streamlit.proto.ButtonGroup_pb2 import ButtonGroup as ButtonGroupProto
+from streamlit.errors import StreamlitAPIException
 
 from streamlit_plugins.extension.button_group import st_button_group
 
@@ -159,7 +156,7 @@ def st_theme_changer(
         st_void.empty()
 
     # -------------------------
-
+    
     @st.fragment
     def button_mode():
         theme_index: str = st.session_state[f"{KEY}_theme_index"]
@@ -212,6 +209,22 @@ def st_theme_changer(
                     st.rerun()
                 else:
                     st.rerun(scope="fragment")
+
+    # ctx = get_script_run_ctx()
+    # Una vez creado el fragment_id, almacenarlo, y despues recuperarlo con el fragment_storage
+    # ctx.fragment_storage.get
+    # Despues, si se quiere hacer un rerun del mismo fragment y de otros, recuperar los fragment_id y lanzar el RerunData
+
+    # ctx.script_requests.request_rerun(
+    #     RerunData(
+    #         query_string=query_string,
+    #         page_script_hash=page_script_hash,
+    #         fragment_id_queue=_new_fragment_id_queue(ctx, scope),
+    #         is_fragment_scoped_rerun=scope == "fragment",
+    #     )
+    # )
+    # # Force a yield point so the runner can do the rerun
+    # st.empty()
 
     # -------------------------
 

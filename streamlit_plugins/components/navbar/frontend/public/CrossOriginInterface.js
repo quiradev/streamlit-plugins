@@ -21,13 +21,14 @@ class CrossOriginInterface {
         // this.disable_scroll = false;
         // this.updateId = 0
         // this.enroute = false;
-        this.navState = "nav-open";
+        this.navState = document.body.classList.contains("nav-open") ? "nav-open" : "nav-closed";
         window.addEventListener("message", this.handleMessage.bind(this));
     }
 
     register(component, navState)     {
         this.component = component;
         this.navState = navState;
+        this.sidebarToggle(navState);
         // this.autoUpdateAnchor = autoUpdateAnchor;
         // this.emphasisStyle = emphasisStyle;
         console.debug('Registered component for key ', this.key, ": ", component, navState);
@@ -190,6 +191,21 @@ class CrossOriginInterface {
     //         {anchor_id, update_id: this.updateId++}
     //     );
     // }
+    
+    postSidebarState() {
+        const isSideOpen = document.body.classList.contains("nav-open");
+        this.postMessage(
+            'sidebarResponseInfo',
+            {'isSideOpen': isSideOpen}
+        );
+    }
+
+    postSetPageId(pageId) {
+        this.postMessage(
+            'setPageId',
+            {'pageId': pageId}
+        );
+    }
 
     //Send a message to the component
     postMessage(COMPONENT_method, data = { anchor_id = null, update_id = null} = {}) {
@@ -199,6 +215,7 @@ class CrossOriginInterface {
         }
         this.component.postMessage({ COMPONENT_method: COMPONENT_method, key: this.key, ...data}, '*');
     }
+
 
     // observer = new IntersectionObserver((entries) => {
     //     entries.forEach(entry => {
@@ -306,7 +323,8 @@ class CrossOriginInterface {
                 const { theme_data } = event.data;
                 this.themeToggle(theme_data);
                 break;
-            
+            case 'sidebarRequestInfo':
+                this.postSidebarState();
             case 'sidebarToggle':
                 const { navState } = event.data;
                 this.sidebarToggle(navState);

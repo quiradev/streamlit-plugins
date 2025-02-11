@@ -64,7 +64,7 @@ def login():
     if submitted:
         if user == USER and password == PASSWORD:
             st.session_state.logged_in = True
-            st.session_state.app_id = "app_default"
+            st.session_state.app_id = st.session_state["default_page_id"]
             st.rerun()
         else:
             st.toast("Invalid username or password", icon="❌")
@@ -90,45 +90,52 @@ st.logo(
     icon_image="https://streamlit.io/images/brand/streamlit-mark-color.png"
 )
 
+dashboard = st.Page("dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True)
 login_page = st.Page(login, title="Log in", icon=":material/login:")
 account_page = st.Page(account, title="Account", icon=":material/account_circle:")
 settings_page = st.Page(settings, title="Settings", icon=":material/settings:")
-dashboard = st.Page("dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True)
 bugs = st.Page("reports/bugs.py", title="Bug reports", icon=":material/bug_report:")
 alerts = st.Page("reports/alerts.py", title="System alerts", icon=":material/notification_important:")
 search = st.Page("tools/search.py", title="Search", icon=":material/search:")
 history = st.Page("tools/history.py", title="History", icon=":material/history:")
+logout_page = st.Page(logout, title="Log out", icon=":material/logout:")
 
 # HERE IS THE CHANGE
-from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pages
+from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pages, NavbarPositionType
 
 menu_data, menu_account_data, app_map = build_menu_from_st_pages(
     {
-        "name": "Reports", "subpages": [dashboard, bugs, alerts], "icon": ":material/assessment:", "ttip": "Reports"
+        "name": "Reports", "subpages": [dashboard, alerts], "icon": ":material/assessment:", "ttip": "Reports"
     },
     {
-        "name": "Tools", "subpages": [search, history], "icon": ":material/extension:"
+        "name": "Tools", "subpages": [search, history, bugs], "icon": ":material/extension:"
     },
-    login_app=login_page, account_app=account_page, settings_app=settings_page,
-    logout_callback=logout,
+    login_page=login_page, account_page=account_page, settings_page=settings_page,
+    logout_page=logout_page,
 )
+st.session_state["default_page_id"] = dashboard._script_hash
+login_page_id = login_page._script_hash
+st.session_state["login_page_id"] = login_page_id
+logout_page_id = logout_page._script_hash
+st.session_state["logout_page_id"] = logout_page_id
+
 st.session_state["app_map"] = app_map
 
 my_sidebar()
 
-position_mode = st.session_state.get("position_mode", "top")
+position_mode: NavbarPositionType = st.session_state.get("position_mode", "top")
 sticky_nav = st.session_state.get("sticky_nav", True)
 
 
-app_id = "app_login"
+page_id = login_page_id
 if st.session_state.logged_in:
     # SOME TEXT ABOVE THE NAVBAR
     if position_mode == "top":
         my_heading()
 
-    app_id = st_navbar(
+    page_id = st_navbar(
         menu_definition=menu_data if st.session_state.logged_in else [],
-        login_name=menu_account_data,
+        login_definition=menu_account_data,
         hide_streamlit_markers=False,
         override_app_selected_id=st.session_state.app_id,
         sticky_nav=sticky_nav,  # at the top or not
@@ -138,19 +145,16 @@ if st.session_state.logged_in:
     if position_mode != "top":
         my_heading()
 
-if not st.session_state.logged_in and app_id != "app_login":
-    app_id = "app_login"
-
-if app_id == "app_login":
-    if st.session_state.logged_in:
-        app_id = "app_logout"
+if not st.session_state.logged_in and page_id != login_page_id:
+    page_id = login_page_id
 
 
 # Loads the selected app content
 st.session_state.app_id = None  # Added to fix login/logout issue
-st.session_state.active_app_id = app_id
-app_map[app_id]._can_be_called = True
-app_map[app_id].run()
+st.session_state.active_app_id = page_id
+app_map[page_id]._can_be_called = True
+app_map[page_id].run()
+# st.switch_page(app_map[page_id])
 
 
 # if st.session_state.logged_in:

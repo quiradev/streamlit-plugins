@@ -219,6 +219,9 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     //     if (auto_update_anchor)
     //         this.postMessage("updateActiveAnchor", { anchor_id });
     // }
+    postSidebarGetState(): void {
+        this.postMessage("sidebarRequestInfo", {});
+    }
     postSidebarToggle(navState: string): void {
         this.postMessage("sidebarToggle", { navState });
     }
@@ -243,6 +246,16 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         }
 
         console.debug("handleMessage", event.data);
+        if (COMPONENT_method === "sidebarResponseInfo") {
+            const { isSideOpen } = event.data;
+            // console.debug(key, "sidebarResponseInfo: ", "Received sidebarResponseInfo message with navState: ", isSideOpen);
+            this.setState({ navState: isSideOpen ? "nav-open" : "nav-close" });
+        }
+        else if (COMPONENT_method === "setPageId") {
+            const { pageId } = event.data;
+            // console.debug(key, "setPageId: ", "Received setPageId message with pageId: ", pageId);
+            this.setState({ selectedAppId: pageId });
+        }
         // if (COMPONENT_method === "updateActiveAnchor") {
         //     const { anchor_id, update_id } = event.data;
         //     console.debug(key, "updateActiveAnchor: ", "Received updateActiveAnchor message with anchor_id: ", anchor_id, "update_id: ", update_id);
@@ -286,7 +299,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // );
 
         // useEffect resize
-        // this.handleResize();
+        this.handleResize();
         if (this.props.args.position_mode !== "side") {
             this.calculateMaxNavBarWidth();
         }
@@ -298,20 +311,19 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         // Se registran los eventos de COI
         // Register component
-        if (this.props.args.position_mode !== "side") {
-            this.postRegister(this.state.navState);
-            // Send styles to COI
-            // this.postUpdateConfig();
-            // Tell COI to track anchors for visibility
-            // this.postTrackAnchors(anchor_ids);
-            // Set initial active anchor for component and COI
-            // this.setState({ activeAnchorId: initialAnchorId });
-            // this.postUpdateActiveAnchor(anchor_ids[0]);
-            this.postSidebarToggle(this.state.navState);
-            // Listen for messages from COI
-            // No se necesita recibir mensajes de streamlit al componente
-            // window.addEventListener("message", this.handleMessage.bind(this));
-        }
+        this.postRegister(this.state.navState);
+        this.postSidebarGetState();
+        // Send styles to COI
+        // this.postUpdateConfig();
+        // Tell COI to track anchors for visibility
+        // this.postTrackAnchors(anchor_ids);
+        // Set initial active anchor for component and COI
+        // this.setState({ activeAnchorId: initialAnchorId });
+        // this.postUpdateActiveAnchor(anchor_ids[0]);
+        this.postSidebarToggle(this.state.navState);
+        // Listen for messages from COI
+        // No se necesita recibir mensajes de streamlit al componente
+        window.addEventListener("message", this.handleMessage.bind(this));
 
         // Loads themes from python args. If not, use default themes
         this.themes_data = this.props.args.themes_infos || this.themes_data;

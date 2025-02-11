@@ -36,8 +36,8 @@ menu_data = [
 
 menu_id = st_navbar(
     menu_definition=menu_data,
-    home_name='Home',
-    login_name='Account',
+    home_definition= {'id': 'page_home', 'icon': ":material/home:", 'label': "Home"},
+    login_definition={'id': 'page_account', 'icon': ":material/user_circle:", 'label': "Account"},
     hide_streamlit_markers=False,  # will show the st hamburger as well as the navbar now!
     sticky_nav=False,  # floating or sticky navbar
     position_mode='top',  # top or under streamlit header

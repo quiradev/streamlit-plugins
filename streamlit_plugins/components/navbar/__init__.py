@@ -1,9 +1,10 @@
-from typing import Literal, Callable
+from typing import Literal
 
+import streamlit
+from streamlit.web.server.routes import _DEFAULT_ALLOWED_MESSAGE_ORIGINS
 import streamlit as st
 import streamlit.components.v1 as components
 from streamlit.navigation.page import StreamlitPage
-from streamlit.runtime.scriptrunner import get_script_run_ctx
 
 from .config import dev_url, build_path, _RELEASE
 from .inject_script import inject_crossorigin_interface, instantiate_crossorigin_interface
@@ -13,12 +14,12 @@ if _RELEASE:
 else:
     _component_func = components.declare_component("nav_bar", url=dev_url)
 
+if "http://localhost:8501" not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
+    streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append("http://localhost:8501")
+
+NavbarPositionType = Literal["top", "under", "side"]
+
 GAP_BETWEEN_COMPS = 1
-
-major, minnor, bug = st.__version__.split('.')
-major, minnor, bug = int(major), int(minnor), int(bug)
-
-
 TOP_SIDE_ELEMENTS_MARGIN = 1.05
 TOP_SIDE_ELEMENTS_WIDTH = 4
 TOP_LINE_HEIGHT = 0.125
@@ -29,6 +30,8 @@ HEADER_HEIGHT = 3.75
 
 APP_VIEWER_SELECTOR = ".stAppViewContainer"
 COLLAPSE_CONTROLL_CLASS = "collapsedControl"
+major, minnor, bug = st.__version__.split('.')
+major, minnor, bug = int(major), int(minnor), int(bug)
 if major == 1:
     if 36 < minnor <= 37:
         APP_VIEWER_SELECTOR = '[data-testid="stAppViewContainer"]'
@@ -333,6 +336,7 @@ body.nav-open div:has(> iframe[title="{_component_func.name}"]) {{
 MATERIAL_ICON_HOME = ":material/home:"
 MATERIAL_ICON_LOGIN = ":material/login:"
 MATERIAL_ICON_LOGOUT = ":material/logout:"
+MATERIAL_ICON_SETTINGS = ":material/settings:"
 MATERIAL_ICON_USER_CIRCLE = ":material/account_circle:"
 
 DEFAULT_CUSTOM_THEMES = [
@@ -437,21 +441,25 @@ DEFAULT_THEMES = [
 
 def build_menu_from_st_pages(
     *pages: StreamlitPage | dict,
-    login_app: StreamlitPage | None = None, logout_callback: Callable | None = None, account_app: StreamlitPage | None = None,
-    settings_app: StreamlitPage | None = None
-) -> tuple[list[dict], dict, dict[str, StreamlitPage]]:
-    if login_app and not logout_callback:
-        raise ValueError("You must provide a logout callback if you provide a login app")
+    home_page: StreamlitPage | None = None,
+    login_page: StreamlitPage | None = None, logout_page: StreamlitPage | None = None,
+    account_page: StreamlitPage | None = None,
+    settings_page: StreamlitPage | None = None
+) -> tuple[list[dict], dict, dict, dict[str, StreamlitPage]]:
+    if login_page and not logout_page:
+        raise ValueError("You must provide a logout page if you provide a login page")
 
     menu = []
-    app_map = {}
+    page_map = {}
+    home_definition = {}
+    account_login_definition = {}
     for page in pages:
         if isinstance(page, dict):
             name = page["name"]
             sub_pages = page["subpages"]
             icon = page.get("icon", None)
             ttip = page.get("ttip", name)
-            submenu, _, sub_app_map = build_menu_from_st_pages(*sub_pages)
+            submenu, sub_home_def, _, sub_app_map = build_menu_from_st_pages(*sub_pages)
             menu.append({
                 'id': name.lower().replace(" ", "_"),
                 'label': name,
@@ -459,51 +467,76 @@ def build_menu_from_st_pages(
                 'icon': icon,
                 'ttip': ttip,
             })
-            app_map.update(sub_app_map)
+            page_map.update(sub_app_map)
+            # home_definition = sub_home_def
+
         elif isinstance(page, StreamlitPage):
-            app_id = page.url_path
-            if not app_id:
-                app_id = "app_default"
+            app_id = page._script_hash
             menu.append({'label': page.title, 'id': app_id, 'icon': page.icon, 'ttip': page.title, 'style': {}})
-            app_map[app_id] = page
+            page_map[app_id] = page
         else:
             raise ValueError(f"Invalid page type: {type(page)}")
 
-    if login_app:
-        app_map["app_login"] = login_app
+    if home_page:
+        home_definition = {
+            'id': home_page._script_hash,
+            'label': home_page.title or "Home",
+            'icon': home_page.icon or MATERIAL_ICON_HOME,
+            'ttip': home_page.title or "Home"
+        }
+        page_map[home_page._script_hash] = home_page
 
-    account_login_definition = {
-        'id': "account_menu",
-        'label': "Account",
-        'icon': MATERIAL_ICON_USER_CIRCLE,
-        'ttip': "Account", 'style': {},
-        'submenu': []
-    }
-    if account_app and logout_callback:
-        account_login_definition['submenu'].append(
-            {'label': "Profile", 'id': "app_account_profile", 'icon': MATERIAL_ICON_USER_CIRCLE, 'ttip': "Profile"},
-        )
-        app_map["app_account_profile"] = account_app
+    if login_page:
+        page_map[login_page._script_hash] = login_page
 
-        if settings_app:
+    if settings_page or account_page or logout_page:
+        account_login_definition = {
+            'id': "account_menu",
+            'label': "Account",
+            'icon': MATERIAL_ICON_USER_CIRCLE,
+            'ttip': "Account", 'style': {},
+            'submenu': []
+        }
+        if account_page:
             account_login_definition['submenu'].append(
-                {'label': "Settings", 'id': "app_account_settings", 'icon': ":material/settings:", 'ttip': "Settings"}
+                {
+                    'id': account_page._script_hash,
+                    'label': account_page.title or "Profile",
+                    'icon': account_page.icon or MATERIAL_ICON_USER_CIRCLE,
+                    'ttip': account_page.title or "Profile"
+                },
             )
-            app_map["app_account_settings"] = settings_app
+            page_map[account_page._script_hash] = account_page
 
-    if logout_callback:
-        account_login_definition['submenu'].append(
-            {'label': "Logout", 'id': "app_logout", 'icon': MATERIAL_ICON_LOGOUT, 'ttip': "Logout"}
-        )
-        app_map["app_logout"] = st.Page(logout_callback, title="Log out", icon=MATERIAL_ICON_LOGOUT)
+        if settings_page:
+            account_login_definition['submenu'].append(
+                {
+                    'id': settings_page._script_hash,
+                    'label': settings_page.title or "Settings",
+                    'icon': settings_page.icon or MATERIAL_ICON_SETTINGS,
+                    'ttip': settings_page.title or "Settings"
+                }
+            )
+            page_map[settings_page._script_hash] = settings_page
 
-    return menu, account_login_definition, app_map
+        if logout_page:
+            account_login_definition['submenu'].append(
+                {
+                    'id': logout_page._script_hash,
+                    'label': logout_page.title or "Logout",
+                    'icon': logout_page.icon or MATERIAL_ICON_LOGOUT,
+                    'ttip': logout_page.title or"Logout"
+                }
+            )
+            page_map[logout_page._script_hash] = logout_page
+
+    return menu, home_definition, account_login_definition, page_map
 
 
 def st_navbar(
-    menu_definition: list[dict], first_select=0, home_name: str | dict | None = None, login_name=None,
+    menu_definition: list[dict], first_select=0, home_definition: dict | None = None, login_definition: dict | None = None,
     override_theme=None, sticky_nav=True, hide_streamlit_markers=True,
-    position_mode: Literal["top", "under", "side"] = 'under',
+    position_mode: NavbarPositionType = 'under',
     force_value=None,
     option_menu=False,
     default_app_selected_id=None,
@@ -531,22 +564,15 @@ def st_navbar(
         "option_active": "var(--primary-color)",
     }
 
-    home_data = {}
-    if type(home_name) is str:
-        home_data = {'id': "app_home", 'label': home_name, 'icon': MATERIAL_ICON_HOME, 'ttip': home_name}
-    else:
-        home_data = home_name
-        if home_name is not None:
-            if home_name.get('icon', None) is None:
-                home_data['icon'] = MATERIAL_ICON_HOME
+    home_data = None
+    if home_definition and home_definition is not None:
+        home_data = home_definition
+        home_data['icon'] =home_definition.get('icon', MATERIAL_ICON_HOME)
 
-    if type(login_name) is str:
-        login_data = {'id': "app_login", 'label': login_name, 'icon': MATERIAL_ICON_USER_CIRCLE, 'ttip': login_name}
-    else:
-        login_data = login_name
-        if login_name is not None:
-            if login_name.get('icon', None) is None:
-                login_data['icon'] = MATERIAL_ICON_USER_CIRCLE
+    login_data = None
+    if login_definition and login_definition is not None:
+        login_data = login_definition
+        login_data['icon'] = login_definition.get('icon', MATERIAL_ICON_USER_CIRCLE)
 
     if option_menu:
         max_len = 0
@@ -572,10 +598,11 @@ def st_navbar(
 
     if default_app_selected_id is None:
         items = menu_definition
-        if home_name is not None:
+        if home_definition is not None:
             items = [home_data] + items
-        if login_name is not None:
+        if login_definition is not None:
             items = items + [login_data]
+        
         first_select_item = items[first_select]
         default_app_selected_id = first_select_item.get('id', None)
         if first_select_item.get('submenu', []):
@@ -623,7 +650,7 @@ def st_navbar(
     input_styles = input_styles or ""
     st.markdown(f"<style>\n{input_styles}\n{style}\n<style>", unsafe_allow_html=True)
     component_value = _component_func(
-        menu_definition=menu_definition, home=home_data, login=login_data,
+        menu_definition=menu_definition, home=home_data or None, login=login_data or None,
         override_theme=override_theme,
         position_mode=position_mode,
         default_app_selected_id=default_app_selected_id,
