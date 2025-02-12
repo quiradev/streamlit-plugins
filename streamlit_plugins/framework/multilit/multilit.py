@@ -604,6 +604,7 @@ class Multilit:
                     /* position: sticky; */
                     top: 0;
                     z-index: 9999999;
+                    height: 2rem;
                 }}
                 """
         if self._within_fragment:
@@ -615,7 +616,7 @@ class Multilit:
             st.session_state["queued_page"] = new_app_id
 
             # TODO: Send COI message to the component to update properly if willUmounted
-            set_page_id_visual("mainMultilitNavbar", new_app_id)
+            # set_page_id_visual("mainMultilitNavbar", new_app_id)
 
             # Hack to force a rerun and component update correctly
             # ctx = get_script_run_ctx()

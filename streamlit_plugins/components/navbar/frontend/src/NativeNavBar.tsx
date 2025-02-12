@@ -96,7 +96,6 @@ interface State {
     expandState: boolean;
     selectedSubMenu: string | null;
     expandSubMenu: boolean;
-    navState: string;
     fromClick: boolean;
     themeIndex: number;
 }
@@ -129,11 +128,11 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         let selectedAppId = args.default_app_selected_id;
         let expandState = false;
         let selectedSubMenu = null;
-        let navState = "nav-close";
         let expandSubMenu = false;
 
         if (args.override_app_selected_id) {
             selectedAppId = args.override_app_selected_id;
+            this.postPageId(selectedAppId);
             Streamlit.setComponentValue(selectedAppId);
         }
 
@@ -144,7 +143,6 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             selectedSubMenu: selectedSubMenu,
             expandState: expandState,
             expandSubMenu: expandSubMenu,
-            navState: navState,
             fromClick: false,
             themeIndex: 0
         };
@@ -188,7 +186,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     postMessage(COI_method: string,
         data?: {
             navState?: string,
-            theme_data?: ThemeData,
+            themeData?: ThemeData,
+            pageId?: string,
         }): boolean {
         const { key } = this.props.args;
         if (key == null || typeof key !== "string") {
@@ -199,8 +198,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         console.debug("postMessage from ", key, ": ", COI_method, data);
         return true;
     }
-    postRegister(navState: string): void {
-        this.postMessage("register", { navState });
+    postRegister(navState: string, themeData: ThemeData): void {
+        this.postMessage("register", { navState: navState, themeData: themeData});
     }
     // postUpdateConfig(): void {
     //     let styles = this.styles;
@@ -225,9 +224,12 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     postSidebarToggle(navState: string): void {
         this.postMessage("sidebarToggle", { navState });
     }
-    postThemeToggle(theme_data: ThemeData): void {
-        this.saveTheme(theme_data);
-        this.postMessage("themeToggle", { theme_data });
+    postThemeToggle(themeData: ThemeData): void {
+        this.saveTheme(themeData);
+        this.postMessage("themeToggle", { themeData: themeData });
+    }
+    postPageId(pageId: string): void {
+        this.postMessage("setPageId", { pageId });
     }
     private saveTheme(theme_data: ThemeData): void {
         localStorage.setItem('stPluginsActiveTheme-/-v1', JSON.stringify(theme_data));
@@ -235,7 +237,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
     // Handle messages from COI
     // Send and Recieved data with custom message not Streamlit Value
-    private handleMessage(event: MessageEvent) {
+    private handleCOIMessage(event: MessageEvent) {
         const { COMPONENT_method, key } = event.data;
         // Check if message is for this component
         if (COMPONENT_method == null || key == null) {
@@ -245,15 +247,15 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             return;
         }
 
-        console.debug("handleMessage", event.data);
+        // console.debug("handleMessage", event.data);
         if (COMPONENT_method === "sidebarResponseInfo") {
             const { isSideOpen } = event.data;
-            // console.debug(key, "sidebarResponseInfo: ", "Received sidebarResponseInfo message with navState: ", isSideOpen);
-            this.setState({ navState: isSideOpen ? "nav-open" : "nav-close" });
+            // console.debug(key, "sidebarResponseInfo: ", "Received sidebarResponseInfo message with expandState: ", isSideOpen);
+            this.setState({ expandState: isSideOpen});
         }
-        else if (COMPONENT_method === "setPageId") {
+        else if (COMPONENT_method === "setVisualPageId") {
             const { pageId } = event.data;
-            // console.debug(key, "setPageId: ", "Received setPageId message with pageId: ", pageId);
+            // console.debug(key, "setVisualPageId: ", "Received setVisualPageId message with pageId: ", pageId);
             this.setState({ selectedAppId: pageId });
         }
         // if (COMPONENT_method === "updateActiveAnchor") {
@@ -309,10 +311,15 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         window.addEventListener("blur", this.handleBlur);
         document.addEventListener("click", this.handleClickOutside);
 
+        // Listen for messages from COI
+        // No se necesita recibir mensajes de streamlit al componente
+        window.addEventListener("message", this.handleCOIMessage.bind(this));
+
         // Se registran los eventos de COI
         // Register component
-        this.postRegister(this.state.navState);
+        this.postRegister(this.state.expandState ? "nav-open" : "nav-close", this.themes_data[this.state.themeIndex]);
         this.postSidebarGetState();
+
         // Send styles to COI
         // this.postUpdateConfig();
         // Tell COI to track anchors for visibility
@@ -320,10 +327,6 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // Set initial active anchor for component and COI
         // this.setState({ activeAnchorId: initialAnchorId });
         // this.postUpdateActiveAnchor(anchor_ids[0]);
-        this.postSidebarToggle(this.state.navState);
-        // Listen for messages from COI
-        // No se necesita recibir mensajes de streamlit al componente
-        window.addEventListener("message", this.handleMessage.bind(this));
 
         // Loads themes from python args. If not, use default themes
         this.themes_data = this.props.args.themes_infos || this.themes_data;
@@ -376,13 +379,15 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                         selectedSubMenu: this.state.selectedSubMenu,
                         expandState: this.state.expandState,
                         expandSubMenu: this.state.expandSubMenu,
-                        navState: this.state.navState,
                         fromClick: false,
                         themeIndex: this.state.themeIndex
                     },
                     () => {
                         this.handleResize();
-                        if (prevArgOverride !== argOverride) Streamlit.setComponentValue(selectedAppId);
+                        if (prevArgOverride !== argOverride) {
+                            this.postPageId(selectedAppId);
+                            Streamlit.setComponentValue(selectedAppId);
+                        }
                     }
                 );
             }
@@ -405,7 +410,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         window.removeEventListener("blur", this.handleBlur);
         document.removeEventListener("click", this.handleClickOutside);
 
-        Streamlit.setFrameHeight();
+        // Streamlit.setFrameHeight();
     }
 
     /* Functions definition */
@@ -452,7 +457,6 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                     selectedSubMenu: this.state.selectedSubMenu,
                     expandState: false,
                     expandSubMenu: false,
-                    navState: "nav-close",
                     fromClick: false,
                     themeIndex: this.state.themeIndex
                 },
@@ -470,7 +474,6 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: false,
                 expandSubMenu: false,
-                navState: "nav-close",
                 fromClick: false,
                 themeIndex: this.state.themeIndex
             },
@@ -543,13 +546,15 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: this.state.expandState,
                 expandSubMenu: this.state.expandSubMenu,
-                navState: this.state.navState,
                 fromClick: true,
                 themeIndex: this.state.themeIndex
             },
             () => {
                 this.handleResize();
-                if (prevSelectedAppId !== itemId || this.props.args.reclick_load) Streamlit.setComponentValue(itemId);
+                if (prevSelectedAppId !== itemId || this.props.args.reclick_load) {
+                    this.postPageId(itemId);
+                    Streamlit.setComponentValue(itemId);
+                }
             }
         );
     };
@@ -570,7 +575,6 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 selectedSubMenu: selectedSubMenu,
                 expandState: this.state.expandState,
                 expandSubMenu: expandSubMenu,
-                navState: this.state.navState,
                 fromClick: false,
                 themeIndex: this.state.themeIndex
             },
@@ -599,13 +603,11 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: !this.state.expandState,
                 expandSubMenu: this.props.args.position_mode === "side" ? this.state.expandSubMenu : false,
-                navState: navState,
                 fromClick: false,
                 themeIndex: this.state.themeIndex
             },
             () => {
                 this.handleResize();
-                // Streamlit.setComponentValue(`::${navState}::`);
                 if (this.props.args.position_mode === "side") this.postSidebarToggle(navState);
             }
         );
@@ -753,7 +755,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                                 <span className="material-symbols-rounded text-color menu-closed">menu</span>
                                 <span className="material-symbols-rounded text-color menu-open">menu_open</span>
                             </button>
-                            <div className={`navbar-collapse navbar-wrapper ${this.state.navState}`}>
+                            <div className={`navbar-collapse navbar-wrapper ${this.state.expandState ? "nav-open" : "nav-close"}`}>
                                 <ul className="navbar-nav py-0">
                                     {menuItems.map((item: MenuItem, index: number) => this.createMenu(item, index))}
                                 </ul>

@@ -22,13 +22,20 @@ class CrossOriginInterface {
         // this.updateId = 0
         // this.enroute = false;
         this.navState = document.body.classList.contains("nav-open") ? "nav-open" : "nav-closed";
-        window.addEventListener("message", this.handleMessage.bind(this));
+        this.pageId = null;
+        window.addEventListener("message", this.handleComponentMessage.bind(this));
     }
 
-    register(component, navState)     {
+    register(component, navState, themeData, themeName="Custom") {
         this.component = component;
-        this.navState = navState;
-        this.sidebarToggle(navState);
+
+        this.saveTheme(themeData, themeName);
+
+        if (!document.body.classList.contains("nav-open") && !document.body.classList.contains("nav-closed")) {
+            this.navState = navState;
+            this.sidebarToggle(navState);
+        }
+
         // this.autoUpdateAnchor = autoUpdateAnchor;
         // this.emphasisStyle = emphasisStyle;
         console.debug('Registered component for key ', this.key, ": ", component, navState);
@@ -46,28 +53,32 @@ class CrossOriginInterface {
             console.debug('Removed navState to', navState);
         }
     }
-
-    themeToggle(theme_data, themeName="Custom") {
+    saveTheme(themeData, themeName="Custom") {
         // Se lanza un post message a la ventana principal con el tema seleccionado
         // El evento tiene un data con este formato
         // {"stCommVersion":1,"type":"SET_THEME_CONFIG","themeInfo":{"primaryColor":"#ff4b4b","backgroundColor":"#0e1117","secondaryBackgroundColor":"#262730","textColor":"#fafafa","base":"dark","font":"\"Source Sans Pro\", sans-serif","linkText":"hsla(209, 100%, 59%, 1)","fadedText05":"rgba(250, 250, 250, 0.1)","fadedText10":"rgba(250, 250, 250, 0.2)","fadedText20":"rgba(250, 250, 250, 0.3)","fadedText40":"rgba(250, 250, 250, 0.4)","fadedText60":"rgba(250, 250, 250, 0.6)","bgMix":"rgba(26, 28, 36, 1)","darkenedBgMix100":"hsla(228, 16%, 72%, 1)","darkenedBgMix25":"rgba(172, 177, 195, 0.25)","darkenedBgMix15":"rgba(172, 177, 195, 0.15)","lightenedBg05":"hsla(220, 24%, 10%, 1)"}}
 
         // Se crea el data
-        const data = {
-            stCommVersion: 1,
-            type: "SET_CUSTOM_THEME_CONFIG",
-            // type: "SET_THEME_CONFIG", // No funciona solo si el origen es el mismo Streamlit
-            themeInfo: theme_data.themeInfo,
-            themeName: theme_data.name || themeName
-        }
         let themeInput = {
             "name": themeName,
-            "themeInput": theme_data.themeInfo
+            "themeInput": themeData.themeInfo
         };
         // Se guarda en el Local Storage el tema seleccionado
         // con clave stActiveTheme-/-v1 y valor theme
         localStorage.setItem('stActiveTheme-/-v1', JSON.stringify(themeInput));
+    }
+    themeToggle(themeData, themeName="Custom") {
+        // Se guarda el tema seleccionado
+        this.saveTheme(themeData, themeName);
+        
         // Se comunica con el padre
+        const data = {
+            stCommVersion: 1,
+            type: "SET_CUSTOM_THEME_CONFIG",
+            // type: "SET_THEME_CONFIG", // No funciona solo si el origen es el mismo Streamlit
+            themeInfo: themeData.themeInfo,
+            themeName: themeData.name || themeName
+        }
         window.parent.postMessage(data, "*");
     }
 
@@ -194,21 +205,21 @@ class CrossOriginInterface {
     
     postSidebarState() {
         const isSideOpen = document.body.classList.contains("nav-open");
-        this.postMessage(
+        this.postComponentMessage(
             'sidebarResponseInfo',
             {'isSideOpen': isSideOpen}
         );
     }
 
-    postSetPageId(pageId) {
-        this.postMessage(
-            'setPageId',
+    setVisualPageId(pageId) {
+        this.postComponentMessage(
+            'setVisualPageId',
             {'pageId': pageId}
         );
     }
 
     //Send a message to the component
-    postMessage(COMPONENT_method, data = { anchor_id = null, update_id = null} = {}) {
+    postComponentMessage(COMPONENT_method, data = { anchor_id = null, update_id = null} = {}) {
         if (this.component === null) {
             console.error('Component has not been registered');
             return;
@@ -276,7 +287,8 @@ class CrossOriginInterface {
     // }
 
     //Handle messages from the component
-    handleMessage(event) {
+    
+    handleComponentMessage(event) {
         const { COI_method, key} = event.data;
 
         //Check if message is intended for COI
@@ -292,8 +304,9 @@ class CrossOriginInterface {
         //If component is not registered, only allow registration method
         if (this.component === null) {
             if (COI_method === 'register') {
-                const {navState} = event.data;
-                this.register(event.source, navState);
+                const { navState, themeData } = event.data;
+                this.register(event.source, navState, themeData);
+                return;
             }
             else {
                 console.error('Must register component with this CrossOriginInterface before calling other methods', event.data);
@@ -302,7 +315,12 @@ class CrossOriginInterface {
 
         switch (COI_method) {
             case 'register':
+                // Se actualiza el componente para poder comunicar mensajes si se desmonta
+                this.component = event.source;
                 console.debug('Register can only be called once per key.');
+                // Si el componente se desmonta y se intenta registrar se pasa
+                //  la pagina que deberia tener el componente
+                this.setVisualPageId(this.pageId);
                 break;
             // case 'updateConfig':
             //     const {styles, disable_scroll} = event.data;
@@ -320,18 +338,21 @@ class CrossOriginInterface {
             //     const { anchor_id: updateAnchorId } = event.data;
             //     this.updateActiveAnchor(updateAnchorId);
             case 'themeToggle':
-                const { theme_data } = event.data;
-                this.themeToggle(theme_data);
+                let { themeData } = event.data;
+                this.themeToggle(themeData);
                 break;
             case 'sidebarRequestInfo':
                 this.postSidebarState();
+                break;
             case 'sidebarToggle':
-                const { navState } = event.data;
+                let { navState } = event.data;
                 this.sidebarToggle(navState);
                 break;
-
-            break;
-                default:
+            case 'setPageId':
+                let { pageId } = event.data;
+                this.pageId = pageId;
+                break;
+            default:
                 console.error('Unknown method', COI_method);
         }
     }

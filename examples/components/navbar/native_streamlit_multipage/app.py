@@ -103,7 +103,7 @@ logout_page = st.Page(logout, title="Log out", icon=":material/logout:")
 # HERE IS THE CHANGE
 from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pages, NavbarPositionType
 
-menu_data, menu_account_data, app_map = build_menu_from_st_pages(
+menu_data, _, menu_account_data, app_map = build_menu_from_st_pages(
     {
         "name": "Reports", "subpages": [dashboard, alerts], "icon": ":material/assessment:", "ttip": "Reports"
     },
