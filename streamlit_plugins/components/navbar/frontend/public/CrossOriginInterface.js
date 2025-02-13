@@ -38,7 +38,7 @@ class CrossOriginInterface {
 
         // this.autoUpdateAnchor = autoUpdateAnchor;
         // this.emphasisStyle = emphasisStyle;
-        console.debug('Registered component for key ', this.key, ": ", component, navState);
+        // console.debug('Registered component for key ', this.key, ": ", component, navState);
     }
 
     // Toggle left margin of streamlit application
@@ -46,11 +46,11 @@ class CrossOriginInterface {
         // Agrega a la clase del body la clase nav-open
         if (navState == "nav-open") {
             document.body.classList.toggle(navState);
-            console.debug('Toggled navState to', navState);
+            // console.debug('Toggled navState to', navState);
         }
         else {
             document.body.classList.remove("nav-open");
-            console.debug('Removed navState to', navState);
+            // console.debug('Removed navState to', navState);
         }
     }
     saveTheme(themeData, themeName="Custom") {
@@ -299,7 +299,7 @@ class CrossOriginInterface {
         if (key !== this.key) {
             return;
         }
-        console.debug("COI with key", key, "received message", event.data);
+        // console.debug("COI with key", key, "received message", event.data);
 
         //If component is not registered, only allow registration method
         if (this.component === null) {
@@ -317,7 +317,7 @@ class CrossOriginInterface {
             case 'register':
                 // Se actualiza el componente para poder comunicar mensajes si se desmonta
                 this.component = event.source;
-                console.debug('Register can only be called once per key.');
+                // console.debug('Register can only be called once per key.');
                 // Si el componente se desmonta y se intenta registrar se pasa
                 //  la pagina que deberia tener el componente
                 this.setVisualPageId(this.pageId);
