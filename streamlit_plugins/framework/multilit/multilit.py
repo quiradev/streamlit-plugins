@@ -14,6 +14,7 @@ try:
 except ModuleNotFoundError:
     from streamlit.runtime.scriptrunner_utils.script_requests import ScriptRequestType, RerunData
 
+from streamlit.commands.execution_control import _new_fragment_id_queue
 
 from streamlit_plugins.components.loader import BaseLoader
 from streamlit_plugins.components.navbar import st_navbar, HEADER_HEIGHT, build_menu_from_st_pages, NavbarPositionType
@@ -184,6 +185,7 @@ class Multilit:
         self._within_fragment = within_fragment
 
         self._pages: dict[str, STPageWrapper] = {}
+        self.pages_map: dict[str, StreamlitPage] = {}
         self._navbar_pointers = {}
         self._login_page: STPageWrapper | None = None
         self._login_id = 'page_login'
@@ -308,12 +310,12 @@ class Multilit:
     def get_page_id(self, page: StreamlitPage) -> str:
         return page._script_hash
 
-    def change_page(self, page: StreamlitPage):
+    def change_page(self, page: StreamlitPage, scope: Literal["app", "fragment"] = "app"):
         page_id = self.get_page_id(page)
         if page_id not in self._pages and page_id != self._home_id:
             raise ValueError(f"Page id {page_id} not found in the list of pages")
 
-        st.session_state["force_nav_page"] = page_id
+        st.session_state["queued_page"] = page_id
         ctx = get_script_run_ctx()
         if ctx is not None:
             if page_id != ctx.page_script_hash:
@@ -321,6 +323,8 @@ class Multilit:
                 rerun_data = RerunData(
                     query_string=ctx.query_string,
                     page_script_hash=page_id,
+                    fragment_id_queue=_new_fragment_id_queue(ctx, scope),
+                    is_fragment_scoped_rerun=scope == "fragment",
                 )
                 raise RerunException(rerun_data)
         else:
@@ -454,7 +458,7 @@ class Multilit:
         return SectionWithStatement(title, _exit_fn)
 
     def _build_nav_menu(self):
-        number_of_sections = int(self._login_page is not None) + len(self._complex_nav.keys())
+        # number_of_sections = int(self._login_page is not None) + len(self._complex_nav.keys())
 
         home_page = self._home_page.st_page if self._home_page is not None else None
         login_page = self._login_page.st_page if self._login_page is not None else None
@@ -466,51 +470,68 @@ class Multilit:
             self._logout_id = self.get_page_id(logout_page)
             self._pages[self._logout_id] = STPageWrapper(logout_page)
         
+        native_position = "sidebar" if self._use_st_navigation_navbar else "hidden"
+        natives_page_data = self.build_native_pages_data_from(
+            home_page, login_page, account_page, settings_page, logout_page
+        )
+        new_navigation_page = st.navigation(natives_page_data, position=native_position)
+        new_navigation_page_id = new_navigation_page._script_hash
+        prev, actual, queued = self.get_nav_transition()
+        updated_with_navigation = False
+        if new_navigation_page_id != actual:
+            updated_with_navigation = True
+            st.session_state["force_nav_page"] = new_navigation_page_id
+            self.update_nav_transition(actual, new_navigation_page_id, None)
+
         if not self._use_st_navigation_navbar:
             menu_definition, home_definition, account_login_definition, pages_map = build_menu_from_st_pages(
-                # {
-                #     "name": "Reports", "subpages": [dashboard, bugs, alerts], "icon": ":material/assessment:", "ttip": "Reports"
-                # },
-                # {
-                #     "name": "Tools", "subpages": [search, history], "icon": ":material/extension:"
-                # },
                 *list(self._complex_nav.values()),
                 home_page=home_page,
                 login_page=login_page, account_page=account_page, settings_page=settings_page,
                 logout_page=logout_page,
             )
+            self.pages_map = pages_map
 
             with self._nav_container:
-                self._run_navbar(menu_definition, home_definition, account_login_definition)
+                new_navbar_page_id = self._run_navbar(menu_definition, home_definition, account_login_definition)
+                if new_navbar_page_id != st.session_state["actual_page"]:
+                    st.session_state["queued_page"] = new_navbar_page_id
+                
+                if updated_with_navigation:
+                    self.update_nav_transition
+                    st.session_state["force_nav_page"] = None
                 # st.session_state["queued_page"] = new_app_id
-        else:
-            native_pages_data = {}
-            if home_page is not None:
-                native_pages_data[""] = [home_page]
-            
-            for sect, data in self._complex_nav.items():
-                if sect.startswith("sect_"):
-                    data_section: dict = data
-                    pages: list[StreamlitPage] = data_section.get("subpages", [])
-                    native_pages_data[sect[len("sect_"):]] = pages
-                else:
-                    page: StreamlitPage = data
-                    if "" not in native_pages_data:
-                        native_pages_data[""] = []
-                    native_pages_data[""].append(page)
-            
-            if any([login_page, account_page, settings_page]):
-                native_pages_data["Account"] = []
-                for page in [account_page, settings_page, logout_page]:
-                    native_pages_data["Account"].append(page)
 
-            st.navigation(native_pages_data)
+    def build_native_pages_data_from(self, home_page, login_page=None, account_page=None, settings_page=None, logout_page=None):
+        native_pages_data = {}
+        if home_page is not None:
+            native_pages_data[""] = [home_page]
+        
+        for sect, data in self._complex_nav.items():
+            if sect.startswith("sect_"):
+                data_section: dict = data
+                pages: list[StreamlitPage] = data_section.get("subpages", [])
+                native_pages_data[sect[len("sect_"):]] = pages
+            else:
+                data_page: StreamlitPage = data
+                if "" not in native_pages_data:
+                    native_pages_data[""] = []
+                native_pages_data[""].append(data_page)
+        
+        if any([login_page, account_page, settings_page]):
+            native_pages_data["Account"] = []
+            for page in [account_page, settings_page, logout_page]:
+                if page is not None:
+                    native_pages_data["Account"].append(page)
+        
+        return native_pages_data
 
     @st.fragment
     def _fragment_navbar(self, menu_definition, home_definition, account_login_definition, styles: str | None = None):
         new_page_id = self._standalone_navbar(menu_definition, home_definition, account_login_definition, styles=styles)
-        if new_page_id != st.session_state["queued_page"]:
-            st.session_state["queued_page"] = new_page_id
+
+        # if new_page_id != st.session_state["queued_page"]:
+        #     st.session_state["queued_page"] = new_page_id
         
         # ctx = get_script_run_ctx()
         # page_script_hash = ctx.active_script_hash
@@ -611,9 +632,6 @@ class Multilit:
             new_app_id = self._fragment_navbar(menu_definition, home_definition, account_login_definition, styles=styles)
         else:
             new_app_id = self._standalone_navbar(menu_definition, home_definition, account_login_definition, styles=styles)
-
-        if new_app_id != st.session_state["actual_page"]:
-            st.session_state["queued_page"] = new_app_id
 
             # TODO: Send COI message to the component to update properly if willUmounted
             # set_page_id_visual("mainMultilitNavbar", new_app_id)
@@ -931,17 +949,18 @@ class Multilit:
 
                 _, actual_page_id, _ = self.get_nav_transition()
                 self.update_nav_transition(actual_page_id, page_id, None)
+
+                ctx = get_script_run_ctx()
+                if ctx is not None:
+                    if page_id != ctx.page_script_hash:
+                        ctx.pages_manager.set_current_page_script_hash(page_id)
+                        rerun_data = RerunData(
+                            query_string=ctx.query_string,
+                            page_script_hash=page_id,
+                        )
+                        raise RerunException(rerun_data)
+                
                 self._run_selected(page)
-                if self._use_st_navigation_navbar:
-                    ctx = get_script_run_ctx()
-                    if ctx is not None:
-                        if page_id != ctx.page_script_hash:
-                            ctx.pages_manager.set_current_page_script_hash(page_id)
-                            rerun_data = RerunData(
-                                query_string=ctx.query_string,
-                                page_script_hash=page_id,
-                            )
-                            raise RerunException(rerun_data)
 
 
         # elif st.session_state["allow_access"] < self._no_access_level:
