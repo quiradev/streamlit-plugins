@@ -188,6 +188,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             navState?: string,
             themeData?: ThemeData,
             pageId?: string,
+            expandSubMenu?: boolean,
+            selectedSubMenu?: string | null
         }): boolean {
         const { key } = this.props.args;
         if (key == null || typeof key !== "string") {
@@ -224,6 +226,9 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     postSidebarToggle(navState: string): void {
         this.postMessage("sidebarToggle", { navState });
     }
+    postSubMenuToggle(expandSubMenu: boolean, selectedSubMenu: string | null): void {
+        this.postMessage("subMenuToggle", { expandSubMenu, selectedSubMenu });
+    }
     postThemeToggle(themeData: ThemeData): void {
         this.saveTheme(themeData);
         this.postMessage("themeToggle", { themeData: themeData });
@@ -249,9 +254,13 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         // console.debug("handleMessage", event.data);
         if (COMPONENT_method === "sidebarResponseInfo") {
-            const { isSideOpen } = event.data;
+            const { isSideOpen, expandSubMenu, selectedSubMenu } = event.data;
             // console.debug(key, "sidebarResponseInfo: ", "Received sidebarResponseInfo message with expandState: ", isSideOpen);
-            this.setState({ expandState: isSideOpen});
+            this.setState({
+                expandState: isSideOpen,
+                expandSubMenu: expandSubMenu || this.state.expandSubMenu,
+                selectedSubMenu: selectedSubMenu || this.state.selectedSubMenu
+            });
         }
         else if (COMPONENT_method === "setVisualPageId") {
             const { pageId } = event.data;
@@ -578,18 +587,21 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 fromClick: false,
                 themeIndex: this.state.themeIndex
             },
-            () => this.handleResize()
+            () => {
+                this.handleResize();
+                this.postSubMenuToggle(expandSubMenu, selectedSubMenu);
+            }
         );
 
     };
 
-    private createSubMenu = (item: MenuItem, key: number): JSX.Element => (
+    private createSubMenu = (parent_id: string, item: MenuItem, key: number): JSX.Element => (
         <NavSubItem
             subitem={item}
             menu_id={key}
             submenu_toggle={this.toggleSubMenu}
             click_on_app={this.clickOnApp}
-            parent_id={item.id}
+            parent_id={parent_id}
             key={key}
             is_active={item.id === this.state.selectedAppId}
         />
@@ -675,7 +687,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                         <span>{item.label}</span>
                     </a>
                     <ul key={key * 103} className={`dropdown-menu ${this.state.selectedSubMenu === item.id && this.state.expandSubMenu ? "show" : ""}`}>
-                        {item.submenu.map((subitem: MenuItem, subindex: number) => this.createSubMenu(subitem, subindex))}
+                        {item.submenu.map((subitem: MenuItem, subindex: number) => this.createSubMenu(item.id, subitem, subindex))}
                     </ul>
                 </li>
             );

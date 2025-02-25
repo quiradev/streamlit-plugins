@@ -53,6 +53,10 @@ class CrossOriginInterface {
             // console.debug('Removed navState to', navState);
         }
     }
+    setSubMenuSelected(expandSubMenu, selectedSubMenu) {
+        document.body.dataset.expandSubMenu = expandSubMenu;
+        document.body.dataset.selectedSubMenu = selectedSubMenu;
+    }
     saveTheme(themeData, themeName="Custom") {
         // Se lanza un post message a la ventana principal con el tema seleccionado
         // El evento tiene un data con este formato
@@ -205,9 +209,15 @@ class CrossOriginInterface {
     
     postSidebarState() {
         const isSideOpen = document.body.classList.contains("nav-open");
+        const expandSubMenu = document.body.dataset.expandSubMenu;
+        const selectedSubMenu = document.body.dataset.selectedSubMenu;
         this.postComponentMessage(
             'sidebarResponseInfo',
-            {'isSideOpen': isSideOpen}
+            {
+                'isSideOpen': isSideOpen,
+                'expandSubMenu': expandSubMenu,
+                'selectedSubMenu': selectedSubMenu
+            }
         );
     }
 
@@ -348,6 +358,9 @@ class CrossOriginInterface {
                 let { navState } = event.data;
                 this.sidebarToggle(navState);
                 break;
+            case 'subMenuToggle':
+                let { expandSubMenu, selectedSubMenu } = event.data;
+                this.setSubMenuSelected(expandSubMenu, selectedSubMenu);
             case 'setPageId':
                 let { pageId } = event.data;
                 this.pageId = pageId;

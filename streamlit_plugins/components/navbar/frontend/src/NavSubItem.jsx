@@ -37,9 +37,9 @@ const NavSubItem = (props) => {
     return false;
   }
 
-  const onSelect = (item_id: string, subitem_id: string) => {
-    submenu_toggle(item_id);
-    click_on_app(item_id, subitem_id);
+  const onSelect = (parent_id: string, item_id: string) => {
+    submenu_toggle(parent_id);
+    click_on_app(item_id);
   }
 
   const create_submenuitem = (item, kid, parent_id) => {
