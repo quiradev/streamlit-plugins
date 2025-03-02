@@ -24,13 +24,14 @@ def inject_crossorigin_interface():
     # This works because streamlit.components.v1.html() creates an iframe from same domain as the parent scope
     # Same domain can bypass sandbox restrictions to create an interface for cross-origin iframes
     # This allows custom components to interact with parent scope
+    escaped_content = content.replace("`", r"\`").replace("${", r"\${")
     components.html(
         f"""<script>
 frameElement.parentElement.style.display = 'none';
 if (!window.parent.COI_injected) {{
     window.parent.COI_injected = true;
     var script = window.parent.document.createElement('script');
-    script.text = `{content}`;
+    script.text = `{escaped_content}`;
     script.type = 'text/javascript';
     window.parent.document.head.appendChild(script);
 }}
@@ -51,11 +52,21 @@ window.parent.instantiateCrossOriginInterface('{key}');
         width=0,
     )
 
+
 def set_page_id_visual(key: str, page_id: str):
     components.html(
         f"""<script>
     // frameElement.parentElement.style.display = 'none';
     window.parent.instantiateCrossOriginInterface('{key}').postSetPageId("{page_id}");
+    </script>""",
+        height=0,
+        width=0,
+    )
+
+def apply_styles(key: str, styles: str):
+    components.html(
+        f"""<script>
+    window.parent.applyNavbarStyles('{key}', {styles});
     </script>""",
         height=0,
         width=0,

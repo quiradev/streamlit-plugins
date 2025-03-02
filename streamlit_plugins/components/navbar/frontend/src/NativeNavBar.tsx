@@ -92,7 +92,7 @@ interface PythonArgs {
 // }
 
 interface State {
-    selectedAppId: string;
+    selectedPageId: string;
     expandState: boolean;
     selectedSubMenu: string | null;
     expandSubMenu: boolean;
@@ -125,21 +125,22 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         super(props);
         const args: PythonArgs = props.args;
 
-        let selectedAppId = args.default_app_selected_id;
+        // let selectedPageId = args.default_app_selected_id;
+        let selectedPageId = window.parent.document.body.dataset.pageId === "null" ? args.default_app_selected_id : window.parent.document.body.dataset.pageId || args.default_app_selected_id;
         let expandState = false;
-        let selectedSubMenu = null;
-        let expandSubMenu = false;
+        let selectedSubMenu = window.parent.document.body.dataset.selectedSubMenu === "null" ? null : window.parent.document.body.dataset.selectedSubMenu || null;
+        let expandSubMenu = window.parent.document.body.dataset.expandSubMenu === 'true' ? true : false;
 
         if (args.override_app_selected_id) {
-            selectedAppId = args.override_app_selected_id;
-            this.postPageId(selectedAppId);
-            Streamlit.setComponentValue(selectedAppId);
+            selectedPageId = args.override_app_selected_id;
+            this.postNavbarState(selectedPageId, expandSubMenu, selectedSubMenu);
+            Streamlit.setComponentValue(selectedPageId);
         }
 
-        // console.log("SELECCIONADA", selectedAppId, args.override_app_selected_id, args.default_app_selected_id);
+        // console.log("SELECCIONADA", selectedPageId, args.override_app_selected_id, args.default_app_selected_id);
 
         this.state = {
-            selectedAppId: selectedAppId,
+            selectedPageId: selectedPageId,
             selectedSubMenu: selectedSubMenu,
             expandState: expandState,
             expandSubMenu: expandSubMenu,
@@ -185,7 +186,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
     postMessage(COI_method: string,
         data?: {
-            navState?: string,
+            expandState?: string,
             themeData?: ThemeData,
             pageId?: string,
             expandSubMenu?: boolean,
@@ -200,8 +201,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         console.debug("postMessage from ", key, ": ", COI_method, data);
         return true;
     }
-    postRegister(navState: string, themeData: ThemeData): void {
-        this.postMessage("register", { navState: navState, themeData: themeData});
+    postRegister(expandState: string, themeData: ThemeData): void {
+        this.postMessage("register", { expandState: expandState, themeData: themeData});
     }
     // postUpdateConfig(): void {
     //     let styles = this.styles;
@@ -223,18 +224,15 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     postSidebarGetState(): void {
         this.postMessage("sidebarRequestInfo", {});
     }
-    postSidebarToggle(navState: string): void {
-        this.postMessage("sidebarToggle", { navState });
-    }
-    postSubMenuToggle(expandSubMenu: boolean, selectedSubMenu: string | null): void {
-        this.postMessage("subMenuToggle", { expandSubMenu, selectedSubMenu });
+    postSidebarToggle(expandState: string): void {
+        this.postMessage("sidebarToggle", { expandState });
     }
     postThemeToggle(themeData: ThemeData): void {
         this.saveTheme(themeData);
         this.postMessage("themeToggle", { themeData: themeData });
     }
-    postPageId(pageId: string): void {
-        this.postMessage("setPageId", { pageId });
+    postNavbarState(pageId: string, expandSubMenu: boolean, selectedSubMenu: string | null): void {
+        this.postMessage("navbarState", { pageId, expandSubMenu, selectedSubMenu });
     }
     private saveTheme(theme_data: ThemeData): void {
         localStorage.setItem('stPluginsActiveTheme-/-v1', JSON.stringify(theme_data));
@@ -254,10 +252,11 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         // console.debug("handleMessage", event.data);
         if (COMPONENT_method === "sidebarResponseInfo") {
-            const { isSideOpen, expandSubMenu, selectedSubMenu } = event.data;
+            const { isSideOpen, pageId, expandSubMenu, selectedSubMenu } = event.data;
             // console.debug(key, "sidebarResponseInfo: ", "Received sidebarResponseInfo message with expandState: ", isSideOpen);
             this.setState({
                 expandState: isSideOpen,
+                selectedPageId: pageId || this.state.selectedPageId,
                 expandSubMenu: expandSubMenu || this.state.expandSubMenu,
                 selectedSubMenu: selectedSubMenu || this.state.selectedSubMenu
             });
@@ -265,7 +264,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         else if (COMPONENT_method === "setVisualPageId") {
             const { pageId } = event.data;
             // console.debug(key, "setVisualPageId: ", "Received setVisualPageId message with pageId: ", pageId);
-            this.setState({ selectedAppId: pageId });
+            this.setState({ selectedPageId: pageId });
         }
         // if (COMPONENT_method === "updateActiveAnchor") {
         //     const { anchor_id, update_id } = event.data;
@@ -305,7 +304,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     public componentDidMount = () => {
         // console.log(
         //     "DidMount",
-        //     this.state.selectedAppId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
+        //     this.state.selectedPageId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
         //     this.state.fromClick
         // );
 
@@ -357,8 +356,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // Si se llama desde python programaticamente
         const args: PythonArgs = this.props.args
 
-        let selectedAppId = this.state.selectedAppId;
-        // let prevSelectedAppId = prevState.selectedAppId;
+        let selectedPageId = this.state.selectedPageId;
+        // let prevselectedPageId = prevState.selectedPageId;
 
         let argDefault = args.default_app_selected_id;
         let prevArgDefault = prevProps.args.default_app_selected_id;
@@ -367,24 +366,24 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         // console.log(
         //     "DidUpdate",
-        //     this.state.selectedAppId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
+        //     this.state.selectedPageId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
         //     this.state.fromClick
         // );
 
         if (prevArgDefault !== argDefault || prevArgOverride !== argOverride) {
-            selectedAppId = this.state.selectedAppId;
+            selectedPageId = this.state.selectedPageId;
 
             // console.log(
             //     "Props DidUpdate",
-            //     this.state.selectedAppId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
+            //     this.state.selectedPageId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
             //     this.state.fromClick
             // );
             if (argOverride) {
-                selectedAppId = argOverride || argDefault;
+                selectedPageId = argOverride || argDefault;
 
                 this.setState(
                     {
-                        selectedAppId: selectedAppId,
+                        selectedPageId: selectedPageId,
                         selectedSubMenu: this.state.selectedSubMenu,
                         expandState: this.state.expandState,
                         expandSubMenu: this.state.expandSubMenu,
@@ -394,8 +393,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                     () => {
                         this.handleResize();
                         if (prevArgOverride !== argOverride) {
-                            this.postPageId(selectedAppId);
-                            Streamlit.setComponentValue(selectedAppId);
+                            this.postNavbarState(selectedPageId, this.state.expandSubMenu, this.state.selectedSubMenu);
+                            Streamlit.setComponentValue(selectedPageId);
                         }
                     }
                 );
@@ -410,7 +409,9 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     }
 
     public componentWillUnmount = () => {
-        // console.log("Unmount", this.state.selectedAppId);
+        this.postNavbarState(this.state.selectedPageId, this.state.expandSubMenu, this.state.selectedSubMenu);
+
+        // console.log("Unmount", this.state.selectedPageId);
 
         // useEffect resize
         window.removeEventListener("resize", this.handleResize);
@@ -462,7 +463,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         if (!document.hasFocus()) {
             this.setState(
                 {
-                    selectedAppId: this.state.selectedAppId,
+                    selectedPageId: this.state.selectedPageId,
                     selectedSubMenu: this.state.selectedSubMenu,
                     expandState: false,
                     expandSubMenu: false,
@@ -479,7 +480,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         if (this.props.args.position_mode === "side") return;
         this.setState(
             {
-                selectedAppId: this.state.selectedAppId,
+                selectedPageId: this.state.selectedPageId,
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: false,
                 expandSubMenu: false,
@@ -548,10 +549,10 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     };
 
     private clickOnApp = (itemId: string): void => {
-        let prevSelectedAppId = this.state.selectedAppId;
+        let prevselectedPageId = this.state.selectedPageId;
         this.setState(
             {
-                selectedAppId: itemId,
+                selectedPageId: itemId,
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: this.state.expandState,
                 expandSubMenu: this.state.expandSubMenu,
@@ -560,8 +561,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             },
             () => {
                 this.handleResize();
-                if (prevSelectedAppId !== itemId || this.props.args.reclick_load) {
-                    this.postPageId(itemId);
+                if (prevselectedPageId !== itemId || this.props.args.reclick_load) {
+                    this.postNavbarState(itemId, this.state.expandSubMenu, this.state.selectedSubMenu);
                     Streamlit.setComponentValue(itemId);
                 }
             }
@@ -578,9 +579,10 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             expandSubMenu = true;
             selectedSubMenu = parentId;
         }
+        if (!expandSubMenu) selectedSubMenu = null;
         this.setState(
             {
-                selectedAppId: this.state.selectedAppId,
+                selectedPageId: this.state.selectedPageId,
                 selectedSubMenu: selectedSubMenu,
                 expandState: this.state.expandState,
                 expandSubMenu: expandSubMenu,
@@ -589,7 +591,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             },
             () => {
                 this.handleResize();
-                this.postSubMenuToggle(expandSubMenu, selectedSubMenu);
+                this.postNavbarState(this.state.selectedPageId, expandSubMenu, selectedSubMenu);
             }
         );
 
@@ -603,15 +605,15 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             click_on_app={this.clickOnApp}
             parent_id={parent_id}
             key={key}
-            is_active={item.id === this.state.selectedAppId}
+            is_active={item.id === this.state.selectedPageId}
         />
     );
 
     private toggleNav = (): void => {
-        let navState = this.state.expandState ? "nav-close" : "nav-open"
+        let expandState = this.state.expandState ? "nav-close" : "nav-open"
         this.setState(
             {
-                selectedAppId: this.state.selectedAppId,
+                selectedPageId: this.state.selectedPageId,
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: !this.state.expandState,
                 expandSubMenu: this.props.args.position_mode === "side" ? this.state.expandSubMenu : false,
@@ -620,7 +622,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             },
             () => {
                 this.handleResize();
-                if (this.props.args.position_mode === "side") this.postSidebarToggle(navState);
+                if (this.props.args.position_mode === "side") this.postSidebarToggle(expandState);
             }
         );
     };
@@ -635,7 +637,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     }
 
     private createMenu = (item: MenuItem, key: number): JSX.Element => {
-        const isActive = item.id === this.state.selectedAppId;
+        const isActive = item.id === this.state.selectedPageId;
         const hasIcon = item.icon ? true : false;
 
         // Me quedo con la primera letra de label para el icono en mayuscula

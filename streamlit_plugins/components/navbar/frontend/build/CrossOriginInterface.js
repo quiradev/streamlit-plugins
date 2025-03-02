@@ -21,39 +21,43 @@ class CrossOriginInterface {
         // this.disable_scroll = false;
         // this.updateId = 0
         // this.enroute = false;
-        this.navState = document.body.classList.contains("nav-open") ? "nav-open" : "nav-closed";
+        this.expandState = document.body.classList.contains("nav-open") ? "nav-open" : "nav-closed";
         this.pageId = null;
+        document.body.dataset.expandSubMenu = false;
+        document.body.dataset.selectedSubMenu = null;
+        document.body.dataset.pageId = this.pageId;
         window.addEventListener("message", this.handleComponentMessage.bind(this));
     }
 
-    register(component, navState, themeData, themeName="Custom") {
+    register(component, expandState, themeData, themeName="Custom") {
         this.component = component;
 
         this.saveTheme(themeData, themeName);
 
         if (!document.body.classList.contains("nav-open") && !document.body.classList.contains("nav-closed")) {
-            this.navState = navState;
-            this.sidebarToggle(navState);
+            this.expandState = expandState;
+            this.sidebarToggle(expandState);
         }
 
         // this.autoUpdateAnchor = autoUpdateAnchor;
         // this.emphasisStyle = emphasisStyle;
-        // console.debug('Registered component for key ', this.key, ": ", component, navState);
+        // console.debug('Registered component for key ', this.key, ": ", component, expandState);
     }
 
     // Toggle left margin of streamlit application
-    sidebarToggle(navState) {
+    sidebarToggle(expandState) {
         // Agrega a la clase del body la clase nav-open
-        if (navState == "nav-open") {
-            document.body.classList.toggle(navState);
-            // console.debug('Toggled navState to', navState);
+        if (expandState == "nav-open") {
+            document.body.classList.toggle(expandState);
+            // console.debug('Toggled expandState to', expandState);
         }
         else {
             document.body.classList.remove("nav-open");
-            // console.debug('Removed navState to', navState);
+            // console.debug('Removed expandState to', expandState);
         }
     }
-    setSubMenuSelected(expandSubMenu, selectedSubMenu) {
+    setNavState(pageId, expandSubMenu, selectedSubMenu) {
+        document.body.dataset.pageId = pageId;
         document.body.dataset.expandSubMenu = expandSubMenu;
         document.body.dataset.selectedSubMenu = selectedSubMenu;
     }
@@ -84,6 +88,19 @@ class CrossOriginInterface {
             themeName: themeData.name || themeName
         }
         window.parent.postMessage(data, "*");
+    }
+    applyNavbarStyles(key, styles) {
+        // Se aplica el estilo al navbar almacenandolo en el head de la pagina con una key para poder reemplazarlo
+        // Si ya existe tener en cuenta para reemplazarlo
+        if (document.getElementById(`navbar-styles-${key}`)) {
+            document.getElementById(`navbar-styles-${key}`).innerHTML = styles;
+            return;
+        }
+        let style = document.createElement('style');
+        style.type = 'text/css';
+        style.id = `navbar-styles-${key}`;
+        style.innerHTML = styles;
+        document.head.appendChild(style);
     }
 
     //Styles from ScrollNavigationBar.tsx
@@ -209,12 +226,14 @@ class CrossOriginInterface {
     
     postSidebarState() {
         const isSideOpen = document.body.classList.contains("nav-open");
+        const pageId = document.body.dataset.pageId;
         const expandSubMenu = document.body.dataset.expandSubMenu;
         const selectedSubMenu = document.body.dataset.selectedSubMenu;
         this.postComponentMessage(
             'sidebarResponseInfo',
             {
                 'isSideOpen': isSideOpen,
+                'pageId': pageId,
                 'expandSubMenu': expandSubMenu,
                 'selectedSubMenu': selectedSubMenu
             }
@@ -314,8 +333,8 @@ class CrossOriginInterface {
         //If component is not registered, only allow registration method
         if (this.component === null) {
             if (COI_method === 'register') {
-                const { navState, themeData } = event.data;
-                this.register(event.source, navState, themeData);
+                const { expandState, themeData } = event.data;
+                this.register(event.source, expandState, themeData);
                 return;
             }
             else {
@@ -355,15 +374,13 @@ class CrossOriginInterface {
                 this.postSidebarState();
                 break;
             case 'sidebarToggle':
-                let { navState } = event.data;
-                this.sidebarToggle(navState);
+                let { expandState } = event.data;
+                this.sidebarToggle(expandState);
                 break;
-            case 'subMenuToggle':
-                let { expandSubMenu, selectedSubMenu } = event.data;
-                this.setSubMenuSelected(expandSubMenu, selectedSubMenu);
-            case 'setPageId':
-                let { pageId } = event.data;
+            case 'navbarState':
+                let { pageId, expandSubMenu, selectedSubMenu } = event.data;
                 this.pageId = pageId;
+                this.setNavState(pageId, expandSubMenu, selectedSubMenu);
                 break;
             default:
                 console.error('Unknown method', COI_method);
@@ -373,3 +390,8 @@ class CrossOriginInterface {
 function instantiateCrossOriginInterface(key) {
     return new CrossOriginInterface(key);
 }
+function applyNavbarStyles(key, styles) {
+    navbar_coi = new CrossOriginInterface(key);
+    navbar_coi.applyNavbarStyles(key, styles);
+}
+window.applyNavbarStyles = applyNavbarStyles;

@@ -1,3 +1,4 @@
+import time
 from typing import Literal
 
 import streamlit
@@ -7,7 +8,7 @@ import streamlit.components.v1 as components
 from streamlit.navigation.page import StreamlitPage
 
 from .config import dev_url, build_path, _RELEASE
-from .inject_script import inject_crossorigin_interface, instantiate_crossorigin_interface
+from .inject_script import apply_styles, inject_crossorigin_interface, instantiate_crossorigin_interface
 
 if _RELEASE:
     _component_func = components.declare_component("nav_bar", path=str(build_path))
@@ -648,7 +649,7 @@ def st_navbar(
         style += HIDE_ST_STYLE
 
     input_styles = input_styles or ""
-    st.markdown(f"<style>\n{input_styles}\n{style}\n<style>", unsafe_allow_html=True)
+    # st.markdown(f"<style>\n{input_styles}\n{style}\n<style>", unsafe_allow_html=True)
     component_value = _component_func(
         menu_definition=menu_definition, home=home_data or None, login=login_data or None,
         override_theme=override_theme,
@@ -660,6 +661,8 @@ def st_navbar(
         themes_data=themes_data,
         default=default_app_selected_id,
     )
+    apply_styles(key, f"`\n{input_styles}\n{style}\n`")
+    time.sleep(0.1)
     # print(f"FROM Navbar: {component_value}")
 
     if component_value is None:

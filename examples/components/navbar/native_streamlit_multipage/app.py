@@ -19,6 +19,9 @@ if "app_id" not in st.session_state:
 if "active_app_id" not in st.session_state:
     st.session_state.active_app_id = None
 
+if "force_app_id" not in st.session_state:
+    st.session_state.force_app_id = None
+
 USER = "admin"
 PASSWORD = "admin"
 
@@ -104,8 +107,9 @@ logout_page = st.Page(logout, title="Log out", icon=":material/logout:")
 from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pages, NavbarPositionType
 
 menu_data, _, menu_account_data, app_map = build_menu_from_st_pages(
+    dashboard,
     {
-        "name": "Reports", "subpages": [dashboard, alerts], "icon": ":material/assessment:", "ttip": "Reports"
+        "name": "Reports", "subpages": [alerts], "icon": ":material/assessment:", "ttip": "Reports"
     },
     {
         "name": "Tools", "subpages": [search, history, bugs], "icon": ":material/extension:"
@@ -133,14 +137,17 @@ if st.session_state.logged_in:
     if position_mode == "top":
         my_heading()
 
+    st.session_state["app_id"] = st.session_state["default_page_id"]
     page_id = st_navbar(
         menu_definition=menu_data if st.session_state.logged_in else [],
         login_definition=menu_account_data,
         hide_streamlit_markers=False,
-        override_app_selected_id=st.session_state.app_id,
+        default_app_selected_id=st.session_state["app_id"] or st.session_state["default_page_id"],
+        override_app_selected_id=st.session_state["force_app_id"],
         sticky_nav=sticky_nav,  # at the top or not
         position_mode=position_mode,  # top or subtop
     )
+    st.session_state["force_app_id"] = None
 
     if position_mode != "top":
         my_heading()
@@ -152,9 +159,28 @@ if not st.session_state.logged_in and page_id != login_page_id:
 # Loads the selected app content
 st.session_state.app_id = None  # Added to fix login/logout issue
 st.session_state.active_app_id = page_id
-app_map[page_id]._can_be_called = True
-app_map[page_id].run()
-# st.switch_page(app_map[page_id])
+# app_map[page_id]._can_be_called = True
+# app_map[page_id].run()
+
+if st.session_state.logged_in:
+    pg = st.navigation(
+        {
+            "": [dashboard],
+            "Account": [account_page, settings_page, logout_page],
+            "Reports": [bugs, alerts],
+            "Tools": [search, history],
+        },
+        position="hidden"
+    )
+
+else:
+    pg = st.navigation([login_page], position="hidden")
+
+if pg._script_hash != page_id:
+    st.session_state["app_id"] = page_id
+    st.switch_page(app_map[page_id])
+
+pg.run()
 
 
 # if st.session_state.logged_in:

@@ -261,8 +261,7 @@ class Multilit:
             self._banner_container = st.container()
 
         if nav_container is None:
-            nav_view = st.empty()
-            self._nav_container = nav_view.container()
+            self._nav_container = st.container()
         else:
             # hack to stop the beta containers from running set_page_config before MultiApp gets a chance to.
             # if we have a beta_columns container, the instance is delayed until the run() method is called, beta components, who knew!
@@ -561,6 +560,7 @@ class Multilit:
         override_app_selected_id = None
         if st.session_state["force_nav_page"]:
             override_app_selected_id = st.session_state["force_nav_page"]
+            st.session_state["force_nav_page"] = None
 
         new_app_id = st_navbar(
             menu_definition=menu_definition, key="mainMultilitNavbar", home_definition=home_definition,
