@@ -136,8 +136,8 @@ if st.session_state.logged_in:
     # SOME TEXT ABOVE THE NAVBAR
     if position_mode == "top":
         my_heading()
-
-    st.session_state["app_id"] = st.session_state["default_page_id"]
+    if st.session_state["app_id"] is None:
+        st.session_state["app_id"] = st.session_state["default_page_id"]
     page_id = st_navbar(
         menu_definition=menu_data if st.session_state.logged_in else [],
         login_definition=menu_account_data,
