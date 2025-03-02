@@ -1,9 +1,9 @@
-import os
+import json
 
 import requests
 import streamlit.components.v1 as components
 
-from .config import dev_url, build_path, _RELEASE
+from .config import _RELEASE, build_path, dev_url
 
 
 def inject_crossorigin_interface():
@@ -41,32 +41,41 @@ if (!window.parent.COI_injected) {{
     )
 
 
-def instantiate_crossorigin_interface(key):
+def instantiate_crossorigin_interface(component_name: str, key: str, default_page_id: str, position_mode: str, sticky_nav: bool):
     """Instantiate the CrossOriginInterface in the parent scope that responds to messages for key."""
     components.html(
         f"""<script>
 frameElement.parentElement.style.display = 'none';
-window.parent.instantiateCrossOriginInterface('{key}');
+window.parent.navbarCOI = new window.parent.instantiateCrossOriginInterface('{component_name}', '{key}', '{default_page_id}', '{position_mode}', {json.dumps(sticky_nav)});
 </script>""",
         height=0,
         width=0,
     )
 
-
-def set_page_id_visual(key: str, page_id: str):
+def set_position(position_mode: str, sticky_nav: bool):
+    """Set the position of the navbar in the parent scope."""
     components.html(
         f"""<script>
-    // frameElement.parentElement.style.display = 'none';
-    window.parent.instantiateCrossOriginInterface('{key}').postSetPageId("{page_id}");
+    window.parent.navbarCOI.setPosition('{position_mode}', {json.dumps(sticky_nav)});
     </script>""",
         height=0,
         width=0,
     )
 
-def apply_styles(key: str, styles: str):
+def apply_styles(key: str, custom_styles: str):
+    if _RELEASE:
+        interface_script_path = build_path / "st-styles.css"
+        with open(interface_script_path) as reader:
+            content = reader.read()
+    else:
+        # Load the script from dev_url
+        response = requests.get(f"{dev_url}/st-styles.css")
+        content = response.text
+        pass
+
     components.html(
         f"""<script>
-    window.parent.applyNavbarStyles('{key}', {styles});
+    window.parent.navbarCOI.applyNavbarStyles('{key}', `{content}`, {custom_styles})
     </script>""",
         height=0,
         width=0,

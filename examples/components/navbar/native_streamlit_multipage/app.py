@@ -33,10 +33,12 @@ def my_sidebar():
         position_mode = st.radio(
             "Navbar position mode",
             positions,
-            # index=positions.index(st.session_state.get("position_mode", "top")),
+            key="position_mode_input",
+            index=positions.index(st.session_state.get("position_mode", "top")),
         )
         sticky_nav = st.checkbox(
-            "Sticky navbar", value=st.session_state.get("sticky_nav", True)
+            "Sticky navbar", value=st.session_state.get("sticky_nav", True),
+            key="sticky_nav_input"
         )
         st.session_state["position_mode"] = position_mode
         st.session_state["sticky_nav"] = sticky_nav

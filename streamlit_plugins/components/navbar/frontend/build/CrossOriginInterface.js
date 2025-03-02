@@ -3,30 +3,50 @@
 //  npx terser CrossOriginInterface.js --compress --mangle 'pure_funcs=["console.debug"]' --output ../build/CrossOriginInterface.min.js
 class CrossOriginInterface {
     static instances = {};
-    constructor(key) {
+    constructor(componentName, key, defaultPageId, positionMode, stickyNav) {
         if (CrossOriginInterface.instances[key]) {
-            console.info('CrossOriginInterface instance already exists with key', key);
-            return CrossOriginInterface.instances[key];
+            console.debug('CrossOriginInterface instance already exists with key', key);
+            let that = CrossOriginInterface.instances[key];
+            console.info("Changing", positionMode, stickyNav);
+            that.init(positionMode, stickyNav);
+            return that;
         }
-
         CrossOriginInterface.instances[key] = this;
+        console.info("Init", positionMode, stickyNav);
+        this.component = null;
+        this.componentName = componentName;
+        this.key = key;
+
+        // AQUI SE CAMBIAN COSAS INICIALES UNICAMENTE
         // this.sortedAnchors = [];
         // this.trackedAnchors = new Set();
         // this.anchorVisibleStates = {};
         // this.activeAnchorId = null;
-        this.component = null;
         // this.autoUpdateAnchor = false;
-        this.key = key;
         // this.styles = null;
         // this.disable_scroll = false;
         // this.updateId = 0
         // this.enroute = false;
-        this.expandState = document.body.classList.contains("nav-open") ? "nav-open" : "nav-closed";
-        this.pageId = null;
+
+        // AQUI EN EL INIT SE LE PASAN LOS PARAMETROS ACTUALIZABLES
+        this.init(positionMode, stickyNav);
+        this.pageId = defaultPageId;
         document.body.dataset.expandSubMenu = false;
         document.body.dataset.selectedSubMenu = null;
         document.body.dataset.pageId = this.pageId;
         window.addEventListener("message", this.handleComponentMessage.bind(this));
+    }
+
+    init(positionMode, stickyNav) {
+        this.iframeSelector = 'div.st-key-'+this.key+' > iframe[title="' + this.componentName + '"]';
+        this.positionMode = positionMode;
+        this.stickyNav = stickyNav;
+        this.setIframeState();
+        this.expandState = document.body.classList.contains("nav-open") ? "nav-open" : "nav-closed";
+    }
+
+    setPosition(positionMode, stickyNav) {
+        this.init(positionMode, stickyNav);
     }
 
     register(component, expandState, themeData, themeName="Custom") {
@@ -42,6 +62,20 @@ class CrossOriginInterface {
         // this.autoUpdateAnchor = autoUpdateAnchor;
         // this.emphasisStyle = emphasisStyle;
         // console.debug('Registered component for key ', this.key, ": ", component, expandState);
+    }
+
+    setIframeState() {
+        let iframeNode = document.querySelector(this.iframeSelector);
+        if (iframeNode) {
+            iframeNode.classList.remove("top", "under", "side", "sticky", "fixed");
+            iframeNode.classList.add(this.positionMode);
+            if (this.stickyNav) {
+                iframeNode.classList.add("sticky");
+            }
+            else {
+                iframeNode.classList.add("fixed");
+            }
+        }
     }
 
     // Toggle left margin of streamlit application
@@ -89,18 +123,26 @@ class CrossOriginInterface {
         }
         window.parent.postMessage(data, "*");
     }
-    applyNavbarStyles(key, styles) {
+    applyNavbarStyles(key, styles, customStyles) {
         // Se aplica el estilo al navbar almacenandolo en el head de la pagina con una key para poder reemplazarlo
         // Si ya existe tener en cuenta para reemplazarlo
-        if (document.getElementById(`navbar-styles-${key}`)) {
-            document.getElementById(`navbar-styles-${key}`).innerHTML = styles;
-            return;
+        if (document.getElementById(`navbar-styles-custom-${key}`)) {
+            const stylesHeadNode = document.getElementById(`navbar-styles-custom-${key}`);
+            stylesHeadNode.remove();
         }
-        let style = document.createElement('style');
-        style.type = 'text/css';
-        style.id = `navbar-styles-${key}`;
-        style.innerHTML = styles;
-        document.head.appendChild(style);
+        if (!document.getElementById(`navbar-styles-${key}`)) {
+            let style = document.createElement('style');
+            style.id = `navbar-styles-${key}`;
+            style.innerHTML = styles;
+            document.head.appendChild(style);
+        }
+
+        if (customStyles) {
+            let cStyleNode = document.createElement('style');
+            cStyleNode.id = `navbar-styles-custom-${key}`;
+            cStyleNode.innerHTML = customStyles;
+            document.head.appendChild(cStyleNode);
+        }
     }
 
     //Styles from ScrollNavigationBar.tsx
@@ -387,11 +429,6 @@ class CrossOriginInterface {
         }
     }
 }
-function instantiateCrossOriginInterface(key) {
-    return new CrossOriginInterface(key);
+function instantiateCrossOriginInterface(componentName, key, defaultPageId, positionMode, stickyNav) {
+    return new CrossOriginInterface(componentName, key, defaultPageId, positionMode, stickyNav);
 }
-function applyNavbarStyles(key, styles) {
-    navbar_coi = new CrossOriginInterface(key);
-    navbar_coi.applyNavbarStyles(key, styles);
-}
-window.applyNavbarStyles = applyNavbarStyles;

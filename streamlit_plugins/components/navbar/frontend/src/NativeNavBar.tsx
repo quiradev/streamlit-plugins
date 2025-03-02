@@ -256,7 +256,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             // console.debug(key, "sidebarResponseInfo: ", "Received sidebarResponseInfo message with expandState: ", isSideOpen);
             this.setState({
                 expandState: isSideOpen,
-                selectedPageId: pageId || this.state.selectedPageId,
+                selectedPageId: pageId === "null" ? null : this.state.selectedPageId || this.state.selectedPageId,
                 expandSubMenu: expandSubMenu || this.state.expandSubMenu,
                 selectedSubMenu: selectedSubMenu || this.state.selectedSubMenu
             });

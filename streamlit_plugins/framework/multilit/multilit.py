@@ -18,7 +18,6 @@ from streamlit.commands.execution_control import _new_fragment_id_queue
 
 from streamlit_plugins.components.loader import BaseLoader
 from streamlit_plugins.components.navbar import st_navbar, HEADER_HEIGHT, build_menu_from_st_pages, NavbarPositionType
-from streamlit_plugins.components.navbar.inject_script import set_page_id_visual
 from .app_wrapper import STPageWrapper
 from .loading_engine import LoadingEngine
 
