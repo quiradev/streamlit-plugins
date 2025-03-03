@@ -565,8 +565,8 @@ class Multilit:
             menu_definition=menu_definition, key="mainMultilitNavbar", home_definition=home_definition,
             override_theme=self._navbar_theme, login_definition=account_login_definition,
             hide_streamlit_markers=self._hide_streamlit_markers,
-            default_app_selected_id=override_app_selected_id or st.session_state["queued_page"],
-            override_app_selected_id=override_app_selected_id,
+            default_page_selected_id=override_app_selected_id or st.session_state["queued_page"],
+            override_page_selected_id=override_app_selected_id,
             sticky_nav=self._navbar_sticky, position_mode=self._navbar_mode, reclick_load=True,
             input_styles=styles
         )

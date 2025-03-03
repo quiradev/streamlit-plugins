@@ -9,6 +9,7 @@ div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
     --header-height: 3.75rem;
 }
 
+body:not([data-nav-position="side"]) div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]),
 div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]:not(.side)) {
     position: sticky;
     opacity: 1 !important;
@@ -31,7 +32,7 @@ div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]:not(.side)
 }
 
 /* UNDER STYLES */
-body:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"].under) {
+body[data-nav-position="under"] {
     & .reportview-container .sidebar-content {
         padding-top: 0rem;
     }
@@ -78,7 +79,7 @@ body:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"].under) {
 }
 
 /* TOP STYLES */
-body:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"].top) {
+body[data-nav-position="top"] {
     header {
         position: static;
     }
@@ -220,14 +221,17 @@ body:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"].top) {
     }
 }
 
-div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"].top.sticky) [data-testid="stSkeleton"],
-div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"].under.sticky) [data-testid="stSkeleton"],
-iframe[title="streamlit_plugins.components.navbar.nav_bar"].top.sticky,
-iframe[title="streamlit_plugins.components.navbar.nav_bar"].under.sticky {
-    box-shadow: 0 0px 10px 5px #00000012;
-    border-radius: 5px;
+body:not([data-nav-position="top"])[data-nav-is-sticky="true"],
+body:not([data-nav-position="under"])[data-nav-is-sticky="true"] {
+    div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]) [data-testid="stSkeleton"],
+    iframe[title="streamlit_plugins.components.navbar.nav_bar"] {
+        box-shadow: 0 0px 10px 5px #00000012;
+        border-radius: 5px;
+    }
 }
 
+body:not([data-nav-position="top"])[data-nav-is-sticky="false"],
+body:not([data-nav-position="under"])[data-nav-is-sticky="false"],
 body:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"].top.fixed),
 body:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"].under.fixed) {
     .stMainBlockContainer {
@@ -246,7 +250,59 @@ body:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"].under.fixed
     }
 }
 
-body:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"].side) {
+body.side-nav-closed {
+    .stAppViewContainer,
+    [data-testid="stAppViewContainer"],
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarCollapsedControl"] {
+        margin-left: 4rem;
+    }
+
+    div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
+        /* position: sticky; */
+        opacity: 1 !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0;
+        /* margin-top: calc(-1 * {GAP_BETWEEN_COMPS}rem); */
+        /* margin-top: calc(-1 * var(--gap-between-comps) * 1rem); */
+
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        margin: 0;
+        margin-top: 0.125rem;
+        left: 0;
+        width: 4rem;
+        z-index: 999999;
+
+        [data-testid="stSkeleton"] {
+            height: 100vh !important;
+        }
+        [data-testid="stSkeleton"],
+        & > iframe {
+            outline: 1px solid #c3c3c326;
+            border-radius: 5px;
+            width: 100%;
+            height: 100vh !important;
+            box-shadow: 5px 0 10px -5px #00000012;
+        }
+    }
+}
+body.side-nav-open {
+    .stAppViewContainer,
+    [data-testid="stAppViewContainer"],
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarCollapsedControl"] {
+        margin-left: 10rem;
+    }
+
+    div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
+        width: 10rem;
+    }
+}
+body[data-nav-position="top"] {
     /* Inject COI */
     .stAppViewContainer,
     [data-testid="stAppViewContainer"],
@@ -288,7 +344,7 @@ body:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"].side) {
     }
 
     /* Open Sidebar */
-    &.nav-open {
+    &.side-nav-open {
         .stAppViewContainer,
         [data-testid="stAppViewContainer"],
         [data-testid="collapsedControl"],
@@ -296,7 +352,7 @@ body:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"].side) {
             margin-left: 10rem;
         }
     }
-    &.nav-open div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
+    &.side-nav-open div:has(> iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
         width: 10rem;
     }
 }

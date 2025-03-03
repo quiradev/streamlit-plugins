@@ -41,23 +41,13 @@ if (!window.parent.COI_injected) {{
     )
 
 
-def instantiate_crossorigin_interface(component_name: str, key: str, default_page_id: str, position_mode: str, sticky_nav: bool):
+def instantiate_crossorigin_interface(component_name: str, key: str, is_navigation: bool, default_page_id: str, position_mode: str, sticky_nav: bool):
     """Instantiate the CrossOriginInterface in the parent scope that responds to messages for key."""
     components.html(
         f"""<script>
 frameElement.parentElement.style.display = 'none';
-window.parent.navbarCOI = new window.parent.instantiateCrossOriginInterface('{component_name}', '{key}', '{default_page_id}', '{position_mode}', {json.dumps(sticky_nav)});
+window.parent.navbarCOI = new window.parent.instantiateCrossOriginInterface('{component_name}', '{key}', {json.dumps(is_navigation)}, '{default_page_id}', '{position_mode}', {json.dumps(sticky_nav)});
 </script>""",
-        height=0,
-        width=0,
-    )
-
-def set_position(position_mode: str, sticky_nav: bool):
-    """Set the position of the navbar in the parent scope."""
-    components.html(
-        f"""<script>
-    window.parent.navbarCOI.setPosition('{position_mode}', {json.dumps(sticky_nav)});
-    </script>""",
         height=0,
         width=0,
     )

@@ -22,6 +22,7 @@ interface MenuItem {
     ttip?: string;
     submenu?: MenuItem[];
     style?: React.CSSProperties;
+    url?: string;
     dataset?: object;
 }
 
@@ -76,9 +77,14 @@ interface PythonArgs {
     login: MenuItem;
     override_theme: OverrideTheme;
     position_mode: PositionMode;
-    default_app_selected_id: string;
-    override_app_selected_id?: string;
+    is_sticky: boolean;
+    styles: string;
+    custom_styles: string;
+    is_navigation: boolean;
+    default_page_selected_id: string;
+    override_page_selected_id?: string;
     reclick_load?: boolean;
+    url_navigation?: boolean;
     key?: string;
     fvalue?: boolean;
     // Si se pasa una lista de ThemeInfo se muestra el boton de cambio de tema dependiendo del numero de elementos
@@ -92,7 +98,7 @@ interface PythonArgs {
 // }
 
 interface State {
-    selectedPageId: string;
+    selectedPageId: string | null;
     expandState: boolean;
     selectedSubMenu: string | null;
     expandSubMenu: boolean;
@@ -125,19 +131,19 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         super(props);
         const args: PythonArgs = props.args;
 
-        // let selectedPageId = args.default_app_selected_id;
-        let selectedPageId = window.parent.document.body.dataset.pageId === "null" ? args.default_app_selected_id : window.parent.document.body.dataset.pageId || args.default_app_selected_id;
+        // let selectedPageId = args.default_page_selected_id;
+        let selectedPageId = window.parent.document.body.dataset.pageId === "null" ? args.default_page_selected_id : window.parent.document.body.dataset.pageId || args.default_page_selected_id;
         let expandState = false;
         let selectedSubMenu = window.parent.document.body.dataset.selectedSubMenu === "null" ? null : window.parent.document.body.dataset.selectedSubMenu || null;
         let expandSubMenu = window.parent.document.body.dataset.expandSubMenu === 'true' ? true : false;
 
-        if (args.override_app_selected_id) {
-            selectedPageId = args.override_app_selected_id;
+        if (args.override_page_selected_id) {
+            selectedPageId = args.override_page_selected_id;
             this.postNavbarState(selectedPageId, expandSubMenu, selectedSubMenu);
             Streamlit.setComponentValue(selectedPageId);
         }
 
-        // console.log("SELECCIONADA", selectedPageId, args.override_app_selected_id, args.default_app_selected_id);
+        // console.log("SELECCIONADA", selectedPageId, args.override_page_selected_id, args.default_page_selected_id);
 
         this.state = {
             selectedPageId: selectedPageId,
@@ -186,11 +192,18 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
     postMessage(COI_method: string,
         data?: {
-            expandState?: string,
+            isExpanded?: boolean,
             themeData?: ThemeData,
-            pageId?: string,
+            pageId?: string | null,
             expandSubMenu?: boolean,
-            selectedSubMenu?: string | null
+            selectedSubMenu?: string | null,
+            iframePositionMode?: string,
+            positionMode?: string,
+            isNavigation?: boolean,
+            isSticky?: boolean,
+            styles?: string,
+            customStyles?: string,
+            pageURL?: string
         }): boolean {
         const { key } = this.props.args;
         if (key == null || typeof key !== "string") {
@@ -201,8 +214,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         console.debug("postMessage from ", key, ": ", COI_method, data);
         return true;
     }
-    postRegister(expandState: string, themeData: ThemeData): void {
-        this.postMessage("register", { expandState: expandState, themeData: themeData});
+    postRegister(positionMode: string, isExpanded: boolean, themeData: ThemeData): void {
+        this.postMessage("register", { positionMode, isExpanded, themeData});
     }
     // postUpdateConfig(): void {
     //     let styles = this.styles;
@@ -224,15 +237,22 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     postSidebarGetState(): void {
         this.postMessage("sidebarRequestInfo", {});
     }
-    postSidebarToggle(expandState: string): void {
-        this.postMessage("sidebarToggle", { expandState });
+    postSidebarToggle(positionMode: string, isExpanded: boolean): void {
+        this.postMessage("sidebarToggle", { positionMode, isExpanded });
     }
     postThemeToggle(themeData: ThemeData): void {
         this.saveTheme(themeData);
         this.postMessage("themeToggle", { themeData: themeData });
     }
-    postNavbarState(pageId: string, expandSubMenu: boolean, selectedSubMenu: string | null): void {
+    postNavbarState(pageId: string | null, expandSubMenu: boolean, selectedSubMenu: string | null): void {
         this.postMessage("navbarState", { pageId, expandSubMenu, selectedSubMenu });
+    }
+    postIframeState(positionMode: string, isSticky: boolean): void {
+        this.postMessage("iframeState", { iframePositionMode: positionMode, isSticky });
+    }
+    postSetStyles(styles: string, customStyles: string): void {
+        // Recuperamos el contenido de los estilos de public
+        this.postMessage("setStyles", { styles, customStyles });
     }
     private saveTheme(theme_data: ThemeData): void {
         localStorage.setItem('stPluginsActiveTheme-/-v1', JSON.stringify(theme_data));
@@ -304,13 +324,14 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     public componentDidMount = () => {
         // console.log(
         //     "DidMount",
-        //     this.state.selectedPageId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
+        //     this.state.selectedPageId, this.props.args.override_page_selected_id, this.props.args.default_page_selected_id,
         //     this.state.fromClick
         // );
+        let args: PythonArgs = this.props.args;
 
         // useEffect resize
         this.handleResize();
-        if (this.props.args.position_mode !== "side") {
+        if (args.position_mode !== "side") {
             this.calculateMaxNavBarWidth();
         }
         window.addEventListener("resize", this.handleResize);
@@ -325,7 +346,9 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         // Se registran los eventos de COI
         // Register component
-        this.postRegister(this.state.expandState ? "nav-open" : "nav-close", this.themes_data[this.state.themeIndex]);
+        this.postRegister(args.position_mode, this.state.expandState, this.themes_data[this.state.themeIndex]);
+        this.postSetStyles(args.styles, args.custom_styles);
+        this.postIframeState(args.position_mode, args.is_sticky);
         this.postSidebarGetState();
 
         // Send styles to COI
@@ -337,7 +360,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // this.postUpdateActiveAnchor(anchor_ids[0]);
 
         // Loads themes from python args. If not, use default themes
-        this.themes_data = this.props.args.themes_infos || this.themes_data;
+        this.themes_data = args.themes_data || this.themes_data;
 
         let theme_data_raw = localStorage.getItem('stPluginsActiveTheme-/-v1');
         if (theme_data_raw) {
@@ -359,23 +382,26 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         let selectedPageId = this.state.selectedPageId;
         // let prevselectedPageId = prevState.selectedPageId;
 
-        let argDefault = args.default_app_selected_id;
-        let prevArgDefault = prevProps.args.default_app_selected_id;
-        let argOverride = args.override_app_selected_id;
-        let prevArgOverride = prevProps.args.override_app_selected_id;
+        let argDefault = args.default_page_selected_id;
+        let prevArgDefault = prevProps.args.default_page_selected_id;
+        let argOverride = args.override_page_selected_id;
+        let prevArgOverride = prevProps.args.override_page_selected_id;
 
         // console.log(
         //     "DidUpdate",
-        //     this.state.selectedPageId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
+        //     this.state.selectedPageId, this.props.args.override_page_selected_id, this.props.args.default_page_selected_id,
         //     this.state.fromClick
         // );
+        if (args.position_mode !== prevProps.args.position_mode || args.is_sticky !== prevProps.args.is_sticky) {
+            this.postIframeState(args.position_mode, args.is_sticky);
+        }
 
         if (prevArgDefault !== argDefault || prevArgOverride !== argOverride) {
             selectedPageId = this.state.selectedPageId;
 
             // console.log(
             //     "Props DidUpdate",
-            //     this.state.selectedPageId, this.props.args.override_app_selected_id, this.props.args.default_app_selected_id,
+            //     this.state.selectedPageId, this.props.args.override_page_selected_id, this.props.args.default_page_selected_id,
             //     this.state.fromClick
             // );
             if (argOverride) {
@@ -548,7 +574,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         return menuItems;
     };
 
-    private clickOnApp = (itemId: string): void => {
+    private clickOnPage = (itemId: string): void => {
         let prevselectedPageId = this.state.selectedPageId;
         this.setState(
             {
@@ -561,9 +587,25 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             },
             () => {
                 this.handleResize();
-                if (prevselectedPageId !== itemId || this.props.args.reclick_load) {
+                let args: PythonArgs = this.props.args;
+                if (prevselectedPageId !== itemId || args.reclick_load) {
                     this.postNavbarState(itemId, this.state.expandSubMenu, this.state.selectedSubMenu);
                     Streamlit.setComponentValue(itemId);
+                    // Buscar de forma recursiva la URL del item seleccionado
+                    for (let item of args.menu_definition) {
+                        if (item.id === itemId) {
+                            this.postMessage("setURLPath", { pageURL: item.url });
+                            break;
+                        }
+                        if (item.submenu) {
+                            for (let subitem of item.submenu) {
+                                if (subitem.id === itemId) {
+                                    this.postMessage("setURLPath", { pageURL: subitem.url });
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         );
@@ -602,7 +644,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             subitem={item}
             menu_id={key}
             submenu_toggle={this.toggleSubMenu}
-            click_on_app={this.clickOnApp}
+            click_on_app={this.clickOnPage}
             parent_id={parent_id}
             key={key}
             is_active={item.id === this.state.selectedPageId}
@@ -610,19 +652,20 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     );
 
     private toggleNav = (): void => {
-        let expandState = this.state.expandState ? "nav-close" : "nav-open"
+        // let expandState = this.state.expandState ? "nav-close" : "nav-open"
+        let args: PythonArgs = this.props.args;
         this.setState(
             {
                 selectedPageId: this.state.selectedPageId,
                 selectedSubMenu: this.state.selectedSubMenu,
                 expandState: !this.state.expandState,
-                expandSubMenu: this.props.args.position_mode === "side" ? this.state.expandSubMenu : false,
+                expandSubMenu: args.position_mode === "side" ? this.state.expandSubMenu : false,
                 fromClick: false,
                 themeIndex: this.state.themeIndex
             },
             () => {
                 this.handleResize();
-                if (this.props.args.position_mode === "side") this.postSidebarToggle(expandState);
+                if (args.position_mode === "side") this.postSidebarToggle(args.position_mode, this.state.expandState);
             }
         );
     };
@@ -702,7 +745,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                     position_mode={this.props.args.position_mode}
                     is_active={isActive}
                     submenu_toggle={this.toggleSubMenu}
-                    click_on_app={this.clickOnApp}
+                    click_on_app={this.clickOnPage}
                     key={key * 104}
                     dataAttributes={dataAttributes}
                 />

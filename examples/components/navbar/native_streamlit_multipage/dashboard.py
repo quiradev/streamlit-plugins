@@ -25,5 +25,5 @@ for i, (app_id, app) in enumerate(app_valids_map.items()):
         with st.container(border=True):
             st.markdown(f"### {app.title}")
             if st.button(app.title, type="primary"):
-                st.session_state["force_app_id"] = app_id
+                st.session_state["navigation_force_app_id"] = app_id
                 st.rerun()

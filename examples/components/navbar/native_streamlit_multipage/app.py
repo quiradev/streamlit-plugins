@@ -144,8 +144,8 @@ if st.session_state.logged_in:
         menu_definition=menu_data if st.session_state.logged_in else [],
         login_definition=menu_account_data,
         hide_streamlit_markers=False,
-        default_app_selected_id=st.session_state["app_id"] or st.session_state["default_page_id"],
-        override_app_selected_id=st.session_state["force_app_id"],
+        default_page_selected_id=st.session_state["app_id"] or st.session_state["default_page_id"],
+        override_page_selected_id=st.session_state["force_app_id"],
         sticky_nav=sticky_nav,  # at the top or not
         position_mode=position_mode,  # top or subtop
     )

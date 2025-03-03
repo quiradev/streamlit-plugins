@@ -1,14 +1,22 @@
+import inspect
 import time
 from typing import Literal
+import warnings
 
+import requests
 import streamlit
 from streamlit.web.server.routes import _DEFAULT_ALLOWED_MESSAGE_ORIGINS
 import streamlit as st
 import streamlit.components.v1 as components
 from streamlit.navigation.page import StreamlitPage
+from streamlit.runtime.scriptrunner import RerunException, get_script_run_ctx
+try:
+    from streamlit.runtime.scriptrunner.script_requests import ScriptRequestType, RerunData
+except ModuleNotFoundError:
+    from streamlit.runtime.scriptrunner_utils.script_requests import ScriptRequestType, RerunData
 
 from .config import dev_url, build_path, _RELEASE
-from .inject_script import apply_styles, inject_crossorigin_interface, instantiate_crossorigin_interface, set_position
+from .inject_script import apply_styles, inject_crossorigin_interface, instantiate_crossorigin_interface
 
 if _RELEASE:
     _component_func = components.declare_component("nav_bar", path=str(build_path))
@@ -18,7 +26,7 @@ else:
 if "http://localhost:8501" not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
     streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append("http://localhost:8501")
 
-NavbarPositionType = Literal["top", "under", "side"]
+NavbarPositionType = Literal["top", "under", "side", "static"]
 
 GAP_BETWEEN_COMPS = 1
 TOP_SIDE_ELEMENTS_MARGIN = 1.05
@@ -456,24 +464,28 @@ def build_menu_from_st_pages(
     account_login_definition = {}
     for page in pages:
         if isinstance(page, dict):
-            name = page["name"]
+            section = page["name"]
             sub_pages = page["subpages"]
             icon = page.get("icon", None)
-            ttip = page.get("ttip", name)
+            ttip = page.get("ttip", section)
             submenu, sub_home_def, _, sub_app_map = build_menu_from_st_pages(*sub_pages)
             menu.append({
-                'id': name.lower().replace(" ", "_"),
-                'label': name,
+                'id': section.lower().replace(" ", "_"),
+                'label': section,
                 'submenu': submenu,
                 'icon': icon,
-                'ttip': ttip,
+                'ttip': ttip
             })
             page_map.update(sub_app_map)
             # home_definition = sub_home_def
 
         elif isinstance(page, StreamlitPage):
             page_id = page._script_hash
-            menu.append({'label': page.title, 'id': page_id, 'icon': page.icon, 'ttip': page.title, 'style': {}})
+            menu.append({
+                'label': page.title, 'id': page_id,
+                'icon': page.icon, 'ttip': page.title, 'style': {},
+                'url': page._url_path
+            })
             page_map[page_id] = page
         else:
             raise ValueError(f"Invalid page type: {type(page)}")
@@ -483,7 +495,8 @@ def build_menu_from_st_pages(
             'id': home_page._script_hash,
             'label': home_page.title or "Home",
             'icon': home_page.icon or MATERIAL_ICON_HOME,
-            'ttip': home_page.title or "Home"
+            'ttip': home_page.title or "Home",
+            'url': home_page._url_path
         }
         page_map[home_page._script_hash] = home_page
 
@@ -504,7 +517,8 @@ def build_menu_from_st_pages(
                     'id': account_page._script_hash,
                     'label': account_page.title or "Profile",
                     'icon': account_page.icon or MATERIAL_ICON_USER_CIRCLE,
-                    'ttip': account_page.title or "Profile"
+                    'ttip': account_page.title or "Profile",
+                    'url': account_page._url_path
                 },
             )
             page_map[account_page._script_hash] = account_page
@@ -515,7 +529,8 @@ def build_menu_from_st_pages(
                     'id': settings_page._script_hash,
                     'label': settings_page.title or "Settings",
                     'icon': settings_page.icon or MATERIAL_ICON_SETTINGS,
-                    'ttip': settings_page.title or "Settings"
+                    'ttip': settings_page.title or "Settings",
+                    'url': settings_page._url_path
                 }
             )
             page_map[settings_page._script_hash] = settings_page
@@ -526,27 +541,58 @@ def build_menu_from_st_pages(
                     'id': logout_page._script_hash,
                     'label': logout_page.title or "Logout",
                     'icon': logout_page.icon or MATERIAL_ICON_LOGOUT,
-                    'ttip': logout_page.title or"Logout"
+                    'ttip': logout_page.title or"Logout",
+                    'url': logout_page._url_path
                 }
             )
             page_map[logout_page._script_hash] = logout_page
 
     return menu, home_definition, account_login_definition, page_map
 
+def load_st_styles():
+    if _RELEASE:
+        interface_script_path = build_path / "st-styles.css"
+        with open(interface_script_path) as reader:
+            content = reader.read()
+    else:
+        # Load the script from dev_url
+        response = requests.get(f"{dev_url}/st-styles.css")
+        content = response.text
+        pass
+
+    return content
 
 def st_navbar(
     menu_definition: list[dict], first_select=0, home_definition: dict | None = None, login_definition: dict | None = None,
     override_theme=None, hide_streamlit_markers=True,
-    position_mode: NavbarPositionType = 'under', sticky_nav=True,
+    position_mode: NavbarPositionType = 'static', sticky_nav=True,
     force_value=None,
     option_menu=False,
-    default_app_selected_id=None,
-    override_app_selected_id=None,
+    default_page_selected_id=None,
+    override_page_selected_id=None,
     reclick_load=True,
     input_styles: str | None = None,
     themes_data: list[dict]| None = None,
     key="NavBarComponent",
 ):
+    is_navigation = True
+    # se recupera del callstack si se ha llamado desde la anterior funcion desde st_navigation
+    inspect_stack = inspect.stack()
+    if len(inspect_stack) > 2:
+        caller = inspect_stack[1]
+        if caller.function == 'st_navigation':
+            is_navigation = True
+    
+    if not is_navigation:
+        if position_mode != "static":
+            raise ValueError("The position_mode parameter can only be 'static' when calling st_navbar directly")
+        if sticky_nav:
+            # Mostrar un warning de python de que no tendra efecto
+            warnings.warn("The sticky_nav parameter will have no effect when calling st_navbar directly")
+
+    if "navbar_coi_instance" not in st.session_state:
+        st.session_state.navbar_coi_instance = False
+    
     if themes_data is None:
         themes_data = DEFAULT_THEMES
 
@@ -596,29 +642,33 @@ def st_navbar(
                     'id', f"app_{menu_definition[i]['submenu'][_i]['label']}"
                 )
 
-    if default_app_selected_id is None:
+    if default_page_selected_id is None:
         items = menu_definition
         if home_definition is not None:
             items = [home_data] + items
         if login_definition is not None:
             items = items + [login_data]
         
-        first_select_item = items[first_select]
-        default_app_selected_id = first_select_item.get('id', None)
+        first_select_item = items[first_select] or {}
+        default_page_selected_id = first_select_item.get('id', None)
         if first_select_item.get('submenu', []):
-            default_app_selected_id = first_select_item['submenu'][0].get('id', None)
+            default_page_selected_id = first_select_item['submenu'][0].get('id', None)
 
-    if override_app_selected_id:
-        default_app_selected_id = override_app_selected_id
+    if override_page_selected_id:
+        default_page_selected_id = override_page_selected_id
 
     # if key not in st.session_state:
     #     override_app_selected_id = default_app_selected_id
     # elif st.session_state[key] is None:
     #     override_app_selected_id = default_app_selected_id
-    coi_scripts = st.empty()
-    with coi_scripts:
-        instantiate_crossorigin_interface(_component_func.name, key, default_app_selected_id, position_mode, sticky_nav)
-        time.sleep(0.2)
+    coi_scripts_instance = st.empty()
+    styles = ""
+    if not st.session_state.navbar_coi_instance:
+        st.session_state.navbar_coi_instance = True
+        styles = load_st_styles()
+        with coi_scripts_instance.container():
+            instantiate_crossorigin_interface(_component_func.name, key, is_navigation, default_page_selected_id, position_mode, sticky_nav)
+            # time.sleep(0.2)
 
     # print()
     # print(f"FROM Override Multi: {override_app_selected_id}")
@@ -656,30 +706,28 @@ def st_navbar(
     component_value = _component_func(
         menu_definition=menu_definition, home=home_data or None, login=login_data or None,
         override_theme=override_theme,
-        position_mode=position_mode,
-        default_app_selected_id=default_app_selected_id,
-        override_app_selected_id=override_app_selected_id,
+        position_mode=position_mode, is_sticky=sticky_nav,
+        default_page_selected_id=default_page_selected_id,
+        override_page_selected_id=override_page_selected_id,
         reclick_load=reclick_load,
+        styles=styles, custom_styles=input_styles,
+        is_navigation=is_navigation,
         key=key, fvalue=force_value,
         themes_data=themes_data,
-        default=default_app_selected_id,
+        default=default_page_selected_id,
     )
     
-    with coi_scripts:
-        apply_styles(key, f"`{input_styles}`")
-        time.sleep(0.1)
-    
-    with coi_scripts:
-        set_position(position_mode, sticky_nav)
-        time.sleep(0.1)
+    # with coi_scripts_styles.container():
+    #     apply_styles(key, f"`{input_styles}`")
+        # time.sleep(0.1)
 
     # print(f"FROM Navbar: {component_value}")
 
     if component_value is None:
-        component_value = default_app_selected_id
+        component_value = default_page_selected_id
 
-    if override_app_selected_id:
-        component_value = override_app_selected_id
+    if override_page_selected_id:
+        component_value = override_page_selected_id
 
     # print(f"FROM Navbar FINAL: {component_value}")
     # print()
@@ -693,7 +741,7 @@ def st_navigation(
     account_page: StreamlitPage | None = None,
     settings_page: StreamlitPage | None = None,
     logout_page: StreamlitPage | None = None,
-    position_mode: NavbarPositionType = 'under', sticky_nav=True,
+    position_mode: NavbarPositionType = 'side', sticky_nav=True,
     themes_data: list[dict]| None = None,
     key="NavigationComponent",
 ):
@@ -738,9 +786,9 @@ def st_navigation(
     )
     default_page = next(filter(lambda p: p._default, app_map.values()), None)
     if default_page:
-        st.session_state["default_page_id"] = default_page._script_hash
+        st.session_state["navigation_default_page_id"] = default_page._script_hash
     else:
-        st.session_state["default_page_id"] = None
+        st.session_state["navigation_default_page_id"] = None
 
     # if login_page:
     #     login_page_id = login_page._script_hash
@@ -750,26 +798,26 @@ def st_navigation(
     #     logout_page_id = logout_page._script_hash
     #     st.session_state["logout_page_id"] = logout_page_id
 
-    st.session_state["app_map"] = app_map
+    st.session_state["navigation_page_map"] = app_map
 
 
-    if st.session_state["page_id"] is None:
-        st.session_state["page_id"] = st.session_state["default_page_id"]
+    if st.session_state["navigation_page_id"] is None:
+        st.session_state["navigation_page_id"] = st.session_state["navigation_default_page_id"]
     
     page_id = st_navbar(
         menu_definition=menu_data,  # if st.session_state.logged_in else [],
         login_definition=menu_account_data,
         hide_streamlit_markers=False,
-        default_app_selected_id=st.session_state["page_id"] or st.session_state["default_page_id"],
-        override_app_selected_id=st.session_state["force_page_id"],
-        sticky_nav=sticky_nav,  # at the top or not
+        default_page_selected_id=st.session_state["navigation_page_id"] or st.session_state["navigation_default_page_id"],
+        override_page_selected_id=st.session_state["navigation_force_page_id"],
         position_mode=position_mode,  # top or subtop
+        sticky_nav=sticky_nav,  # at the top or not
     )
-    st.session_state["force_page_id"] = None
+    st.session_state["navigation_force_page_id"] = None
 
 
-    st.session_state["page_id"] = None  # Added to fix login/logout issue
-    st.session_state["active_page_id"] = page_id
+    st.session_state["navigation_page_id"] = None  # Added to fix login/logout issue
+    st.session_state["navigation_active_page_id"] = page_id
     pg = st.navigation(
         pages,
         position="hidden"
@@ -778,3 +826,19 @@ def st_navigation(
     if pg._script_hash != page_id:
         st.session_state["page_id"] = page_id
         st.switch_page(app_map[page_id])
+
+
+def st_switch_page(page_id: str, with_native: bool = False):
+    st.session_state["navigation_force_page_id"] = page_id
+    if with_native:
+        st.switch_page(page_id)
+    else:
+        ctx = get_script_run_ctx()
+        if ctx is not None:
+            if page_id != ctx.page_script_hash:
+                ctx.pages_manager.set_current_page_script_hash(page_id)
+                rerun_data = RerunData(
+                    query_string=ctx.query_string,
+                    page_script_hash=page_id,
+                )
+                raise RerunException(rerun_data)
