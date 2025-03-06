@@ -13,15 +13,6 @@ st.set_page_config(layout="wide")
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = True
 
-if "app_id" not in st.session_state:
-    st.session_state.app_id = None
-
-if "active_app_id" not in st.session_state:
-    st.session_state.active_app_id = None
-
-if "force_app_id" not in st.session_state:
-    st.session_state.force_app_id = None
-
 USER = "admin"
 PASSWORD = "admin"
 
@@ -33,15 +24,22 @@ def my_sidebar():
         position_mode = st.radio(
             "Navbar position mode",
             positions,
-            key="position_mode_input",
             index=positions.index(st.session_state.get("position_mode", "top")),
+            key="position_mode_input",
         )
         sticky_nav = st.checkbox(
-            "Sticky navbar", value=st.session_state.get("sticky_nav", True),
+            "Sticky navbar",
+            value=st.session_state.get("sticky_nav", True),
             key="sticky_nav_input"
+        )
+        native_way = st.checkbox(
+            "Use native way",
+            value=st.session_state.get("native_way", False),
+            key="native_way_input"
         )
         st.session_state["position_mode"] = position_mode
         st.session_state["sticky_nav"] = sticky_nav
+        st.session_state["native_way"] = native_way
 
 
 def my_heading():
@@ -69,8 +67,7 @@ def login():
     if submitted:
         if user == USER and password == PASSWORD:
             st.session_state.logged_in = True
-            st.session_state.app_id = st.session_state["default_page_id"]
-            st.rerun()
+            st_switch_home()
         else:
             st.toast("Invalid username or password", icon="❌")
 
@@ -95,108 +92,52 @@ st.logo(
     icon_image="https://streamlit.io/images/brand/streamlit-mark-color.png"
 )
 
-dashboard = st.Page("dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True)
-login_page = st.Page(login, title="Log in", icon=":material/login:")
-account_page = st.Page(account, title="Account", icon=":material/account_circle:")
-settings_page = st.Page(settings, title="Settings", icon=":material/settings:")
-bugs = st.Page("reports/bugs.py", title="Bug reports", icon=":material/bug_report:")
-alerts = st.Page("reports/alerts.py", title="System alerts", icon=":material/notification_important:")
-search = st.Page("tools/search.py", title="Search", icon=":material/search:")
-history = st.Page("tools/history.py", title="History", icon=":material/history:")
-logout_page = st.Page(logout, title="Log out", icon=":material/logout:")
+dashboard = st.Page("dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True, url_path="dashboard")
+login_page = st.Page(login, title="Log in", icon=":material/login:", url_path="login")
+account_page = st.Page(account, title="Account", icon=":material/account_circle:", url_path="account")
+settings_page = st.Page(settings, title="Settings", icon=":material/settings:", url_path="settings")
+bugs = st.Page("reports/bugs.py", title="Bug reports", icon=":material/bug_report:", url_path="bugs")
+bugs2 = st.Page("reports/bugs.py", title="Bug reports2", icon=":material/bug_report:", url_path="bugs2")
+bugs3 = st.Page("reports/bugs.py", title="Bug reports3", icon=":material/bug_report:", url_path="bugs3")
+alerts = st.Page("reports/alerts.py", title="System alerts", icon=":material/notification_important:", url_path="alerts")
+search = st.Page("tools/search.py", title="Search", icon=":material/search:", url_path="search")
+history = st.Page("tools/history.py", title="History", icon=":material/history:", url_path="history")
+logout_page = st.Page(logout, title="Log out", icon=":material/logout:", url_path="logout")
 
 # HERE IS THE CHANGE
-from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pages, NavbarPositionType
-
-menu_data, _, menu_account_data, app_map = build_menu_from_st_pages(
-    dashboard,
-    {
-        "name": "Reports", "subpages": [alerts], "icon": ":material/assessment:", "ttip": "Reports"
-    },
-    {
-        "name": "Tools", "subpages": [search, history, bugs], "icon": ":material/extension:"
-    },
-    login_page=login_page, account_page=account_page, settings_page=settings_page,
-    logout_page=logout_page,
-)
-st.session_state["default_page_id"] = dashboard._script_hash
-login_page_id = login_page._script_hash
-st.session_state["login_page_id"] = login_page_id
-logout_page_id = logout_page._script_hash
-st.session_state["logout_page_id"] = logout_page_id
-
-st.session_state["app_map"] = app_map
+from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pages, NavbarPositionType, st_navigation, st_switch_home
 
 my_sidebar()
 
 position_mode: NavbarPositionType = st.session_state.get("position_mode", "top")
 sticky_nav = st.session_state.get("sticky_nav", True)
+native_way = st.session_state.get("native_way", False)
 
+if st.session_state.logged_in:
+    if position_mode == "top":
+            my_heading()
+    
+page = st_navigation(
+    {
+        "": [dashboard],
+        "Reports": [alerts],
+        "Tools": [search, history, bugs, bugs2, bugs3]
+    },
+    section_info={
+        "Reports": {"icon": ":material/assessment:"},
+        "Tools": {"icon": ":material/extension:"}
+    },
+    position_mode=position_mode if st.session_state.logged_in else "hidden", sticky_nav=sticky_nav,
+    login_page=login_page, logout_page=logout_page,
+    account_page=account_page,
+    settings_page=settings_page,
+    native_way=native_way
+)
 
-page_id = login_page_id
 if st.session_state.logged_in:
     # SOME TEXT ABOVE THE NAVBAR
-    if position_mode == "top":
-        my_heading()
-    if st.session_state["app_id"] is None:
-        st.session_state["app_id"] = st.session_state["default_page_id"]
-    page_id = st_navbar(
-        menu_definition=menu_data if st.session_state.logged_in else [],
-        login_definition=menu_account_data,
-        hide_streamlit_markers=False,
-        default_page_selected_id=st.session_state["app_id"] or st.session_state["default_page_id"],
-        override_page_selected_id=st.session_state["force_app_id"],
-        sticky_nav=sticky_nav,  # at the top or not
-        position_mode=position_mode,  # top or subtop
-    )
-    st.session_state["force_app_id"] = None
-
-    if position_mode != "top":
-        my_heading()
-
-if not st.session_state.logged_in and page_id != login_page_id:
-    page_id = login_page_id
-
-
-# Loads the selected app content
-st.session_state.app_id = None  # Added to fix login/logout issue
-st.session_state.active_app_id = page_id
-# app_map[page_id]._can_be_called = True
-# app_map[page_id].run()
-
-if st.session_state.logged_in:
-    pg = st.navigation(
-        {
-            "": [dashboard],
-            "Account": [account_page, settings_page, logout_page],
-            "Reports": [bugs, alerts],
-            "Tools": [search, history],
-        },
-        position="hidden"
-    )
+    page.run()
 
 else:
-    pg = st.navigation([login_page], position="hidden")
-
-if pg._script_hash != page_id:
-    st.session_state["app_id"] = page_id
-    st.switch_page(app_map[page_id])
-
-pg.run()
-
-
-# if st.session_state.logged_in:
-#     pg = st.navigation(
-#         {
-#             "Account": [logout_page],
-#             "Reports": [dashboard, bugs, alerts],
-#             "Tools": [search, history],
-#         },
-#         position="hidden"
-#     )
-#
-# else:
-#     pg = st.navigation([login_page], position="hidden")
-#
-#
-# pg.run()
+    login_page._can_be_called = True
+    login_page.run()

@@ -108,6 +108,10 @@ nav.navbar.side .navbar-wrapper {
     /*border-radius: 15px; */
     border-radius: 0;
 }
+nav:not(.side) .navbar-nav>li>.dropdown-menu {
+    max-height: calc(3.5*(3.75rem - 0.125rem - 0.15rem));
+    overflow-y: auto;
+}
 
 nav.side .navbar-nav>li>.dropdown-menu {
     position: relative;
@@ -337,6 +341,11 @@ nav.navbar:not(.side):before {
 
 ul.navbar-nav {
     width: 100%;
+}
+
+nav:not(.side) .navbar-nav {
+    max-height: calc(5.5*(3.75rem - 0.125rem - 0.15rem));
+    overflow-y: auto;
 }
 
 .navbar-wrapper ul{

@@ -33,13 +33,6 @@ class CrossOriginInterface {
         this.init(positionMode, isSticky);
         this.pageId = defaultPageId;
 
-        if (isNavigation) {
-            document.body.dataset.expandSubMenu = false;
-            document.body.dataset.selectedSubMenu = null;
-            document.body.dataset.pageId = this.pageId;
-            document.body.dataset.navPosition = positionMode;
-            document.body.dataset.navIsSticky = isSticky;
-        }
         window.addEventListener("message", this.handleComponentMessage.bind(this));
     }
 
@@ -48,7 +41,62 @@ class CrossOriginInterface {
         this.positionMode = positionMode;
         this.isSticky = isSticky;
         // this.setIframeState();
-        this.isExpanded = document.body.classList.contains("side-nav-open") ? "side-nav-open" : "side-nav-closed";
+        this.isExpanded = document.body.classList.contains("side-nav-open");
+
+        if (this.isNavigation) {
+            this.setNavState(
+                this.pageId,
+                document.body.dataset.expandSubMenu || false,
+                document.body.dataset.selectedSubMenu || null
+            );
+            document.body.dataset.navPosition = positionMode;
+            document.body.dataset.navIsSticky = isSticky;
+            // Add css property to body to set the width of the sidebar
+            document.body.style.setProperty('--sidebar-width', '150px');
+        }
+
+        // Se crea el expander al lado del iframeSelector
+        if (positionMode === "side") {
+            let expander = document.getElementById('expander-' + this.key);
+            if (!expander) {
+                let expander = document.createElement('span');
+                expander.id = 'expander-' + this.key;
+                let isBeingExpanding = false;
+                let mouseClickX = null;
+                expander.addEventListener('mousedown', (event) => {
+                    isBeingExpanding = true;
+                    expander.classList.add('expander-active');
+                    mouseClickX = event.clientX;
+                    const mouseUpHandler = () => {
+                        isBeingExpanding = false;
+                        expander.classList.remove('expander-active');
+                        document.body.removeEventListener('mouseup', mouseUpHandler);
+                        document.body.removeEventListener('mousemove', mouseMoveHandler);
+                    };
+                    const mouseMoveHandler = (event) => {
+                        if (isBeingExpanding) {
+                            let distX = event.clientX - mouseClickX;
+                            mouseClickX = event.clientX;
+                            let actualSideWidth = parseInt(document.body.style.getPropertyValue('--sidebar-width'));
+                            document.body.style.setProperty('--sidebar-width', Math.max(150, Math.min(300, actualSideWidth + distX)) + 'px');
+                        }
+                    }
+                    // Quiero eliminar el listener una vez que se suelte el mouse
+                    document.body.addEventListener('mouseup', mouseUpHandler);
+                    document.body.addEventListener('mousemove', mouseMoveHandler);
+                });
+                let iframe = document.querySelector(this.iframeSelector);
+                if (iframe) {
+                    iframe.parentNode.appendChild(expander);
+                }
+            }
+        }
+        else {
+            let expander = document.getElementById('expander-' + this.key);
+            if (expander) {
+                expander.remove();
+            }
+        }
     }
 
     register(component, positionMode, isExpanded, themeData, themeName="Custom") {
@@ -72,17 +120,18 @@ class CrossOriginInterface {
             document.body.classList.remove("side-nav-open");
             document.body.classList.remove("side-nav-closed");
         }
-        
-        // Agrega a la clase del body la clase nav-open
-        if (isExpanded) {
-            document.body.classList.add("side-nav-open");
-            document.body.classList.remove("side-nav-closed");
-            // console.debug('Toggled isExpanded to', isExpanded);
-        }
         else {
-            document.body.classList.add("side-nav-closed");
-            document.body.classList.remove("side-nav-open");
-            // console.debug('Removed isExpanded to', isExpanded);
+            // Agrega a la clase del body la clase nav-open
+            if (isExpanded) {
+                document.body.classList.add("side-nav-open");
+                document.body.classList.remove("side-nav-closed");
+                // console.debug('Toggled isExpanded to', isExpanded);
+            }
+            else {
+                document.body.classList.add("side-nav-closed");
+                document.body.classList.remove("side-nav-open");
+                // console.debug('Removed isExpanded to', isExpanded);
+            }
         }
     }
     setNavState(pageId, expandSubMenu, selectedSubMenu) {
