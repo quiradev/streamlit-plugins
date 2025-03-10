@@ -37,7 +37,7 @@ def run():
     
     multilit = Multilit(
         title="Demo", nav_horizontal=True, layout='wide', favicon="📚",
-        use_st_navigation_navbar=False,
+        use_st_navigation_navbar=True,
         navbar_sticky=sticky_nav, navbar_mode=position_mode,
         use_cookie_cache=True, sidebar_state='auto',
         allow_url_nav=False, hide_streamlit_markers=False, use_banner_images=None,

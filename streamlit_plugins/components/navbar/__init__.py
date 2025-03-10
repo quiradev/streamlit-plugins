@@ -875,9 +875,27 @@ def st_navigation(
     page._can_be_called = True
     return page
 
-def st_switch_home():
-    st.session_state["navigation_force_page_id"] = st.session_state["navigation_default_page_id"]
-    st.rerun()
+def set_default_page(page_id: str):
+    st.session_state["navigation_default_page_id"] = page_id
+
+def init_navigation_transition(prev_page_id: str, page_id: str):
+    if "navigation_prev_page_id" not in st.session_state:
+        st.session_state["navigation_prev_page_id"] = prev_page_id
+    if "navigation_page_id" not in st.session_state:
+        st.session_state["navigation_page_id"] = page_id
+
+def set_navigation_transition(prev_page_id: str, page_id: str):
+    st.session_state["navigation_prev_page_id"] = prev_page_id
+    st.session_state["navigation_page_id"] = page_id
+
+def set_force_next_page(page_id: str):
+    st.session_state["navigation_force_page_id"] = page_id
+
+def get_navigation_transition() -> tuple[str, str]:
+    return st.session_state["navigation_prev_page_id"], st.session_state["navigation_page_id"]
+
+def st_switch_home(native_way: bool = False):
+    st_switch_page(st.session_state["navigation_default_page_id"], native_way=native_way)
 
 def st_switch_page(page_id: str, native_way: bool = False):
     pages = st.session_state["navigation_page_map"]
@@ -885,10 +903,10 @@ def st_switch_page(page_id: str, native_way: bool = False):
     if page is None:
         raise ValueError(f"Page with id {page_id} not found")
     
+    st.session_state["navigation_force_page_id"] = page._script_hash
     if native_way:
         st.switch_page(page)
     else:
-        st.session_state["navigation_force_page_id"] = page._script_hash
         st.rerun()
         # ctx = get_script_run_ctx()
         # if ctx is not None:
