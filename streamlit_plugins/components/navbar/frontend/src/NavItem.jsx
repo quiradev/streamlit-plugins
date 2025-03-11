@@ -38,9 +38,9 @@ const NavItem = (props) => {
     return false;
   }
 
-  const onSelect = (id) => {
+  const onSelect = () => {
     submenu_toggle("");
-    click_on_app(id);
+    click_on_app(menu_item);
   }
 
   const create_item = (item, kid, is_active) => {
@@ -75,7 +75,7 @@ const NavItem = (props) => {
 
     return (
       <li style={item.style || {}} className={`nav-item py-0 ${is_active ? "active": ""}`} key={kid} {...dataAttributes}>
-        <a className="nav-link" href={"#" + kid} onClick={()=>onSelect(ret_id)} data-toggle="tooltip" data-placement="top" data-html="true" title={item.ttip}>
+        <a className="nav-link" href={"#" + kid} onClick={()=>onSelect()} data-toggle="tooltip" data-placement="top" data-html="true" title={item.ttip}>
           {iconMarkup}
           <span>{label}</span>
         </a>

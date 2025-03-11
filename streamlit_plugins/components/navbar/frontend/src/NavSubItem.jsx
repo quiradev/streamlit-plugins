@@ -37,9 +37,9 @@ const NavSubItem = (props) => {
     return false;
   }
 
-  const onSelect = (parent_id: string, item_id: string) => {
+  const onSelect = (parent_id: string) => {
     submenu_toggle(parent_id);
-    click_on_app(item_id);
+    click_on_app(menu_subitem);
   }
 
   const create_submenuitem = (item, kid, parent_id) => {
@@ -64,7 +64,7 @@ const NavSubItem = (props) => {
 
     return (
       <li className={is_active ? "active": ""} key={parent_id+kid*97}>
-          <a className="dropdown-item" href={"#" + kid*97} onClick={()=>onSelect(parent_id, item.id)} data-toggle="tooltip" data-placement="top" data-html="true" title={item.ttip}>
+          <a className="dropdown-item" href={"#" + kid*97} onClick={()=>onSelect(parent_id)} data-toggle="tooltip" data-placement="top" data-html="true" title={item.ttip}>
             {hasIcon && iconMarkup}
             <span>{label}</span>
           </a>

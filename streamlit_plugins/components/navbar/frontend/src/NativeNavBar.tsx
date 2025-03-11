@@ -131,8 +131,11 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         super(props);
         const args: PythonArgs = props.args;
 
-        // let selectedPageId = args.default_page_selected_id;
-        let selectedPageId = window.parent.document.body.dataset.pageId === "null" ? args.default_page_selected_id : window.parent.document.body.dataset.pageId || args.default_page_selected_id;
+        let bodyPageId = window.parent.document.body.dataset.pageId;
+        let selectedPageId = bodyPageId;
+        if (bodyPageId === "null" || bodyPageId === "undefined") {
+            selectedPageId = args.default_page_selected_id;
+        }
         let expandState = false;
         let selectedSubMenu = window.parent.document.body.dataset.selectedSubMenu === "null" ? null : window.parent.document.body.dataset.selectedSubMenu || null;
         let expandSubMenu = window.parent.document.body.dataset.expandSubMenu === 'true' ? true : false;
@@ -146,7 +149,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // console.log("SELECCIONADA", selectedPageId, args.override_page_selected_id, args.default_page_selected_id);
 
         this.state = {
-            selectedPageId: selectedPageId,
+            selectedPageId: selectedPageId || args.default_page_selected_id,
             selectedSubMenu: selectedSubMenu,
             expandState: expandState,
             expandSubMenu: expandSubMenu,
@@ -203,7 +206,9 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             isSticky?: boolean,
             styles?: string,
             customStyles?: string,
-            pageURL?: string
+            currentPageName?: string,
+            currentPageScriptHash?: string,
+            isDefault?: boolean
         }): boolean {
         const { key } = this.props.args;
         if (key == null || typeof key !== "string") {
@@ -574,8 +579,9 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         return menuItems;
     };
 
-    private clickOnPage = (itemId: string): void => {
+    private clickOnPage = (item: MenuItem): void => {
         let prevselectedPageId = this.state.selectedPageId;
+        let itemId = item.id;
         this.setState(
             {
                 selectedPageId: itemId,
@@ -592,20 +598,10 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                     this.postNavbarState(itemId, this.state.expandSubMenu, this.state.selectedSubMenu);
                     Streamlit.setComponentValue(itemId);
                     // Buscar de forma recursiva la URL del item seleccionado
-                    for (let item of args.menu_definition) {
-                        if (item.id === itemId) {
-                            this.postMessage("setURLPath", { pageURL: item.url });
-                            break;
-                        }
-                        if (item.submenu) {
-                            for (let subitem of item.submenu) {
-                                if (subitem.id === itemId) {
-                                    this.postMessage("setURLPath", { pageURL: subitem.url });
-                                    break;
-                                }
-                            }
-                        }
-                    }
+                    let currentPageName = item.label;
+                    let currentPageScriptHash = item.id;
+                    let isDefault = args.default_page_selected_id === itemId;
+                    this.postMessage("setCurrentPage", { currentPageName, currentPageScriptHash, isDefault });
                 }
             }
         );

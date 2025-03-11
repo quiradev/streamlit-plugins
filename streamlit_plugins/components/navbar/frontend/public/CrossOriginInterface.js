@@ -193,12 +193,51 @@ class CrossOriginInterface {
                 ? window.history.replaceState(state, '', url)
                 : window.history.pushState(state, '', url);
         
-        updateURL(urlPath, {
+        // Eliminar las barras al principio y al final de urlPath
+        let regexp = new RegExp("^/+|/+$", "g");
+        const cleanedUrlPath = urlPath.replace(regexp, '');
+
+        const fullURL = `${window.location.origin}/${cleanedUrlPath}`;
+
+        updateURL(fullURL, {
             additionalInformation: 'Updated the URL with JS',
         });
     }
-        
 
+    setPages(appPages) {
+        // this.appNav.hostCommunicationMgr.sendMessageToHost({
+        //     type: "SET_APP_PAGES",
+        //     appPages: this.appPages
+        // });
+        // appPages = {
+        //     icon: ""
+        //     isDefault: true,
+        //     pageName: "app",
+        //     pageScriptHash: "d965c522969fa9f32813cdbd0c58ccae",
+        //     urlPathname: "app"
+        // }
+        const data = {
+            stCommVersion: 1,
+            type: "SET_APP_PAGES",
+            appPages: appPages,
+        }
+        window.parent.postMessage(data, "*");
+    }
+
+    setCurrentPage(currentPageName, currentPageScriptHash, isDefault) {
+        // this.appNav.hostCommunicationMgr.sendMessageToHost({
+        //     type: "SET_CURRENT_PAGE_NAME",
+        //     currentPageName: isDefault ? "" : currentPageName,
+        //     currentPageScriptHash: currentPageScriptHash
+        // });
+        const data = {
+            stCommVersion: 1,
+            type: "SET_CURRENT_PAGE_NAME",
+            currentPageName: isDefault ? "" : currentPageName,
+            currentPageScriptHash: currentPageScriptHash
+        }
+        window.parent.postMessage(data, "*");
+    }
 
     //Styles from ScrollNavigationBar.tsx
     // updateConfig(styles, disable_scroll) {
@@ -463,6 +502,11 @@ class CrossOriginInterface {
             // case 'updateActiveAnchor':
             //     const { anchor_id: updateAnchorId } = event.data;
             //     this.updateActiveAnchor(updateAnchorId);
+            case 'setPages':
+                // TODO: Enviar desde el componente las paginas (para evitar usar el st.navigation)
+                let { appPages } = event.data;
+                this.setPages(appPages);
+                break;
             case 'themeToggle':
                 let { themeData } = event.data;
                 this.themeToggle(themeData);
@@ -487,9 +531,9 @@ class CrossOriginInterface {
                 let { styles, customStyles } = event.data;
                 this.applyNavbarStyles(styles, customStyles);
                 break;
-            case 'setURLPath':
-                let { urlPath } = event.data;
-                if (this.isNavigation) this.setURLPath(urlPath);
+            case 'setCurrentPage':
+                let { currentPageName, currentPageScriptHash, isDefault } = event.data;
+                if (this.isNavigation) this.setCurrentPage(currentPageName, currentPageScriptHash, isDefault);
                 break;
             default:
                 console.error('Unknown method', COI_method);
