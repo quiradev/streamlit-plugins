@@ -24,7 +24,7 @@ def my_sidebar():
         position_mode = st.radio(
             "Navbar position mode",
             positions,
-            index=positions.index(st.session_state.get("position_mode", "top")),
+            index=positions.index(st.session_state.get("position_mode", "side")),
             key="position_mode_input",
         )
         sticky_nav = st.checkbox(
@@ -109,14 +109,14 @@ from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pa
 
 my_sidebar()
 
-position_mode: NavbarPositionType = st.session_state.get("position_mode", "top")
+position_mode: NavbarPositionType = st.session_state.get("position_mode", "side")
 sticky_nav = st.session_state.get("sticky_nav", True)
 native_way = st.session_state.get("native_way", False)
 
 if st.session_state.logged_in:
     if position_mode == "top":
-            my_heading()
-    
+        my_heading()
+
 page = st_navigation(
     {
         "": [dashboard],

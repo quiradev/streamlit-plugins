@@ -15,10 +15,11 @@ st.set_page_config(layout="wide")
 def run():
     with st.sidebar:
         st.write("Logged in:", st.session_state[LOGGING_SESSION_KEY])
-        position_mode: NavbarPositionType = st.radio(
+        nav_position_modes: list[NavbarPositionType] = ["top", "under", "side", "hidden", "static"]
+        position_mode = st.radio(
             "Navbar position mode",
-            ["top", "under", "side"],
-            # index=0 if st.session_state.get("position_mode", "top") == "top" else 1,
+            nav_position_modes,
+            index=nav_position_modes.index(st.session_state.get("position_mode", "side")),
         )
         sticky_nav = st.checkbox(
             "Sticky navbar", value=st.session_state.get("sticky_nav", True)

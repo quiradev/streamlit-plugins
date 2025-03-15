@@ -51,8 +51,10 @@ class CrossOriginInterface {
             );
             document.body.dataset.navPosition = positionMode;
             document.body.dataset.navIsSticky = isSticky;
+            // Leer la propiedad actual del ancho del sidebar
+            const currentSidebarWidth = document.body.style.getPropertyValue('--sidebar-width') || "150px";
             // Add css property to body to set the width of the sidebar
-            document.body.style.setProperty('--sidebar-width', '150px');
+            document.body.style.setProperty('--sidebar-width', currentSidebarWidth);
         }
 
         // Se crea el expander al lado del iframeSelector
@@ -62,29 +64,35 @@ class CrossOriginInterface {
                 let expander = document.createElement('span');
                 expander.id = 'expander-' + this.key;
                 let isBeingExpanding = false;
-                let mouseClickX = null;
+                let initialMouseX = null;
+                let initialSidebarWidth = null;
+                
                 expander.addEventListener('mousedown', (event) => {
                     isBeingExpanding = true;
                     expander.classList.add('expander-active');
-                    mouseClickX = event.clientX;
+                    initialMouseX = event.clientX;
+                    initialSidebarWidth = parseInt(document.body.style.getPropertyValue('--sidebar-width'));
+                    
                     const mouseUpHandler = () => {
                         isBeingExpanding = false;
                         expander.classList.remove('expander-active');
                         document.body.removeEventListener('mouseup', mouseUpHandler);
                         document.body.removeEventListener('mousemove', mouseMoveHandler);
                     };
+                    
                     const mouseMoveHandler = (event) => {
                         if (isBeingExpanding) {
-                            let distX = event.clientX - mouseClickX;
-                            mouseClickX = event.clientX;
-                            let actualSideWidth = parseInt(document.body.style.getPropertyValue('--sidebar-width'));
-                            document.body.style.setProperty('--sidebar-width', Math.max(150, Math.min(300, actualSideWidth + distX)) + 'px');
+                            const currentMouseX = event.clientX;
+                            const deltaX = currentMouseX - initialMouseX;
+                            const newWidth = Math.max(150, Math.min(300, initialSidebarWidth + deltaX));
+                            document.body.style.setProperty('--sidebar-width', newWidth + 'px');
                         }
                     }
-                    // Quiero eliminar el listener una vez que se suelte el mouse
+                    
                     document.body.addEventListener('mouseup', mouseUpHandler);
                     document.body.addEventListener('mousemove', mouseMoveHandler);
                 });
+                
                 let iframe = document.querySelector(this.iframeSelector);
                 if (iframe) {
                     iframe.parentNode.appendChild(expander);

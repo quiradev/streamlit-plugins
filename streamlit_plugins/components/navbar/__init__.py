@@ -10,6 +10,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from streamlit.navigation.page import StreamlitPage
 from streamlit.runtime.scriptrunner import RerunException, get_script_run_ctx
+from streamlit.proto.WidgetStates_pb2 import WidgetState, WidgetStates
 try:
     from streamlit.runtime.scriptrunner.script_requests import ScriptRequestType, RerunData
 except ModuleNotFoundError:
