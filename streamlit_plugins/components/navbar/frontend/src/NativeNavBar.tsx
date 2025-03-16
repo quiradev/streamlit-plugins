@@ -146,7 +146,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             Streamlit.setComponentValue(selectedPageId);
         }
 
-        // console.log("SELECCIONADA", selectedPageId, args.override_page_selected_id, args.default_page_selected_id);
+        // console.debug("Constructor", selectedPageId, args.override_page_selected_id, args.default_page_selected_id);
 
         this.state = {
             selectedPageId: selectedPageId || args.default_page_selected_id,
@@ -208,7 +208,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             customStyles?: string,
             currentPageName?: string,
             currentPageScriptHash?: string,
-            isDefault?: boolean
+            isDefault?: boolean,
+            iframeHeight?: number
         }): boolean {
         const { key } = this.props.args;
         if (key == null || typeof key !== "string") {
@@ -216,7 +217,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         }
         window.parent.postMessage({ COI_method, key, ...data }, "*");
 
-        console.debug("postMessage from ", key, ": ", COI_method, data);
+        // console.debug("postMessage from ", key, ": ", COI_method, data);
         return true;
     }
     postRegister(positionMode: string, isExpanded: boolean, themeData: ThemeData): void {
@@ -253,7 +254,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         this.postMessage("navbarState", { pageId, expandSubMenu, selectedSubMenu });
     }
     postIframeState(positionMode: string, isSticky: boolean): void {
-        this.postMessage("iframeState", { iframePositionMode: positionMode, isSticky });
+        this.postMessage("iframeState", { iframePositionMode: positionMode, isSticky, iframeHeight: document.body.scrollHeight });
     }
     postSetStyles(styles: string, customStyles: string): void {
         // Recuperamos el contenido de los estilos de public
@@ -327,7 +328,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     }
 
     public componentDidMount = () => {
-        // console.log(
+        // console.debug(
         //     "DidMount",
         //     this.state.selectedPageId, this.props.args.override_page_selected_id, this.props.args.default_page_selected_id,
         //     this.state.fromClick
@@ -335,7 +336,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         let args: PythonArgs = this.props.args;
 
         // useEffect resize
-        this.handleResize();
+        this.resizeNavbar(true, false);
         if (args.position_mode !== "side") {
             this.calculateMaxNavBarWidth();
         }
@@ -392,7 +393,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         let argOverride = args.override_page_selected_id;
         let prevArgOverride = prevProps.args.override_page_selected_id;
 
-        // console.log(
+        // console.debug(
         //     "DidUpdate",
         //     this.state.selectedPageId, this.props.args.override_page_selected_id, this.props.args.default_page_selected_id,
         //     this.state.fromClick
@@ -422,7 +423,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                         themeIndex: this.state.themeIndex
                     },
                     () => {
-                        this.handleResize();
+                        this.resizeNavbar(true);
                         if (prevArgOverride !== argOverride) {
                             this.postNavbarState(selectedPageId, this.state.expandSubMenu, this.state.selectedSubMenu);
                             Streamlit.setComponentValue(selectedPageId);
@@ -442,7 +443,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     public componentWillUnmount = () => {
         this.postNavbarState(this.state.selectedPageId, this.state.expandSubMenu, this.state.selectedSubMenu);
 
-        // console.log("Unmount", this.state.selectedPageId);
+        // console.debug("Unmount", this.state.selectedPageId);
 
         // useEffect resize
         window.removeEventListener("resize", this.handleResize);
@@ -471,6 +472,10 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         listItems$.forEach((li) => {
             totalWidth += li.clientWidth;
         });
+        let themeToggle$ = navbar$.querySelector(".theme-toggler") as HTMLElement;
+        if (themeToggle$ !== null) {
+            totalWidth += themeToggle$.clientWidth;
+        }
 
         container$.classList.remove("nav-open");
         this.maxNavBarWidth = totalWidth;
@@ -521,23 +526,29 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             () => this.delayed_resize(50)
         );
     };
-
-    private handleResize = () => {
-        if (this.props.args.position_mode !== "side") {
-            if (this.resizeTimeout) {
-                clearTimeout(this.resizeTimeout);
-            }
-            this.resizeTimeout = setTimeout(() => {
-                this.checkNavbarOverflow();
-            }, 200);
+    private resizeNavbar = (changeNow: boolean = false, postIframe: boolean = true) => {
+        this.handleResize();
+        if (changeNow) {
+            Streamlit.setFrameHeight();
+            if (postIframe) this.postIframeState(this.props.args.position_mode, this.props.args.is_sticky);
         }
-
-        Streamlit.setFrameHeight();
+    }
+    private handleResize = () => {
+        if (this.resizeTimeout) {
+            clearTimeout(this.resizeTimeout);
+        }
+        this.resizeTimeout = setTimeout(() => {
+            if (this.props.args.position_mode !== "side") {
+                this.checkNavbarOverflow();
+            }
+            Streamlit.setFrameHeight();
+        }, 200);
     };
 
     private delayed_resize = (wait_time: number): NodeJS.Timeout => {
         return setTimeout(() => {
             Streamlit.setFrameHeight();
+            this.postIframeState(this.props.args.position_mode, this.props.args.is_sticky);
         }, wait_time);
     };
 
@@ -592,7 +603,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 themeIndex: this.state.themeIndex
             },
             () => {
-                this.handleResize();
+                this.resizeNavbar(true);
                 let args: PythonArgs = this.props.args;
                 if (prevselectedPageId !== itemId || args.reclick_load) {
                     this.postNavbarState(itemId, this.state.expandSubMenu, this.state.selectedSubMenu);
@@ -628,7 +639,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 themeIndex: this.state.themeIndex
             },
             () => {
-                this.handleResize();
+                this.resizeNavbar(true);
                 this.postNavbarState(this.state.selectedPageId, expandSubMenu, selectedSubMenu);
             }
         );
@@ -660,7 +671,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
                 themeIndex: this.state.themeIndex
             },
             () => {
-                this.handleResize();
+                this.resizeNavbar(true);
                 if (args.position_mode === "side") this.postSidebarToggle(args.position_mode, this.state.expandState);
             }
         );

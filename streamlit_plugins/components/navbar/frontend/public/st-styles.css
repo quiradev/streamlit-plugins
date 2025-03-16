@@ -86,9 +86,9 @@ body[data-nav-position="under"][data-nav-is-sticky="false"] {
 
 /* TOP STYLES */
 body[data-nav-position="top"] {
-    header {
+    /* header {
         position: static;
-    }
+    } */
     [data-testid="collapsedControl"],
     [data-testid="stSidebarCollapsedControl"],
     [data-testid="stToolbar"] {

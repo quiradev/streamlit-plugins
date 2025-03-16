@@ -11,7 +11,6 @@ const NavItem = (props) => {
   const dataAttributes = props.dataAttributes;
 
   const containsEmojis = (input) => {
-
     if (input) {
       for (var c of input) {
           var cHex = ("" + c).codePointAt(0);
@@ -44,10 +43,6 @@ const NavItem = (props) => {
   }
 
   const create_item = (item, kid, is_active) => {
-    let ret_id = "";
-
-    ret_id = item.id;
-
     const label = item.label;
     const hasIcon = item.icon ? true : false;
 
@@ -67,8 +62,8 @@ const NavItem = (props) => {
             iconMarkup = <span className="material-symbols-rounded icon">{symbol}</span>;
         }
         else {
-            const iconClass = this.containsEmojis(item.icon) ? "icon" : `${item.icon} icon`;
-            const iconTxt = this.containsEmojis(item.icon) ? item.icon : "";
+            const iconClass = containsEmojis(item.icon) ? "icon" : `${item.icon} icon`;
+            const iconTxt = containsEmojis(item.icon) ? item.icon : "";
             iconMarkup = <i className={iconClass}>{iconTxt}</i>;
         }
     }

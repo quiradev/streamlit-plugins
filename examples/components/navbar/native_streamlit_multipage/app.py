@@ -16,25 +16,35 @@ if "logged_in" not in st.session_state:
 USER = "admin"
 PASSWORD = "admin"
 
-positions = ["top", "under", "side"]
+positions = ["top", "under", "side"]  # "hidden", "static"]
 
 def my_sidebar():
+    if "position_mode" not in st.session_state:
+        st.session_state["position_mode"] = "side"
+    if "sticky_nav" not in st.session_state:
+        st.session_state["sticky_nav"] = False
+    if "native_way" not in st.session_state:
+        st.session_state["native_way"] = False
+
     with st.sidebar:
         st.write("Logged in:", st.session_state.logged_in)
         position_mode = st.radio(
             "Navbar position mode",
             positions,
-            index=positions.index(st.session_state.get("position_mode", "side")),
+            index=positions.index(st.session_state["position_mode"]),
             key="position_mode_input",
+            # key="position_mode",
         )
         sticky_nav = st.checkbox(
             "Sticky navbar",
-            value=st.session_state.get("sticky_nav", True),
+            value=st.session_state["sticky_nav"],
             key="sticky_nav_input"
+            # key="sticky_nav"
         )
         native_way = st.checkbox(
             "Use native way",
-            value=st.session_state.get("native_way", False),
+            value=st.session_state["native_way"],
+            # key="native_way"
             key="native_way_input"
         )
         st.session_state["position_mode"] = position_mode
@@ -109,9 +119,9 @@ from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pa
 
 my_sidebar()
 
-position_mode: NavbarPositionType = st.session_state.get("position_mode", "side")
-sticky_nav = st.session_state.get("sticky_nav", True)
-native_way = st.session_state.get("native_way", False)
+position_mode: NavbarPositionType = st.session_state["position_mode"]
+sticky_nav = st.session_state["sticky_nav"]
+native_way = st.session_state["native_way"]
 
 if st.session_state.logged_in:
     if position_mode == "top":
@@ -133,7 +143,7 @@ page = st_navigation(
     settings_page=settings_page,
     native_way=native_way
 )
-
+print(f"{page.title=}, {native_way=}, {sticky_nav=}, {position_mode=}")
 if st.session_state.logged_in:
     # SOME TEXT ABOVE THE NAVBAR
     page.run()

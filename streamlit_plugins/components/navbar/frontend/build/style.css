@@ -8,12 +8,6 @@ body {
     color: var(--text-color);
 }
 
-nav.navbar.side {
-    display: flex;
-    flex-wrap: nowrap;
-    flex-direction: column;
-}
-
 nav.navbar {
     align-items: center;
 }
@@ -131,6 +125,7 @@ nav.side .navbar-nav>li>.dropdown-menu {
     line-height: 1;
     border-radius: 0.25rem;
     outline: none !important;
+    z-index: 10;
 }
 
 
@@ -143,6 +138,8 @@ nav.side .navbar-toggler, nav.side .theme-toggler {
 }
 nav.side .navbar-toggler {
     display: block;
+    position: sticky;
+    top: 0;
 }
 
 nav .navbar-toggler[aria-expanded="true"] > span.menu-closed {
@@ -153,7 +150,7 @@ nav .navbar-toggler[aria-expanded="false"] > span.menu-open {
 }
 
 nav.navbar.side:has(.navbar-wrapper.nav-open) > .navbar-toggler, nav.navbar.side:has(.navbar-wrapper.nav-open) > .navbar-toggler > span {
-    width: 100%;
+    width: 95%;
 }
 
 nav.side .theme-toggler {
@@ -455,19 +452,35 @@ nav.navbar:not(.side).collapsed {
 }
 
 nav.navbar.side {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: column;
+    overflow-y: auto;
+
     & .navbar-wrapper ul.navbar-nav li.nav-item.active > a,
     & .navbar-wrapper ul.navbar-nav li.nav-item:has(li.active) > a {
-       border-right: 4px solid var(--option_active) !important;
-       border-left: none;
-       border-bottom: none;
+        border-right: 4px solid var(--option_active) !important;
+        border-left: none;
+        border-bottom: none;
     }
     & .navbar-wrapper ul.navbar-nav li.nav-item:not(.active):has(> ul > li:not(.active)) > a {
-       border-right: 4px solid transparent;
-       border-left: none;
-       border-bottom: none;
+        border-right: 4px solid transparent;
+        border-left: none;
+        border-bottom: none;
     }
     & .navbar-wrapper > ul.navbar-nav > li {
         border-bottom: none;
+    }
+
+    /* scrollbar styles */
+    &::-webkit-scrollbar {
+        width: 0.5rem;
+    }
+    &::-webkit-scrollbar-track {
+        background: var(--secondary-background-color);
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #8686867a;
     }
 }
 
@@ -512,6 +525,7 @@ nav.navbar.side {
 .theme-toggler > span, .navbar-toggler > span {
     padding: 0.5rem;
     border-radius: 0.5rem;
+    background-color: var(--background-color);
 }
 
 .theme-toggler:hover > span {
