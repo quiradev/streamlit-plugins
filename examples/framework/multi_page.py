@@ -27,10 +27,14 @@ def run():
         within_fragment = st.checkbox(
             "Use within fragment", value=st.session_state.get("within_fragment", False)
         )
+        native_way = st.checkbox(
+            "Use native way", value=st.session_state.get("native_way", False)
+        )
         st.divider()
         st.session_state["position_mode"] = position_mode
         st.session_state["sticky_nav"] = sticky_nav
         st.session_state["within_fragment"] = within_fragment
+        st.session_state["native_way"] = native_way
     
     # st.title("Streamlit Multi-Page App")
     # st.subheader("This is a multi-page app with a native Streamlit navbar.")
@@ -38,7 +42,7 @@ def run():
     
     multilit = Multilit(
         title="Demo", nav_horizontal=True, layout='wide', favicon="📚",
-        use_st_navigation_navbar=True,
+        use_st_navigation_navbar=native_way,
         navbar_sticky=sticky_nav, navbar_mode=position_mode,
         use_cookie_cache=True, sidebar_state='auto',
         allow_url_nav=False, hide_streamlit_markers=False, use_banner_images=None,
