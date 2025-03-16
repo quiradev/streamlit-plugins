@@ -29,6 +29,7 @@ class CrossOriginInterface {
         localStorage.setItem('stActiveTheme-/-v1', JSON.stringify(themeInput));
         // Se comunica con el padre
         window.parent.postMessage(data, "*");
+        window.postMessage(data, "*");
     }
 }
 
