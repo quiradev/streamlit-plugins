@@ -4,6 +4,10 @@ Components and frameworks to extend Streamlit's capabilities with advanced featu
 
 ![Demo Multipage with Navbar](https://raw.githubusercontent.com/quiradev/streamlit-plugins/main/resources/navbar_change_theme.gif)
 
+- `Framework` Multilit: https://plugins-framework-multilit.streamlit.app/
+- `Component` Theme Changer: https://plugins-component-theme-changer.streamlit.app/
+- `Component` Navbar: https://plugins-navbar.streamlit.app/
+
 ---
 
 ## Table of Contents
