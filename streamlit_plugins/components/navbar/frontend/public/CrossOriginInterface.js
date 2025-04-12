@@ -1,17 +1,17 @@
-//Source for CrossOriginInterface class.
+//Source for NavbarCOI class.
 //Build with terser:
-//  npx terser CrossOriginInterface.js --compress --mangle 'pure_funcs=["console.debug"]' --output ../build/CrossOriginInterface.min.js
-class CrossOriginInterface {
+//  npx terser NavbarCOI.js --compress --mangle 'pure_funcs=["console.debug"]' --output ../build/NavbarCOI.min.js
+class NavbarCOI {
     static instances = {};
     constructor(componentName, key, isNavigation, defaultPageId, positionMode, isSticky) {
-        if (CrossOriginInterface.instances[key]) {
-            console.debug('CrossOriginInterface instance already exists with key', key);
-            let that = CrossOriginInterface.instances[key];
+        if (NavbarCOI.instances[key]) {
+            console.debug('NavbarCOI instance already exists with key', key);
+            let that = NavbarCOI.instances[key];
             console.info("Changing", positionMode, isSticky);
             that.init(positionMode, isSticky);
             return that;
         }
-        CrossOriginInterface.instances[key] = this;
+        NavbarCOI.instances[key] = this;
         console.info("Init", positionMode, isSticky);
         this.component = null;
         this.componentName = componentName;
@@ -41,7 +41,7 @@ class CrossOriginInterface {
         this.positionMode = positionMode;
         this.isSticky = isSticky;
         this.isExpanded = document.body.classList.contains("side-nav-open");
-        
+
         if (this.isNavigation) {
             let iframe = document.querySelector(this.iframeSelector);
             if (iframe) {
@@ -72,7 +72,7 @@ class CrossOriginInterface {
                 let isBeingExpanding = false;
                 let initialX = null;
                 let initialSidebarWidth = null;
-                
+
                 const startDrag = (event) => {
                     isBeingExpanding = true;
                     expander.classList.add('expander-active');
@@ -80,7 +80,7 @@ class CrossOriginInterface {
                     initialX = event.type.includes('touch') ? event.touches[0].clientX : event.clientX;
                     initialSidebarWidth = parseInt(document.body.style.getPropertyValue('--sidebar-width'));
                 };
-                
+
                 const onDrag = (event) => {
                     if (isBeingExpanding) {
                         // Use clientX for mouse events and touches[0].clientX for touch events
@@ -90,7 +90,7 @@ class CrossOriginInterface {
                         document.body.style.setProperty('--sidebar-width', newWidth + 'px');
                     }
                 };
-                
+
                 const endDrag = () => {
                     isBeingExpanding = false;
                     expander.classList.remove('expander-active');
@@ -99,21 +99,21 @@ class CrossOriginInterface {
                     document.body.removeEventListener('touchend', endDrag);
                     document.body.removeEventListener('touchmove', onDrag);
                 };
-                
+
                 // Mouse events
                 expander.addEventListener('mousedown', (event) => {
                     startDrag(event);
                     document.body.addEventListener('mouseup', endDrag);
                     document.body.addEventListener('mousemove', onDrag);
                 });
-                
+
                 // Touch events
                 expander.addEventListener('touchstart', (event) => {
                     startDrag(event);
                     document.body.addEventListener('touchend', endDrag);
                     document.body.addEventListener('touchmove', onDrag);
                 });
-                
+
                 let iframe = document.querySelector(this.iframeSelector);
                 if (iframe) {
                     iframe.parentNode.appendChild(expander);
@@ -185,7 +185,7 @@ class CrossOriginInterface {
     themeToggle(themeData, themeName="Custom") {
         // Se guarda el tema seleccionado
         this.saveTheme(themeData, themeName);
-        
+
         // Se comunica con el padre
         const data = {
             stCommVersion: 1,
@@ -250,7 +250,7 @@ class CrossOriginInterface {
             replace
                 ? window.history.replaceState(state, '', url)
                 : window.history.pushState(state, '', url);
-        
+
         // Eliminar las barras al principio y al final de urlPath
         let regexp = new RegExp("^/+|/+$", "g");
         const cleanedUrlPath = urlPath.replace(regexp, '');
@@ -417,7 +417,7 @@ class CrossOriginInterface {
     //         {anchor_id, update_id: this.updateId++}
     //     );
     // }
-    
+
     postSidebarState() {
         // Investigar si el estado de la barra se puede mantener en algun sitio sin que se elimine, sobre todo en navegacion mutiple
         const isSideOpen = document.body.classList.contains("side-nav-open");
@@ -511,7 +511,7 @@ class CrossOriginInterface {
     // }
 
     //Handle messages from the component
-    
+
     handleComponentMessage(event) {
         const { COI_method, key} = event.data;
 
@@ -533,7 +533,7 @@ class CrossOriginInterface {
                 return;
             }
             else {
-                console.error('Must register component with this CrossOriginInterface before calling other methods', event.data);
+                console.error('Must register component with this NavbarCOI before calling other methods', event.data);
             }
         }
         switch (COI_method) {
@@ -598,6 +598,6 @@ class CrossOriginInterface {
         }
     }
 }
-function instantiateCrossOriginInterface(componentName, key, isNavigation, defaultPageId, positionMode, isSticky) {
-    return new CrossOriginInterface(componentName, key, isNavigation, defaultPageId, positionMode, isSticky);
+function instantiateNavbarCOI(componentName, key, isNavigation, defaultPageId, positionMode, isSticky) {
+    return new NavbarCOI(componentName, key, isNavigation, defaultPageId, positionMode, isSticky);
 }

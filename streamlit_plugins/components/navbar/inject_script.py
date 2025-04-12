@@ -28,8 +28,8 @@ def inject_crossorigin_interface():
     components.html(
         f"""<script>
 frameElement.parentElement.style.display = 'none';
-if (!window.parent.COI_injected) {{
-    window.parent.COI_injected = true;
+if (!window.parent.NavbarCOI_injected) {{
+    window.parent.NavbarCOI_injected = true;
     var script = window.parent.document.createElement('script');
     script.text = `{escaped_content}`;
     script.type = 'text/javascript';
@@ -46,7 +46,7 @@ def instantiate_crossorigin_interface(component_name: str, key: str, is_navigati
     components.html(
         f"""<script>
 frameElement.parentElement.style.display = 'none';
-window.parent.navbarCOI = new window.parent.instantiateCrossOriginInterface('{component_name}', '{key}', {json.dumps(is_navigation)}, '{default_page_id}', '{position_mode}', {json.dumps(sticky_nav)});
+window.parent.navbarCOI = new window.parent.instantiateNavbarCOI('{component_name}', '{key}', {json.dumps(is_navigation)}, '{default_page_id}', '{position_mode}', {json.dumps(sticky_nav)});
 </script>""",
         height=0,
         width=0,

@@ -21,8 +21,8 @@ def inject_crossorigin_interface():
     components.html(
         f"""<script>
 frameElement.parentElement.style.display = 'none';
-if (!window.parent.COI_injected) {{
-    window.parent.COI_injected = true;
+if (!window.parent.ThemeChangerCOI_injected) {{
+    window.parent.ThemeChangerCOI_injected = true;
     var script = window.parent.document.createElement('script');
     script.text = `{content}`;
     script.type = 'text/javascript';

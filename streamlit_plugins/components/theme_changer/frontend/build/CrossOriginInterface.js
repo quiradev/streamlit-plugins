@@ -1,12 +1,12 @@
-class CrossOriginInterface {
+class ThemeChangerCOI {
     static instances = {};
     constructor(key) {
-        if (CrossOriginInterface.instances[key]) {
-            console.info('CrossOriginInterface instance already exists with key', key);
-            return CrossOriginInterface.instances[key];
+        if (ThemeChangerCOI.instances[key]) {
+            console.info('ThemeChangerCOI instance already exists with key', key);
+            return ThemeChangerCOI.instances[key];
         }
 
-        CrossOriginInterface.instances[key] = this;
+        ThemeChangerCOI.instances[key] = this;
         this.key = key;
     }
 
@@ -35,7 +35,7 @@ class CrossOriginInterface {
 
 function changeThemeWithCOI(key, themeData) {
     console.info("Theme Changed");
-    theme_coi = new CrossOriginInterface(key);
+    theme_coi = new ThemeChangerCOI(key);
     theme_coi.themeToggle(themeData);
 }
 window.changeThemeWithCOI = changeThemeWithCOI;
