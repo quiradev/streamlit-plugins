@@ -181,6 +181,7 @@ class NavbarCOI {
         // Se guarda en el Local Storage el tema seleccionado
         // con clave stActiveTheme-/-v1 y valor theme
         localStorage.setItem('stActiveTheme-/-v1', JSON.stringify(themeInput));
+        document.body.dataset.themeName = themeData.name || themeName;
     }
     themeToggle(themeData, themeName="Custom") {
         // Se guarda el tema seleccionado
