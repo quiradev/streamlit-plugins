@@ -747,6 +747,7 @@ def st_navigation(
     account_page: StreamlitPage | None = None,
     settings_page: StreamlitPage | None = None,
     native_way=False,
+    input_styles: str | None = None,
     themes_data: list[dict]| None = None,
     key="NavigationComponent",
 ) -> StreamlitPage:
@@ -850,7 +851,9 @@ def st_navigation(
         override_page_selected_id=st.session_state["navigation_force_page_id"],
         position_mode=position_mode,
         sticky_nav=sticky_nav,
-        key="NavigationComponent",
+        input_styles=input_styles,
+        themes_data=themes_data,
+        key=key,
     )
     st.session_state["navigation_force_page_id"] = None
     prev_page_id = st.session_state["navigation_page_id"]

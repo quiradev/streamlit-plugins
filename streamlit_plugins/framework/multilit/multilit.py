@@ -17,7 +17,14 @@ except ModuleNotFoundError:
 from streamlit.commands.execution_control import _new_fragment_id_queue
 
 from streamlit_plugins.components.loader import BaseLoader
-from streamlit_plugins.components.navbar import get_navigation_transition, HEADER_HEIGHT, NavbarPositionType, init_navigation_transition, set_default_page, set_force_next_page, set_navigation_transition, st_navigation, st_switch_page
+from streamlit_plugins.components.navbar import (
+    DEFAULT_THEMES,
+    HEADER_HEIGHT,
+    NavbarPositionType,
+    init_navigation_transition, get_navigation_transition,
+    set_default_page, set_force_next_page, set_navigation_transition,
+    st_navigation, st_switch_page,
+)
 from .app_wrapper import STPageWrapper
 from .loading_engine import LoadingEngine
 
@@ -211,13 +218,7 @@ class Multilit:
         self._nav_item_count = 0
         self._use_st_navigation_navbar = use_st_navigation_navbar
         self._hide_streamlit_markers = hide_streamlit_markers
-        self._navbar_theme = navbar_theme or {
-            "menu_background": "var(--background-color)",
-            # "menu_background": "transparent",
-            "txc_inactive": "var(--text-color)",
-            "txc_active": "var(--text-color)",
-            "option_active": "var(--primary-color)",
-        }
+        self._navbar_theme = navbar_theme or DEFAULT_THEMES
 
         self._banners = use_banner_images
         self._banner_spacing = banner_spacing
@@ -575,7 +576,9 @@ class Multilit:
             login_page=login_page, logout_page=logout_page,
             account_page=account_page,
             settings_page=settings_page,
-            native_way=self._use_st_navigation_navbar
+            native_way=self._use_st_navigation_navbar,
+            input_styles=styles,
+            themes_data=self._navbar_theme
         )
         if self.cross_session_clear and st.session_state["preserve_state"]:
             self._clear_session_values()
