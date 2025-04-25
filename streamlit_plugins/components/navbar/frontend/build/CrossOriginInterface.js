@@ -37,7 +37,7 @@ class NavbarCOI {
     }
 
     init(positionMode, isSticky, iframeHeight) {
-        this.iframeSelector = 'div.st-key-'+this.key+' > iframe[title="' + this.componentName + '"]';
+        this.iframeSelector = 'div.st-key-'+this.key+' iframe[title="' + this.componentName + '"]';
         this.positionMode = positionMode;
         this.isSticky = isSticky;
         this.isExpanded = document.body.classList.contains("side-nav-open");
