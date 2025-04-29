@@ -466,7 +466,7 @@ class Multilit:
 
         return SectionWithStatement(title, _exit_fn)
 
-    def _build_run_nav_menu(self):
+    def _build_run_nav_menu(self) -> StreamlitPage:
         # number_of_sections = int(self._login_page is not None) + len(self._complex_nav.keys())
 
         home_page = self._home_page.st_page if self._home_page is not None else None
@@ -588,7 +588,7 @@ class Multilit:
 
         return page
 
-    def _run_navbar(self, natives_page_data, login_page, account_page, settings_page, logout_page):
+    def _run_navbar(self, natives_page_data, login_page, account_page, settings_page, logout_page) -> StreamlitPage:
         # TODO: Agregar estilos para cada modo de navbar
         styles = ""
         if self._st_navbar_parent_selector:
@@ -936,6 +936,11 @@ class Multilit:
             else:
                 page = self._build_run_nav_menu()
                 page_id = self.get_page_id(page)
+                if page_id == self._logout_id:
+                    ctx = get_script_run_ctx()
+                    # Se evita recargas innecesarias o paradas si esta pendiente cambiar al logout
+                    if ctx.script_requests._state == ScriptRequestType.CONTINUE:
+                        ctx.script_requests._state = ScriptRequestType.CONTINUE
                 # La navegacion nativa de streamlit no necesita ejeuctar o especificar la pagina
                 # if not self._use_st_navigation_navbar:
                 #     page_id, page_label = self._get_next_app_info()
@@ -978,6 +983,12 @@ class Multilit:
         #     st.session_state["current_user"] = self._guest_name
         #     self._unsecure_app.run()
         else:
+            page = self._build_run_nav_menu()
+            page_id = self.get_page_id(page)
+            if page_id != self._login_id:
+                # Se transiciona a la pagina de login si no lo fuera
+                ...
+
             st.session_state["current_user"] = None
             st.session_state["access_hash"] = None
             if self._login_page is not None:

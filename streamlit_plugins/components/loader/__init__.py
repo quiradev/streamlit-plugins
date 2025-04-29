@@ -3423,6 +3423,8 @@ def book_loader(**kwargs):
     <style>
         div:has(.book-parent) {
             width: inherit;
+            display: flex;
+            justify-content: center;
         }
         .book-container, book-parent:after {
             opacity: 0;
@@ -3430,7 +3432,6 @@ def book_loader(**kwargs):
         }
         .book-parent {
             position: fixed;
-            width: inherit;
             top: 40vh;
             display: flex;
             justify-content: center;
