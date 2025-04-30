@@ -1,20 +1,16 @@
 import logging
-from pathlib import Path
 import traceback
-from collections import defaultdict
 from typing import Any, Callable, Dict, Literal
 
 import streamlit as st
 from streamlit.commands.page_config import Layout, InitialSideBarState
-from streamlit.runtime.scriptrunner import RerunException, StopException, get_script_run_ctx
 from streamlit.navigation.page import StreamlitPage
+from streamlit.runtime.scriptrunner import RerunException, StopException, get_script_run_ctx
 
 try:
     from streamlit.runtime.scriptrunner.script_requests import ScriptRequestType, RerunData
 except ModuleNotFoundError:
     from streamlit.runtime.scriptrunner_utils.script_requests import ScriptRequestType, RerunData
-
-from streamlit.commands.execution_control import _new_fragment_id_queue
 
 from streamlit_plugins.components.loader import BaseLoader
 from streamlit_plugins.components.navbar import (
@@ -634,10 +630,10 @@ class Multilit:
             if self._navbar_mode == "side":
                 styles = f"""
                 {self._st_navbar_parent_selector} {{
-                    /* position: sticky; */
+                    position: absolute;
                     top: 0;
                     z-index: 9999999;
-                    height: 2rem;
+                    /* height: 2rem; */
                 }}
                 """
         if self._within_fragment:

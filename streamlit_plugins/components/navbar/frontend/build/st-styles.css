@@ -264,9 +264,6 @@ body[data-nav-position="side"].side-nav-closed {
     div.st-key-NavigationComponent:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
         /* position: sticky; */
         opacity: 1 !important;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
         padding: 0;
         /* margin-top: calc(-1 * {GAP_BETWEEN_COMPS}rem); */
         /* margin-top: calc(-1 * var(--gap-between-comps) * 1rem); */
@@ -322,7 +319,7 @@ body[data-nav-position="side"] {
         /* position: sticky; */
         opacity: 1 !important;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
         padding: 0;
         /* margin-top: calc(-1 * {GAP_BETWEEN_COMPS}rem); */

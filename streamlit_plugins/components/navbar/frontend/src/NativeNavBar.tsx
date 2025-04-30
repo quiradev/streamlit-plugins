@@ -400,6 +400,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // );
         if (args.position_mode !== prevProps.args.position_mode || args.is_sticky !== prevProps.args.is_sticky) {
             this.postIframeState(args.position_mode, args.is_sticky);
+            this.postSetStyles(args.styles, args.custom_styles);
         }
 
         if (prevArgDefault !== argDefault || prevArgOverride !== argOverride) {
