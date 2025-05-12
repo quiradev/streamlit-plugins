@@ -285,7 +285,7 @@ class Multilit:
 
         self.login_info_session_key = login_info_session_key
         self._session_attrs = {
-            # 'previous_page': None, 'actual_page': None, 'queued_page': None,'force_nav_page': None,
+            'previous_page': None, 'actual_page': None, 'queued_page': None,'force_nav_page': None,
             'url_nav_page': None,
             'preserve_state': preserve_state, 'allow_access': self._no_access_level,
             login_info_session_key: None, 'access_hash': None, 'uncaught_error': None
@@ -822,7 +822,7 @@ class Multilit:
         tuple: previous_page, current_app
         """
 
-        return st.session_state["previous_page"], st.session_state["actual_page"], st.session_state["queued_page"]
+        return st.session_state.get("previous_page"), st.session_state.get("actual_page"), st.session_state.get("queued_page")
 
     def update_nav_transition(self, prev_page_id, actual_page_id, next_page_id):
         st.session_state["previous_page"] = actual_page_id if actual_page_id not in [self._login_id, self._logout_id, prev_page_id] else prev_page_id
