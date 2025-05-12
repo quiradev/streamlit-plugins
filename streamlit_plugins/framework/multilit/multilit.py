@@ -711,12 +711,13 @@ class Multilit:
 
         st.session_state["uncaught_error"] = trace_err
 
-        st.error(
-            f'😭 Error triggered from page: **{app_label}**\n\n'
-            f'Details:\n'
-            f'```{trace_err}```',
-            icon="🚨"
-        )
+        if self._verbose:
+            st.error(
+                f'😭 Error triggered from page: **{app_label}**\n\n'
+                f'Details:\n'
+                f'```{trace_err}```',
+                icon="🚨"
+            )
         raise e
 
     def _run_selected(self, page: STPageWrapper):
