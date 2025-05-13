@@ -47,9 +47,7 @@ def instantiate_crossorigin_interface(component_name: str, key: str, is_navigati
         f"""<script>
 frameElement.parentElement.style.display = 'none';
 if (!window.parent.navbarCOI) {{
-    setTimeout(function() {{
-        window.parent.navbarCOI = new window.parent.instantiateNavbarCOI('{component_name}', '{key}', {json.dumps(is_navigation)}, '{default_page_id}', '{position_mode}', {json.dumps(sticky_nav)});
-    }}, 500);
+    window.parent.navbarCOI = new window.parent.instantiateNavbarCOI('{component_name}', '{key}', {json.dumps(is_navigation)}, '{default_page_id}', '{position_mode}', {json.dumps(sticky_nav)});
 }}
 </script>""",
         height=0,
