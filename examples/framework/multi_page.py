@@ -49,7 +49,8 @@ def run():
         allow_url_nav=False, hide_streamlit_markers=False, use_banner_images=None,
         banner_spacing=None, clear_cross_page_sessions=True, session_params=None,
         use_loader=True, within_fragment=within_fragment,
-        login_info_session_key=LOGGING_SESSION_KEY
+        login_info_session_key=LOGGING_SESSION_KEY,
+        navigation_theme_changer=True
     )
 
 

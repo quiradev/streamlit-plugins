@@ -129,7 +129,8 @@ class Multilit:
         session_params=None,
         verbose=False,
         within_fragment=False,
-        login_info_session_key="logged_in"
+        login_info_session_key="logged_in",
+        navigation_theme_changer=True
     ):
         """
         A class to create an Multi-app Streamlit application. This class will be the host application for multiple applications that are added after instancing.
@@ -216,6 +217,7 @@ class Multilit:
         self._navbar_sticky = navbar_sticky
         self._nav_item_count = 0
         self._use_st_navigation_navbar = use_st_navigation_navbar
+        self._navigation_theme_changer = navigation_theme_changer
         self._hide_streamlit_markers = hide_streamlit_markers
         self._navbar_theme = navbar_theme or DEFAULT_THEMES
 
@@ -577,7 +579,8 @@ class Multilit:
             settings_page=settings_page,
             native_way=self._use_st_navigation_navbar,
             input_styles=styles,
-            themes_data=self._navbar_theme
+            themes_data=self._navbar_theme,
+            theme_changer=self._navigation_theme_changer
         )
         if self.cross_session_clear and st.session_state["preserve_state"]:
             self._clear_session_values()

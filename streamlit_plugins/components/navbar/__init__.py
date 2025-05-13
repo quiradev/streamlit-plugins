@@ -755,6 +755,7 @@ def st_navigation(
     native_way=False,
     input_styles: str | None = None,
     themes_data: list[dict]| None = None,
+    theme_changer: bool = True,
     key="NavigationComponent",
 ) -> StreamlitPage:
     if "navigation_prev_page_id" not in st.session_state:
@@ -859,6 +860,7 @@ def st_navigation(
         sticky_nav=sticky_nav,
         input_styles=input_styles,
         themes_data=themes_data,
+        theme_changer=theme_changer,
         key=key,
     )
     st.session_state["navigation_force_page_id"] = None
