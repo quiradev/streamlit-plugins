@@ -46,7 +46,12 @@ def instantiate_crossorigin_interface(component_name: str, key: str, is_navigati
     components.html(
         f"""<script>
 frameElement.parentElement.style.display = 'none';
-window.parent.navbarCOI = new window.parent.instantiateNavbarCOI('{component_name}', '{key}', {json.dumps(is_navigation)}, '{default_page_id}', '{position_mode}', {json.dumps(sticky_nav)});
+if (!window.parent.navbarCOI) {{
+    while (!window.parent.instantiateNavbarCOI) {{
+        console.log("Waiting for NavbarCOI to be injected...");
+    }}
+    window.parent.navbarCOI = new window.parent.instantiateNavbarCOI('{component_name}', '{key}', {json.dumps(is_navigation)}, '{default_page_id}', '{position_mode}', {json.dumps(sticky_nav)});
+}}
 </script>""",
         height=0,
         width=0,

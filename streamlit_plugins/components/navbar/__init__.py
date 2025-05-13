@@ -567,7 +567,7 @@ def load_st_styles():
 def st_navbar(
     menu_definition: list[dict], first_select=0, home_definition: dict | None = None, login_definition: dict | None = None,
     override_theme=None, hide_streamlit_markers=True,
-    position_mode: NavbarPositionType = 'static', sticky_nav=True,
+    position_mode: NavbarPositionType = 'static', sticky_nav=False,
     force_value=None,
     option_menu=False,
     default_page_selected_id=None,
@@ -575,14 +575,16 @@ def st_navbar(
     reclick_load=True,
     input_styles: str | None = None,
     themes_data: list[dict]| None = None,
+    theme_changer: bool = True,
+    collapsible: bool = True,
     key="NavBarComponent",
 ):
-    is_navigation = True
+    is_navigation = False
     # se recupera del callstack si se ha llamado desde la anterior funcion desde st_navigation
     inspect_stack = inspect.stack()
     if len(inspect_stack) > 2:
         caller = inspect_stack[1]
-        if caller.function == 'st_navigation':
+        if caller.function == 'st_navigation' and caller.filename == __file__:
             is_navigation = True
     
     if not is_navigation:
@@ -595,8 +597,10 @@ def st_navbar(
     if "navbar_coi_instance" not in st.session_state:
         st.session_state.navbar_coi_instance = False
     
-    if themes_data is None:
+    if themes_data is None and theme_changer:
         themes_data = DEFAULT_THEMES
+    elif not theme_changer:
+        themes_data = []
 
     # https://github.com/SnpM/streamlit-scroll-navigation
     inject_crossorigin_interface()
@@ -670,7 +674,7 @@ def st_navbar(
         styles = load_st_styles()
         with coi_scripts_instance.container():
             instantiate_crossorigin_interface(_component_func.name, key, is_navigation, default_page_selected_id, position_mode, sticky_nav)
-            # time.sleep(0.2)
+            time.sleep(0.2)
 
     # print()
     # print(f"FROM Override Multi: {override_app_selected_id}")
@@ -714,9 +718,11 @@ def st_navbar(
         reclick_load=reclick_load,
         styles=styles, custom_styles=input_styles,
         is_navigation=is_navigation,
-        key=key, fvalue=force_value,
         themes_data=themes_data,
+        theme_changer=theme_changer,
+        collapsible=collapsible,
         default=default_page_selected_id,
+        key=key, fvalue=force_value,
     )
     
     # with coi_scripts_styles.container():

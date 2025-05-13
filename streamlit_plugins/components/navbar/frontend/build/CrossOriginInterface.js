@@ -131,7 +131,7 @@ class NavbarCOI {
     register(component, positionMode, isExpanded, themeData, themeName="Custom") {
         this.component = component;
 
-        this.saveTheme(themeData, themeName);
+        if (themeData) this.saveTheme(themeData, themeName);
 
         this.isExpanded = isExpanded;
         if (this.isNavigation) {

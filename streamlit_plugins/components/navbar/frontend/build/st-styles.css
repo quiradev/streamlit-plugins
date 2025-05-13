@@ -231,7 +231,7 @@ body:not([data-nav-position="top"])[data-nav-is-sticky="true"],
 body:not([data-nav-position="under"])[data-nav-is-sticky="true"] {
     div.st-key-NavigationComponent:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"]) [data-testid="stSkeleton"],
     iframe[title="streamlit_plugins.components.navbar.nav_bar"] {
-        box-shadow: 0 0px 10px 5px #00000012;
+        box-shadow: 0 0px 10px 0px #00000012;
         border-radius: 5px;
     }
 }

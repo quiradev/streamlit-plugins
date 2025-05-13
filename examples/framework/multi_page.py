@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit.navigation.page import StreamlitPage
 
+from streamlit_plugins.components.navbar import st_navbar
 from streamlit_plugins.framework.multilit import Multilit, STPageWrapper, NavbarPositionType
 
 USER = "admin"
@@ -107,6 +108,27 @@ def run():
     @multilit.page(title="Single")
     def no_sectioned_page():
         st.header('Single')
+        sel_page = st_navbar(
+            menu_definition=[
+                {
+                    'id': "Example 1".lower().replace(" ", "_"),
+                    'label': "Example 1",
+                    # 'submenu': submenu,
+                    'icon': ":material/home:",
+                    'ttip': "Example 1",
+                },
+                {
+                    'id': "Example 2".lower().replace(" ", "_"),
+                    'label': "Example 1",
+                    # 'submenu': submenu,
+                    'icon': ":material/settings:",
+                    'ttip': "Example 2",
+                },
+            ],
+            default_page_selected_id="Example 1".lower().replace(" ", "_"),
+            theme_changer=False,
+            position_mode="static",
+        )
         multilit.change_page_button(bugs, 'Bugs')
         multilit.change_page_button(alerts, 'Alerts')
 

@@ -89,6 +89,8 @@ interface PythonArgs {
     fvalue?: boolean;
     // Si se pasa una lista de ThemeInfo se muestra el boton de cambio de tema dependiendo del numero de elementos
     themes_data?: ThemeData[];
+    theme_changer?: boolean;
+    collapsible?: boolean;
 }
 
 // interface NavBarRenderData extends RenderData {
@@ -131,14 +133,25 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         super(props);
         const args: PythonArgs = props.args;
 
-        let bodyPageId = window.parent.document.body.dataset.pageId;
-        let selectedPageId = bodyPageId;
-        if (bodyPageId === "null" || bodyPageId === "undefined") {
-            selectedPageId = args.default_page_selected_id;
+        let selectedPageId = null;
+        let expandState = args.collapsible ? false : true;
+        let selectedSubMenu = null;
+        let expandSubMenu = false;
+
+        if (args.is_navigation) {
+          let bodyPageId = window.parent.document.body.dataset.pageId;
+          selectedPageId = bodyPageId;
+          if (bodyPageId === "null" || bodyPageId === "undefined") {
+              selectedPageId = args.default_page_selected_id;
+          }
+          expandState = args.collapsible ? false : true;
+          selectedSubMenu = window.parent.document.body.dataset.selectedSubMenu === "null" ? null : window.parent.document.body.dataset.selectedSubMenu || null;
+          expandSubMenu = window.parent.document.body.dataset.expandSubMenu === 'true' ? true : false;
         }
-        let expandState = false;
-        let selectedSubMenu = window.parent.document.body.dataset.selectedSubMenu === "null" ? null : window.parent.document.body.dataset.selectedSubMenu || null;
-        let expandSubMenu = window.parent.document.body.dataset.expandSubMenu === 'true' ? true : false;
+        else {
+          selectedPageId = args.default_page_selected_id;
+        }
+
 
         if (args.override_page_selected_id) {
             selectedPageId = args.override_page_selected_id;
@@ -196,7 +209,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     postMessage(COI_method: string,
         data?: {
             isExpanded?: boolean,
-            themeData?: ThemeData,
+            themeData?: ThemeData | null,
             pageId?: string | null,
             expandSubMenu?: boolean,
             selectedSubMenu?: string | null,
@@ -220,8 +233,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // console.debug("postMessage from ", key, ": ", COI_method, data);
         return true;
     }
-    postRegister(positionMode: string, isExpanded: boolean, themeData: ThemeData): void {
-        this.postMessage("register", { positionMode, isExpanded, themeData});
+    postRegister(positionMode: string, isExpanded: boolean, themeData?: ThemeData | null): void {
+        this.postMessage("register", { positionMode, isExpanded, themeData });
     }
     // postUpdateConfig(): void {
     //     let styles = this.styles;
@@ -277,7 +290,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         }
 
         // console.debug("handleMessage", event.data);
-        if (COMPONENT_method === "sidebarResponseInfo") {
+        if (COMPONENT_method === "sidebarResponseInfo" && this.props.args.position_mode === "side") {
             const { isSideOpen, pageId, expandSubMenu, selectedSubMenu } = event.data;
             // console.debug(key, "sidebarResponseInfo: ", "Received sidebarResponseInfo message with expandState: ", isSideOpen);
             this.setState({
@@ -352,7 +365,11 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         // Se registran los eventos de COI
         // Register component
-        this.postRegister(args.position_mode, this.state.expandState, this.themes_data[this.state.themeIndex]);
+        this.postRegister(
+          args.position_mode,
+          this.state.expandState,
+          args.theme_changer ? this.themes_data[this.state.themeIndex] : null
+        );
         this.postSetStyles(args.styles, args.custom_styles);
         this.postIframeState(args.position_mode, args.is_sticky);
         this.postSidebarGetState();
@@ -367,7 +384,14 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         // Loads themes from python args. If not, use default themes
         this.themes_data = args.themes_data || this.themes_data;
+        if (!args.theme_changer) {
+          this.themes_data = []
+        }
 
+        if (!args.theme_changer || this.themes_data.length === 0) {
+            // Si no hay themes_data o no se ha pasado el theme_changer, se oculta el boton de cambio de tema
+            return;
+        }
         let theme_data_raw = localStorage.getItem('stPluginsActiveTheme-/-v1');
         if (theme_data_raw) {
             let theme_data = JSON.parse(theme_data_raw);
@@ -438,7 +462,9 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         this.themes_data = this.props.args.themes_data || this.themes_data;
         // Se busca en los themes_info actuales si existe el theme guardado y si no se inicia a 0 el indice
         // y se carga el theme 0 del array de themes_info, sino se deja el de streamlit, es decir no se hace nada
-        this.saveTheme(this.themes_data[this.state.themeIndex]);
+        if (this.props.args.theme_changer && this.themes_data.length > 0) {
+          this.saveTheme(this.themes_data[this.state.themeIndex]);
+        }
     }
 
     public componentWillUnmount = () => {
