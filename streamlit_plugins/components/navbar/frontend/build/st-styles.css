@@ -21,7 +21,7 @@ body:not([data-nav-position="side"]) div.st-key-NavigationComponent:has(iframe[t
     flex-direction: column;
     align-items: center;
     padding: 0;
-    margin-top: calc(-1 * var(--gap-between-comps) * 1rem);
+    /* margin-top: calc(-1 * var(--gap-between-comps) * 1rem); */
 
     & [data-testid="stSkeleton"] {
         height: var(--header-height);
@@ -66,7 +66,7 @@ body[data-nav-position="under"] {
         @media (max-width: 575.98px) {
             width: 100%;
         }
-        @media (min-width: 768px) {
+        @media (min-width: calc(736px + 8rem)) {
             width: 100%;
         }
     }
@@ -75,6 +75,7 @@ body[data-nav-position="under"][data-nav-is-sticky="true"] {
     /* STICKY */
     & div.st-key-NavigationComponent:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
         top: calc(var(--header-height) + 1rem);
+        margin-top: calc(-1 * var(--gap-between-comps) * 1rem);
     }
 }
 body[data-nav-position="under"][data-nav-is-sticky="false"] {
@@ -119,32 +120,31 @@ body[data-nav-position="top"] {
     }
     @media (min-width: 576px) {
         & [data-layout="narrow"] div.st-key-NavigationComponent:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
-            /* width: calc(100% - {MARGIN_SIDE_NAVBAR}rem + {SCROLLBAR_WIDTH}px - 2 * {MARGIN_SIDE_NARROW_DIFF}rem); */
-            width: calc(100% - var(--margin-side-navbar) * 1rem + var(--scrollbar-width) - 2 * var(--margin-side-narrow-diff) * 1rem);
-            /* left: calc({TOP_SIDE_ELEMENTS_MARGIN}rem + {TOP_SIDE_ELEMENTS_WIDTH}rem); */
+            width: calc(100vw - 2 * (var(--top-side-elements-width) * 1rem + 2*var(--margin-side-navbar) * 1rem) - var(--margin-side-navbar) * 1rem);
             left: calc(var(--top-side-elements-margin) * 1rem + var(--top-side-elements-width) * 1rem);
         }
         & [data-layout="narrow"]:has(> [data-testid="stSidebar"][aria-expanded="true"]) div.st-key-NavigationComponent:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
-            left: 0;
+            left: calc(100% - 736px - var(--margin-side-navbar) * 1rem);
+            width: calc(100% - (var(--top-side-elements-width) * 1rem - 2 * var(--margin-side-navbar) * 1rem));
         }
     }
     @media(max-width: 575.98px) {
         [data-layout="narrow"] div.st-key-NavigationComponent:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
-            /* width: calc(100% - 2*({TOP_SIDE_ELEMENTS_WIDTH}rem + {MARGIN_SIDE_NAVBAR}rem - {MARGIN_SIDE_NARROW_DIFF}rem)); */
-            width: calc(100% - 2 * (var(--top-side-elements-width) * 1rem + var(--margin-side-navbar) * 1rem - var(--margin-side-narrow-diff) * 1rem));
-            /* left: calc({TOP_SIDE_ELEMENTS_MARGIN}rem + {TOP_SIDE_ELEMENTS_WIDTH}rem + {MARGIN_SIDE_NAVBAR}rem); */
-            left: calc(var(--top-side-elements-margin) * 1rem + var(--top-side-elements-width) * 1rem + var(--margin-side-navbar) * 1rem);
+            width: calc(100vw - 2 * (var(--top-side-elements-width) * 1rem + 2*var(--margin-side-navbar) * 1rem) - var(--margin-side-navbar) * 1rem);
+            left: calc(var(--top-side-elements-margin) * 1rem + var(--top-side-elements-width) * 1rem);
         }
-        [data-layout="wide"]:not(:has(> [data-testid="{COLLAPSE_CONTROLL_CLASS}"])) div.st-key-NavigationComponent:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
-            /* width: calc(100% - {TOP_SIDE_ELEMENTS_WIDTH}rem); */
-            width: calc(100% - var(--top-side-elements-width) * 1rem);
-            left: 0;
-        }
-        [data-layout="narrow"]:not(:has(> [data-testid="{COLLAPSE_CONTROLL_CLASS}"])) div.st-key-NavigationComponent:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
-            width: 100%;
-            /* margin-left: calc(-1*({MARGIN_SIDE_NARROW_DIFF}rem)); */
+        [data-layout="narrow"]:not(:has(> [data-testid="collapsedControl"])) div.st-key-NavigationComponent:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"]),
+        [data-layout="narrow"]:not(:has(> [data-testid="stSidebarCollapsedControl"])) div.st-key-NavigationComponent:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
             margin-left: calc(-1 * var(--margin-side-narrow-diff) * 1rem);
+            width: calc(100vw - 2 * (var(--top-side-elements-width) * 1rem + 2*var(--margin-side-navbar) * 1rem) - var(--margin-side-navbar) * 1rem);
+            left: calc(var(--top-side-elements-margin) * 1rem + var(--top-side-elements-width) * 1rem);
+        }
+    }
+    @media (min-width: calc(736px + 8rem)) {
+        & [data-layout="narrow"] div.st-key-NavigationComponent:has(iframe[title="streamlit_plugins.components.navbar.nav_bar"]) {
+            width: calc(100vw - 2 * (var(--top-side-elements-width) * 1rem + 2*var(--margin-side-navbar) * 1rem) - var(--margin-side-navbar) * 1rem);
             left: 0;
+            margin-left: calc(-1 * ((100vw - 100%) / 2 - 1 * ((var(--top-side-elements-width) * 1rem + 2*var(--margin-side-navbar) * 1rem) + 0.125rem)));
         }
     }
 
@@ -167,13 +167,23 @@ body[data-nav-position="top"] {
 
         @media (min-width: 576px) {
             /* width: calc(100% - {MARGIN_SIDE_NAVBAR}rem + {SCROLLBAR_WIDTH}px); */
-            width: calc(100% - var(--margin-side-navbar) * 1rem + var(--scrollbar-width));
+            /* width: calc(100% - var(--margin-side-navbar) * 1rem + var(--scrollbar-width)); */
+            /* width: calc(100% - 2 * (var(--top-side-elements-width) * 1rem + var(--margin-side-navbar) * 1rem)); */
+            /* left: calc(var(--top-side-elements-margin) * 1rem + var(--top-side-elements-width) * 1rem + var(--margin-side-navbar) * 1rem - 0.125rem); */
+            /* width: calc(100% - 2 * (var(--top-side-elements-width) * 1rem - var(--margin-side-navbar) * 1rem) - var(--margin-side-navbar) * 1rem); */
+            /* left: calc(var(--top-side-elements-margin) * 1rem + var(--top-side-elements-width) * 1rem + var(--margin-side-navbar) * 1rem - 0.125rem);*/
+            width: calc(100vw - 2 * (var(--top-side-elements-width) * 1rem + 2*var(--margin-side-navbar) * 1rem) - var(--margin-side-navbar) * 1rem);
+            left: calc(var(--top-side-elements-margin) * 1rem + var(--top-side-elements-width) * 1rem);
         }
         @media(max-width: 575.98px) {
-            /* width: calc(100% - 2*({TOP_SIDE_ELEMENTS_WIDTH}rem + {MARGIN_SIDE_NAVBAR}rem)); */
-            width: calc(100% - 2 * (var(--top-side-elements-width) * 1rem + var(--margin-side-navbar) * 1rem));
-            /* left: calc({TOP_SIDE_ELEMENTS_MARGIN}rem + {TOP_SIDE_ELEMENTS_WIDTH}rem + {MARGIN_SIDE_NAVBAR}rem); */
-            left: calc(var(--top-side-elements-margin) * 1rem + var(--top-side-elements-width) * 1rem + var(--margin-side-navbar) * 1rem);
+            /* width: calc(100% - 2 * (var(--top-side-elements-width) * 1rem + var(--margin-side-navbar) * 1rem)); */
+            /* left: calc(var(--top-side-elements-margin) * 1rem + var(--top-side-elements-width) * 1rem + var(--margin-side-navbar) * 1rem); */
+            width: calc(100vw - 2 * (var(--top-side-elements-width) * 1rem + 2*var(--margin-side-navbar) * 1rem) - var(--margin-side-navbar) * 1rem);
+            left: calc(var(--top-side-elements-margin) * 1rem + var(--top-side-elements-width) * 1rem);
+        }
+        @media (min-width: calc(736px + 8rem)) {
+            width: 100%;
+            left: 0;
         }
     }
 
@@ -185,7 +195,7 @@ body[data-nav-position="top"] {
         border-left: solid 1px #c3c3c380;
         justify-content: flex-end;
         overflow: visible;
-        
+
         /* AJUSTE DEL LATERAL */
         /* right: calc({TOP_SIDE_ELEMENTS_MARGIN}rem + {SCROLLBAR_WIDTH}px); */
         right: calc(var(--top-side-elements-margin) * 1rem + var(--scrollbar-width));
@@ -194,10 +204,10 @@ body[data-nav-position="top"] {
     [data-testid="collapsedControl"] {
         flex-direction: column !important;
         justify-content: flex-start;
-        
+
         /* AJUSTE DEL LATERAL */
         /* left: {TOP_SIDE_ELEMENTS_MARGIN}rem; */
-        left: var(--top-side-elements-margin) * 1rem;
+        /* left: var(--top-side-elements-margin) * 1rem; */
     }
     [data-testid="stSidebarCollapsedControl"]:has([data-testid="stLogoSpacer"]),
     [data-testid="collapsedControl"]:has([data-testid="stLogoSpacer"]) {

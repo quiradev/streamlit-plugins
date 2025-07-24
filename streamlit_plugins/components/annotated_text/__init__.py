@@ -231,7 +231,7 @@ def resolve_background_style(styles_map: dict[str, str]) -> str:
     return CSS_COLOR_MAP["gray"]
 
 
-@st.experimental_fragment
+@st.fragment
 def annotated_text(
     *tokens, annotation_style: dict[str, dict[str, str]] = None,
     display_mode: AnnotationDisplayMode = AnnotationDisplayMode.NORMAL,
