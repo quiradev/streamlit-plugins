@@ -2,6 +2,8 @@ import inspect
 import time
 from typing import Literal
 import warnings
+import logging
+from urllib.parse import urlparse
 
 import requests
 import streamlit
@@ -26,6 +28,8 @@ else:
 
 if "http://localhost:8501" not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
     streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append("http://localhost:8501")
+
+logger = logging.getLogger(__name__)
 
 NavbarPositionType = Literal["top", "under", "side", "static", "hidden"]
 
@@ -564,6 +568,22 @@ def load_st_styles():
 
     return content
 
+
+def get_page_id_by_url_path(pages_map: dict[str, StreamlitPage], url: str, prefix_url: str = "") -> str | None:
+    # Elimina el prefijo si existe
+    url_path = urlparse(url).path
+    url_path = url_path.strip("/")
+    prefix_url = prefix_url.strip("/")
+    if prefix_url and url_path.startswith(prefix_url):
+        url_path = url_path[len(prefix_url):]
+
+    for page_id, page in pages_map.items():
+        if getattr(page, "_default", False) and url_path == "":
+            return page_id
+        if getattr(page, "url_path", None) == url_path:
+            return page_id
+    return None
+
 def st_navbar(
     menu_definition: list[dict], first_select=0, home_definition: dict | None = None, login_definition: dict | None = None,
     override_theme=None, hide_streamlit_markers=True,
@@ -577,6 +597,8 @@ def st_navbar(
     themes_data: list[dict]| None = None,
     theme_changer: bool = True,
     collapsible: bool = True,
+    prefix_url: str = "",
+    url_navigation: bool = False,
     key="NavBarComponent",
 ):
     is_navigation = False
@@ -604,6 +626,7 @@ def st_navbar(
 
     # https://github.com/SnpM/streamlit-scroll-navigation
     inject_crossorigin_interface()
+    time.sleep(0.1)
 
     # ctx = get_script_run_ctx(suppress_warning=True)
 
@@ -721,6 +744,8 @@ def st_navbar(
         themes_data=themes_data,
         theme_changer=theme_changer,
         collapsible=collapsible,
+        prefix_url=prefix_url,
+        url_navigation=url_navigation and is_navigation,
         default=default_page_selected_id,
         key=key, fvalue=force_value,
     )
@@ -752,12 +777,16 @@ def st_navigation(
     logout_page: StreamlitPage | None = None,
     account_page: StreamlitPage | None = None,
     settings_page: StreamlitPage | None = None,
-    native_way=False,
+    native_way=False, url_navigation=False,
     input_styles: str | None = None,
     themes_data: list[dict]| None = None,
     theme_changer: bool = True,
+    prefix_url: str = "",
     key="NavigationComponent",
 ) -> StreamlitPage:
+    if "navigation_prev_url_page_id" not in st.session_state:
+        st.session_state.navigation_prev_url_page_id = None
+
     if "navigation_prev_page_id" not in st.session_state:
         st.session_state.navigation_prev_page_id = None
 
@@ -777,8 +806,8 @@ def st_navigation(
     if section_info is None:
         section_info = {}
     
-    orginzed_pages = [*pages]
-    st_pages = {}
+
+    default_page = None
     if isinstance(pages, dict):
         st_pages = {**pages}
         if account_page or settings_page or logout_page:
@@ -792,18 +821,37 @@ def st_navigation(
         
         organized_pages = []
         for section, sub_pages in pages.items():
+            no_default_pages = []
+            for sub_page in sub_pages:
+                if sub_page._default:
+                    if default_page is None:
+                        default_page = sub_page
+                    else:
+                        raise ValueError("You can only have one default page")
+                else:
+                    no_default_pages.append(sub_page)
+
             if section == "":
-                organized_pages.extend(sub_pages)
+                organized_pages.extend(no_default_pages)
             else:
                 organized_pages.append(
                     {
                         "name": section,
-                        "subpages": sub_pages,
+                        "subpages": no_default_pages,
                         "icon": section_info.get(section, {}).get("icon", None),
                         "ttip": section_info.get(section, {}).get("ttip", section)
                     }
                 )
     else:
+        organized_pages = []
+        for page in pages:
+            if page._default:
+                if default_page is None:
+                    default_page = page
+                else:
+                    raise ValueError("You can only have one default page")
+            else:
+                organized_pages.append(page)
         st_pages = {
             "": [*pages]
         }
@@ -813,16 +861,17 @@ def st_navigation(
             st_pages[""].append(settings_page)
         if logout_page:
             st_pages[""].append(logout_page)
-        
-    menu_pages, _, menu_account_pages, pages_map = build_menu_from_st_pages(
+
+    if default_page is None:
+        raise ValueError("You must provide a default page")
+
+    menu_pages, home_definition, menu_account_pages, pages_map = build_menu_from_st_pages(
         *organized_pages,
+        home_page=default_page,  # Default page is the home page
         login_page=login_page, account_page=account_page, settings_page=settings_page,
         logout_page=logout_page,
     )
-    default_page = next(filter(lambda p: p._default, pages_map.values()), None)
-    if default_page is None:
-        raise ValueError("You must provide a default page")
-    
+
     st.session_state["navigation_menu_pages"] = menu_pages
     st.session_state["navigation_menu_account_pages"] = menu_account_pages
     st.session_state["navigation_default_page_id"] = default_page._script_hash
@@ -852,6 +901,7 @@ def st_navigation(
     
     next_page_id = st_navbar(
         menu_definition=menu_pages,  # if st.session_state.logged_in else [],
+        home_definition=home_definition,
         login_definition=menu_account_pages,
         hide_streamlit_markers=False,
         default_page_selected_id=st.session_state["navigation_page_id"] or st.session_state["navigation_default_page_id"],
@@ -861,6 +911,8 @@ def st_navigation(
         input_styles=input_styles,
         themes_data=themes_data,
         theme_changer=theme_changer,
+        prefix_url=prefix_url,
+        url_navigation=native_way and url_navigation,
         key=key,
     )
     st.session_state["navigation_force_page_id"] = None
@@ -868,8 +920,18 @@ def st_navigation(
     st.session_state["navigation_page_id"] = next_page_id  # Added to fix login/logout issue
     
     if native_way:
+        # Si la url es el path igual al que devuelve el `next_page_id` quiere decir que la navegacion es por url
         # En este punto el navigation de streamlit siempre devolvera la pagina actual
         #  ya que no se usara su navegacion frontal para seleccionar una pagina
+        if url_navigation:
+            url_page_id = get_page_id_by_url_path(
+                pages_map, st.context.url, prefix_url=prefix_url
+            )
+            if url_page_id != st.session_state["navigation_prev_url_page_id"]:
+                # Navegacion por url
+                st.session_state["navigation_prev_url_page_id"] = url_page_id
+                next_page_id = url_page_id
+
         page = st.navigation(
             st_pages,
             position="hidden"

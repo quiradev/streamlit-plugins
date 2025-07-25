@@ -24,7 +24,7 @@ def my_sidebar():
     if "sticky_nav" not in st.session_state:
         st.session_state["sticky_nav"] = False
     if "native_way" not in st.session_state:
-        st.session_state["native_way"] = False
+        st.session_state["native_way"] = True
 
     with st.sidebar:
         st.write("Logged in:", st.session_state.logged_in)
@@ -115,7 +115,7 @@ history = st.Page("tools/history.py", title="History", icon=":material/history:"
 logout_page = st.Page(logout, title="Log out", icon=":material/logout:", url_path="logout")
 
 # HERE IS THE CHANGE
-from streamlit_plugins.components.navbar import st_navbar, build_menu_from_st_pages, NavbarPositionType, st_navigation, st_switch_home
+from streamlit_plugins.components.navbar import NavbarPositionType, st_navigation, st_switch_home
 
 my_sidebar()
 

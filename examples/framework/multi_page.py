@@ -9,9 +9,19 @@ PASSWORD = "admin"
 LOGGING_SESSION_KEY = "logged_in"
 
 if LOGGING_SESSION_KEY not in st.session_state:
-    st.session_state[LOGGING_SESSION_KEY] = False
+    is_logged = st.context.cookies.get("user") == USER
+    st.session_state[LOGGING_SESSION_KEY] = is_logged
 
 st.set_page_config(layout="wide")
+
+# If you set a cookie with user you can login automatically
+# function setCookie(nombre, valor) {
+#   const fecha = new Date();
+#   fecha.setTime(fecha.getTime() + (1 * 60 * 60 * 1000)); // 1 hora
+#   const expiracion = "expires=" + fecha.toUTCString();
+#   document.cookie = nombre + "=" + valor + ";" + expiracion + ";path=/";
+# }
+# setCookie("usuario", "admin");
 
 def run():
     with st.sidebar:
@@ -29,7 +39,7 @@ def run():
             "Use within fragment", value=st.session_state.get("within_fragment", False)
         )
         native_way = st.checkbox(
-            "Use native way", value=st.session_state.get("native_way", False)
+            "Use native way", value=st.session_state.get("native_way", True)
         )
         st.divider()
         st.session_state["position_mode"] = position_mode
@@ -43,10 +53,10 @@ def run():
     
     multilit = Multilit(
         title="Demo", nav_horizontal=True, layout='wide', favicon="📚",
-        use_st_navigation_navbar=native_way,
+        use_st_navigation_navbar=native_way, allow_url_nav=True,
         navbar_sticky=sticky_nav, navbar_mode=position_mode,
         use_cookie_cache=True, sidebar_state='auto',
-        allow_url_nav=False, hide_streamlit_markers=False, use_banner_images=None,
+        hide_streamlit_markers=False, use_banner_images=None,
         banner_spacing=None, clear_cross_page_sessions=True, session_params=None,
         use_loader=True, within_fragment=within_fragment,
         login_info_session_key=LOGGING_SESSION_KEY,

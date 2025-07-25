@@ -1,8 +1,22 @@
 from typing import Literal, Sequence, Any, Callable
 
 import streamlit as st
+st_version = st.version.STREAMLIT_VERSION_STRING.split(".")
+major_version, minor_version, patch_version = int(st_version[0]), int(st_version[1]), int(st_version[2])
+
 from streamlit.elements.lib.options_selector_utils import convert_to_sequence_and_check_comparable, get_default_indices
-from streamlit.elements.widgets.button_group import SingleOrMultiSelectSerde, V
+
+if minor_version < 38:
+    raise ImportError(
+        "The button_group plugin requires Streamlit version 1.38 or higher. "
+        "Please upgrade your Streamlit installation."
+    )
+if minor_version < 45:
+    from streamlit.elements.widgets.button_group import SingleOrMultiSelectSerde, V
+    ButtonGroupSerde = SingleOrMultiSelectSerde
+else:
+    from streamlit.elements.widgets.button_group import ButtonGroupSerde, V
+
 from streamlit.errors import StreamlitAPIException
 from streamlit.proto.ButtonGroup_pb2 import ButtonGroup as ButtonGroupProto
 from streamlit.runtime.state import WidgetCallback
@@ -38,7 +52,7 @@ def st_button_group(
     indexable_options = convert_to_sequence_and_check_comparable(options)
     default_values = get_default_indices(indexable_options, default)
 
-    serde: SingleOrMultiSelectSerde[V] = SingleOrMultiSelectSerde[V](
+    serde: ButtonGroupSerde[V] = ButtonGroupSerde[V](
         indexable_options, default_values, selection_mode
     )
     if selection_visualization == "only_selected":

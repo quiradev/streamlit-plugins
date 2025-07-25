@@ -19,6 +19,7 @@ interface MenuItem {
     icon: string;
     id: string;
     label: string;
+    isDefault?: boolean;
     ttip?: string;
     submenu?: MenuItem[];
     style?: React.CSSProperties;
@@ -84,6 +85,7 @@ interface PythonArgs {
     default_page_selected_id: string;
     override_page_selected_id?: string;
     reclick_load?: boolean;
+    prefix_url?: string;
     url_navigation?: boolean;
     key?: string;
     fvalue?: boolean;
@@ -152,8 +154,13 @@ class NativeNavBar extends StreamlitComponentBase<State> {
           selectedPageId = args.default_page_selected_id;
         }
 
-
-        if (args.override_page_selected_id) {
+        selectedPageId = this.getPageFromURL();
+        if (args.url_navigation) {
+            // Si se usa navegación por URL, se obtiene el id de la página desde la URL
+            this.postNavbarState(selectedPageId, expandSubMenu, selectedSubMenu);
+            Streamlit.setComponentValue(selectedPageId);
+        }
+        else if (args.override_page_selected_id) {
             selectedPageId = args.override_page_selected_id;
             this.postNavbarState(selectedPageId, expandSubMenu, selectedSubMenu);
             Streamlit.setComponentValue(selectedPageId);
@@ -483,6 +490,44 @@ class NativeNavBar extends StreamlitComponentBase<State> {
     }
 
     /* Functions definition */
+    private getPageFromURL = (): string => {
+        const url = new URL(window.parent.location.href);
+        let path = url.pathname.replace(/^\/+|\/+$/g, "");
+        if (this.props.args.prefix_url) {
+            const prefix = this.props.args.prefix_url.replace(/^\/+|\/+$/g, "");
+            if (path.startsWith(prefix)) {
+                path = path.slice(prefix.length).replace(/^\/+/, "");
+            }
+        }
+
+        // Si el path está vacío, devuelve la página por defecto
+        if (!path) {
+            return this.props.args.home.id;
+        }
+
+        // Busca el item del menú o submenú que coincida con el path
+        const menuItems = this.props.args.menu_definition;
+        function findMenuItemByPath(items: MenuItem[]): MenuItem | undefined {
+            for (const item of items) {
+                if (item.url === path || item.url === "/" + path) {
+                    return item;
+                }
+                if (item.submenu) {
+                    const found = findMenuItemByPath(item.submenu);
+                    if (found) return found;
+                }
+            }
+            return undefined;
+        }
+        const match = findMenuItemByPath(menuItems);
+        if (match) {
+            return match.id;
+        }
+
+        // Si no hay coincidencia, devuelve la página por defecto
+        return this.props.args.default_page_selected_id;
+    }
+
     private calculateMaxNavBarWidth = () => {
         const navbar$ = document.querySelector(`nav.navbar#navbar-${this.key}`) as HTMLElement;
         if (navbar$ === null) return;

@@ -213,7 +213,7 @@ class Multilit:
         self._complex_nav: dict[str, dict | StreamlitPage] = dict()
         self._navbar_mode: NavbarPositionType = navbar_mode
         self._navbar_active_index = 0
-        self._allow_url_nav = False  # allow_url_nav
+        self._allow_url_nav = allow_url_nav
         self._navbar_sticky = navbar_sticky
         self._nav_item_count = 0
         self._use_st_navigation_navbar = use_st_navigation_navbar
@@ -578,6 +578,7 @@ class Multilit:
             account_page=account_page,
             settings_page=settings_page,
             native_way=self._use_st_navigation_navbar,
+            url_navigation=self._allow_url_nav,
             input_styles=styles,
             themes_data=self._navbar_theme,
             theme_changer=self._navigation_theme_changer
@@ -738,9 +739,6 @@ class Multilit:
             # with self._theme_change_container:
             #     self._run_change_theme()
 
-            if self._allow_url_nav:
-                st.query_params['page'] = page.id
-
             if self._user_loader and page.has_loading():
                 loading_engine = self._loading_engine
                 if page.loading_engine is not None:
@@ -894,7 +892,7 @@ class Multilit:
         This method is the entry point for the MultiApp, just like a single Streamlit page, you simply setup the additional apps and then call this method to begin.
         """
         # process url navigation parameters
-        self._do_url_params()
+        # self._do_url_params()
 
         if self._banners is not None:
             if isinstance(self._banners, str):
