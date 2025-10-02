@@ -2,7 +2,9 @@ import logging
 import traceback
 from typing import Any, Callable, Dict, Literal
 
+import streamlit
 import streamlit as st
+from streamlit.web.server.routes import _DEFAULT_ALLOWED_MESSAGE_ORIGINS
 from streamlit.commands.page_config import Layout, InitialSideBarState
 from streamlit.navigation.page import StreamlitPage
 from streamlit.runtime.scriptrunner import RerunException, StopException, get_script_run_ctx
@@ -130,7 +132,9 @@ class Multilit:
         verbose=False,
         within_fragment=False,
         login_info_session_key="logged_in",
-        navigation_theme_changer=True
+        navigation_theme_changer=True,
+        allowed_origins=None,
+        **kwargs
     ):
         """
         A class to create an Multi-app Streamlit application. This class will be the host application for multiple applications that are added after instancing.
@@ -184,6 +188,10 @@ class Multilit:
         session_params: Dict
             A Dict of parameter name and default values that will be added to the global session store, these parameters will be available to all child applications and they can get/set values from the store during execution.
         """
+
+        for origin in allowed_origins:
+            if origin not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
+                streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(origin)
 
         self._active_section = None
         self._active_section_icon = None
