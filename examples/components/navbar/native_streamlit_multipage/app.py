@@ -1,6 +1,7 @@
 import sys
 
 import streamlit as st
+from streamlit.runtime.scriptrunner_utils.script_run_context import get_script_run_ctx
 
 try:
     if "_pydevd_frame_eval.pydevd_frame_eval_cython_wrapper" not in sys.modules:
@@ -11,7 +12,7 @@ except ImportError:
 st.set_page_config(layout="wide")
 
 if "logged_in" not in st.session_state:
-    st.session_state.logged_in = True
+    st.session_state.logged_in = False
 
 USER = "admin"
 PASSWORD = "admin"
@@ -47,9 +48,15 @@ def my_sidebar():
             # key="native_way"
             key="native_way_input"
         )
+        url_navigation = st.checkbox(
+            "URL navigation",
+            value=st.session_state.get("url_navigation", True),
+            key="url_navigation_input"
+        )
         st.session_state["position_mode"] = position_mode
         st.session_state["sticky_nav"] = sticky_nav
         st.session_state["native_way"] = native_way
+        st.session_state["url_navigation"] = url_navigation
 
 
 def my_heading():
@@ -61,22 +68,23 @@ def my_heading():
 def login():
     _, col, _ = st.columns([2, 6, 2])
     with col:
+        st.title("Login page")
         with st.form(key="login_form"):
             user = st.text_input("Username")
             password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Submit")
-
+            submitted_user_pas_login = st.form_submit_button("Submit")
         with st.expander("Psst! Here's the login info"):
             st.write(f"Username and Password is:")
-            st.markdown(f"""
-            ```bash
-            {USER}
-            ```
-            """)
+            st.code(USER)
 
-    if submitted:
+        if st.button("Oauth Login (demo)", type="primary"):
+            st.login()
+
+    if submitted_user_pas_login:
         if user == USER and password == PASSWORD:
             st.session_state.logged_in = True
+            ctx = get_script_run_ctx()
+            ctx.user_info['is_logged_in'] = True
             st_switch_home()
         else:
             st.toast("Invalid username or password", icon="❌")
@@ -95,6 +103,7 @@ def logout():
     st.session_state.logged_in = False
     st.session_state.app_id = None
     st.session_state.active_app_id = None
+    st.logout()
     st.rerun()
 
 st.logo(
@@ -122,6 +131,7 @@ my_sidebar()
 position_mode: NavbarPositionType = st.session_state["position_mode"]
 sticky_nav = st.session_state["sticky_nav"]
 native_way = st.session_state["native_way"]
+url_navigation = st.session_state["url_navigation"]
 
 if st.session_state.logged_in:
     if position_mode == "top":
@@ -141,9 +151,11 @@ page = st_navigation(
     login_page=login_page, logout_page=logout_page,
     account_page=account_page,
     settings_page=settings_page,
-    native_way=native_way
+    native_way=native_way,
+    url_navigation=url_navigation
 )
 print(f"{page.title=}, {native_way=}, {sticky_nav=}, {position_mode=}")
+print()
 if st.session_state.logged_in:
     # SOME TEXT ABOVE THE NAVBAR
     page.run()

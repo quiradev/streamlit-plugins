@@ -234,6 +234,11 @@ def st_theme_changer(
     elif render_mode == "pills":
         pills_mode()
 
+def add_trusted_url(url: str):
+    if url not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
+        _DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(url)
+    if url not in streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS:
+        streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(url)
 
 def get_active_theme_key() -> str | None:
     return st.session_state.get(f"{KEY}_theme_index", None)

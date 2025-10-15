@@ -9,7 +9,7 @@ except ImportError:
 
 import streamlit as st
 
-from streamlit_plugins.components.theme_changer import get_active_theme_key, st_theme_changer
+from streamlit_plugins.components.theme_changer import get_active_theme_key, st_theme_changer, add_trusted_url
 from streamlit_plugins.components.theme_changer.entity import ThemeInfo, ThemeInput, ThemeBaseLight, ThemeBaseDark
 
 # make it look nice from the start
@@ -18,7 +18,7 @@ st.set_page_config(layout='wide', initial_sidebar_state='collapsed')
 st.title("Theme Changer Component")
 st.caption("Just push the button to change the theme! On the client side, of course.")
 
-
+add_trusted_url("http://localhost:8501")
 
 init_theme_data = dict(
     soft_light=ThemeInput(

@@ -918,7 +918,7 @@ def st_navigation(
     st.session_state["navigation_force_page_id"] = None
     prev_page_id = st.session_state["navigation_page_id"]
     st.session_state["navigation_page_id"] = next_page_id  # Added to fix login/logout issue
-    
+    # print("CUSTOM COMPONENT", pages_map[next_page_id].title)
     if native_way:
         # Si la url es el path igual al que devuelve el `next_page_id` quiere decir que la navegacion es por url
         # En este punto el navigation de streamlit siempre devolvera la pagina actual
@@ -927,8 +927,11 @@ def st_navigation(
             url_page_id = get_page_id_by_url_path(
                 pages_map, st.context.url, prefix_url=prefix_url
             )
+            # print("URL PAGE", pages_map[url_page_id].title)
             if url_page_id != st.session_state["navigation_prev_url_page_id"]:
                 # Navegacion por url
+                # Give enough time to the custom component to update
+                time.sleep(0.1)
                 st.session_state["navigation_prev_url_page_id"] = url_page_id
                 next_page_id = url_page_id
 
@@ -936,9 +939,12 @@ def st_navigation(
             st_pages,
             position="hidden"
         )
+        # print("ST PAGE", page.title)
         prev_page_id = page._script_hash
     else:
         page = pages_map.get(next_page_id, default_page)
+
+    # print("PAGE", pages_map[next_page_id].title)
 
     # Solo si se cambia de pagina
     if prev_page_id != next_page_id:
@@ -1010,3 +1016,9 @@ def get_pages_info() -> tuple[dict[str, str], str, list[dict], list[dict], str |
     menu_account_pages = st.session_state["navigation_menu_account_pages"]
 
     return pages, default_page_id, menu_pages, menu_account_pages, login_page_id, logout_page_id, account_page_id, settings_page_id
+
+def add_trusted_url(url: str):
+    if url not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
+        _DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(url)
+    if url not in streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS:
+        streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(url)

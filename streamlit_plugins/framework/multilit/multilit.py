@@ -189,6 +189,9 @@ class Multilit:
             A Dict of parameter name and default values that will be added to the global session store, these parameters will be available to all child applications and they can get/set values from the store during execution.
         """
 
+        if allowed_origins is None:
+            allowed_origins = []
+
         for origin in allowed_origins:
             if origin not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
                 streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(origin)
