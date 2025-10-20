@@ -2,7 +2,7 @@ import traceback
 
 from streamlit.runtime.scriptrunner import StopException
 
-from streamlit_plugins.components.loader import BaseLoader, LoadersLib, Loader
+from streamlit_plugins.components.loader import BaseLoader, LoadersLib, DefaultLoader
 
 class LoadingWithStatement:
     def __init__(self, loading_engine: "LoadingEngine", status_msg: str = "") -> None:
@@ -26,9 +26,15 @@ class LoadingWithStatement:
 
 
 class LoadingEngine:
-    def __init__(self, loader_container, app_container, loader: BaseLoader | None = None):
-        self.app_container = app_container
-        self.loader = loader or Loader(loader_container=loader_container, loader_name=LoadersLib.book_loader)
+    default_loader: LoadersLib = LoadersLib.book_loader
+
+    def __init__(self, loader: BaseLoader):
+        self.loader = loader
+
+    @classmethod
+    def get_default_loader(cls, loader_container, loader_name: LoadersLib = None):
+        loader_name = loader_name or cls.default_loader
+        return DefaultLoader(loader_container=loader_container, loader_name=loader_name)
 
     def loading(self, status_msg=""):
         return LoadingWithStatement(self, status_msg=status_msg)

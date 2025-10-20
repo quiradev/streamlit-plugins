@@ -53,7 +53,7 @@ def run():
     
     multilit = Multilit(
         title="Demo", nav_horizontal=True, layout='wide', favicon="📚",
-        use_st_navigation_navbar=native_way, allow_url_nav=True,
+        use_st_navigation=native_way, allow_url_nav=False,
         navbar_sticky=sticky_nav, navbar_mode=position_mode,
         use_cookie_cache=True, sidebar_state='auto',
         hide_streamlit_markers=False, use_banner_images=None,
@@ -93,9 +93,39 @@ def run():
         st.write("Account page")
         st.caption("This is a protected page. Only logged in users can view this.")
     
-    @multilit.page(title="Settings", icon=":material/settings:", page_type="settings")
+    @multilit.page(title="Settings", icon=":material/settings:", page_type="settings", with_loader=False)
     def settings():
-        st.button("Theme")
+        menu_definition = [
+            {
+                "id": "account",
+                "label": "Account",
+                "icon": "material/account_circle",
+                "ttip": "Account",
+            },
+            {
+                "id": "preferences",
+                "label": "Preferences",
+                "icon": "material/settings",
+                "ttip": "Preferences",
+            }
+        ]
+        # default_definition = menu_definition.pop(0)
+        selected_tab = st_navbar(
+            menu_definition,
+            sticky_nav=False,
+            theme_changer=False,
+            # home_definition=default_definition
+        )
+
+        if selected_tab == "account":
+            st.subheader("Account settings")
+            st.text_input("Email", value="", placeholder="Email")
+            st.text_input("Username", value="", placeholder="Username")
+            st.text_input("Full name", value="", placeholder="Full name")
+        elif selected_tab == "preferences":
+            st.subheader("Preferences")
+            st.checkbox("Enable notifications", value=True)
+            st.checkbox("Dark mode", value=False)
 
     @multilit.logout_callback
     def logout():
@@ -145,7 +175,7 @@ def run():
 
     multilit.add_page(page=multilit.default_home_dashboard(), page_type="home")
     with multilit.new_section(title="Reports"):
-        multilit.add_page(bugs)
+        multilit.add_page(bugs, with_loader=False)
         multilit.add_page(alerts)
     
     with multilit.new_section(title="Tools"):

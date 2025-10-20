@@ -5,7 +5,7 @@ from streamlit.navigation.page import StreamlitPage
 from streamlit_plugins.framework.multilit.loading_engine import LoadingEngine
 
 
-class STPageWrapper(ABC):
+class STPageWrapper:
     """
     This is a template class that streamlit applications can inherit from that automatically structures them for use in a Multilit application.
 

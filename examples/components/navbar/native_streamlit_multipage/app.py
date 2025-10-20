@@ -96,7 +96,37 @@ def account():
 
 
 def settings():
-    st.button("Theme")
+    menu_definition = [
+        {
+            "id": "account",
+            "label": "Account",
+            "icon": "material/account_circle",
+            "ttip": "Account",
+        },
+        {
+            "id": "preferences",
+            "label": "Preferences",
+            "icon": "material/settings",
+            "ttip": "Preferences",
+        }
+    ]
+    # default_definition = menu_definition.pop(0)
+    selected_tab = st_navbar(
+        menu_definition,
+        sticky_nav=False,
+        theme_changer=False,
+        # home_definition=default_definition
+    )
+
+    if selected_tab == "account":
+        st.subheader("Account settings")
+        st.text_input("Email", value="", placeholder="Email")
+        st.text_input("Username", value="", placeholder="Username")
+        st.text_input("Full name", value="", placeholder="Full name")
+    elif selected_tab == "preferences":
+        st.subheader("Preferences")
+        st.checkbox("Enable notifications", value=True)
+        st.checkbox("Dark mode", value=False)
 
 
 def logout():
@@ -124,7 +154,8 @@ history = st.Page("tools/history.py", title="History", icon=":material/history:"
 logout_page = st.Page(logout, title="Log out", icon=":material/logout:", url_path="logout")
 
 # HERE IS THE CHANGE
-from streamlit_plugins.components.navbar import NavbarPositionType, st_navigation, st_switch_home
+from streamlit_plugins.components.navbar import NavbarPositionType, st_navigation, st_switch_home, st_navbar, \
+    set_force_next_page, st_switch_page
 
 my_sidebar()
 
@@ -156,10 +187,8 @@ page = st_navigation(
 )
 print(f"{page.title=}, {native_way=}, {sticky_nav=}, {position_mode=}")
 print()
-if st.session_state.logged_in:
-    # SOME TEXT ABOVE THE NAVBAR
-    page.run()
 
-else:
-    login_page._can_be_called = True
-    login_page.run()
+if not st.session_state.logged_in and page._script_hash != login_page._script_hash:
+    st_switch_page(login_page._script_hash, native_way=True)
+
+page.run()

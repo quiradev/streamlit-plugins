@@ -405,3 +405,15 @@ body[data-nav-position="hidden"] {
         display: none;
     }
 }
+div.st-key-NavigationComponent iframe[title="streamlit_plugins.components.navbar.nav_bar"] {
+    display: none !important;
+}
+div.st-key-NavigationComponent iframe[title="streamlit_plugins.components.navbar.nav_bar"].is-registered {
+    display: initial !important;
+}
+
+div > .st-key-container_coi_styles {
+    /* display: none; */
+    height: 0;
+    position: absolute;
+}

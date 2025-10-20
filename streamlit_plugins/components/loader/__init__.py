@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import atexit
 import time
 from enum import Enum, auto
+from typing import TypeVar
 
 import streamlit as st
 
@@ -3421,7 +3422,7 @@ def book_loader(**kwargs):
     style = """
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <style>
-        div:has(.book-parent) {
+        div:has(>.book-parent) {
             width: inherit;
             display: flex;
             justify-content: center;
@@ -4419,7 +4420,9 @@ class BaseLoader(ABC):
     def stop_loader(self):
         pass
 
-class Loader(BaseLoader):
+LoaderType = TypeVar('LoaderType', bound=BaseLoader)
+
+class DefaultLoader(BaseLoader):
     def __init__(self,
         loader_container=None, text='', loader_name: LoadersLib = LoadersLib.book_loader, height=256,
         index=0, primary_color=None

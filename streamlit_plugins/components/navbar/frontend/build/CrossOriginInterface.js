@@ -14,6 +14,7 @@ class NavbarCOI {
         NavbarCOI.instances[key] = this;
         console.info("Init", positionMode, isSticky);
         this.component = null;
+        this.pendingCOIMethodsBeforeRegister = [];
         this.componentName = componentName;
         this.key = key;
 
@@ -30,13 +31,14 @@ class NavbarCOI {
 
         // AQUI EN EL INIT SE LE PASAN LOS PARAMETROS ACTUALIZABLES
         this.isNavigation = isNavigation;
-        this.init(positionMode, isSticky, null);
         this.pageId = defaultPageId;
 
         window.addEventListener("message", this.handleComponentMessage.bind(this));
     }
 
     init(positionMode, isSticky, iframeHeight) {
+        // setReadyRegistered();
+
         this.iframeSelector = 'div.st-key-'+this.key+' iframe[title="' + this.componentName + '"]';
         this.positionMode = positionMode;
         this.isSticky = isSticky;
@@ -48,6 +50,7 @@ class NavbarCOI {
                 if (iframeHeight) {
                     iframe.height = iframeHeight;
                 }
+                iframe.classList.add('is-registered');
             }
 
             this.setNavState(
@@ -128,7 +131,9 @@ class NavbarCOI {
         }
     }
 
-    register(component, positionMode, isExpanded, themeData, themeName="Custom") {
+    register(component, positionMode, isSticky, isExpanded, themeData, themeName="Custom") {
+        this.init(positionMode, isSticky, null);
+
         this.component = component;
 
         if (themeData) this.saveTheme(themeData, themeName);
@@ -443,6 +448,13 @@ class NavbarCOI {
         );
     }
 
+    setReadyRegistered() {
+        this.postComponentMessage(
+            'setReadyRegistered',
+            {}
+        );
+    }
+
     //Send a message to the component
     postComponentMessage(COMPONENT_method, data = { anchor_id = null, update_id = null} = {}) {
         if (this.component === null) {
@@ -529,12 +541,19 @@ class NavbarCOI {
         //If component is not registered, only allow registration method
         if (this.component === null) {
             if (COI_method === 'register') {
-                const { positionMode, isExpanded, themeData } = event.data;
-                this.register(event.source, positionMode, isExpanded, themeData);
+                const { positionMode, isSticky, isExpanded, themeData } = event.data;
+                this.register(event.source, positionMode, isSticky, isExpanded, themeData);
+                // Se llaman los metodos pendientes
+                console.debug('Processing pending COI methods before register:', this.pendingCOIMethodsBeforeRegister.length);
+                while (this.pendingCOIMethodsBeforeRegister.length > 0) {
+                    const pendingEvent = this.pendingCOIMethodsBeforeRegister.shift();
+                    this.handleComponentMessage(pendingEvent);
+                }
                 return;
             }
             else {
-                console.error('Must register component with this NavbarCOI before calling other methods', event.data);
+                this.pendingCOIMethodsBeforeRegister.push(event);
+                console.warn('Advertencia: el metodo se ha encolado porque el componente aun no esta registrado en este NavbarCOI', event.data);
             }
         }
         switch (COI_method) {

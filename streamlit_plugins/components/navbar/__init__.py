@@ -595,12 +595,15 @@ def st_navbar(
     reclick_load=True,
     input_styles: str | None = None,
     themes_data: list[dict]| None = None,
-    theme_changer: bool = True,
+    theme_changer: bool = False,
     collapsible: bool = True,
     prefix_url: str = "",
     url_navigation: bool = False,
     key="NavBarComponent",
 ):
+    if home_definition is None:
+        home_definition = menu_definition.pop(0)
+
     is_navigation = False
     # se recupera del callstack si se ha llamado desde la anterior funcion desde st_navigation
     inspect_stack = inspect.stack()
@@ -618,15 +621,25 @@ def st_navbar(
 
     if "navbar_coi_instance" not in st.session_state:
         st.session_state.navbar_coi_instance = False
-    
-    if themes_data is None and theme_changer:
-        themes_data = DEFAULT_THEMES
-    elif not theme_changer:
-        themes_data = []
+
+    if "navbar_st_styles_loaded" not in st.session_state:
+        st.session_state.navbar_st_styles_loaded = False
+
+    if is_navigation:
+        if themes_data is None and theme_changer:
+            themes_data = DEFAULT_THEMES
+        elif not theme_changer:
+            themes_data = []
+    else:
+        theme_changer = False
+
+    navbar_view = st.container(key=f"{key}_container_navbar")
+    coi_styles_view = st.container(key=f"{key}_container_coi_styles")
 
     # https://github.com/SnpM/streamlit-scroll-navigation
-    inject_crossorigin_interface()
-    time.sleep(0.1)
+    with coi_styles_view:
+        inject_crossorigin_interface()
+        # time.sleep(0.1)
 
     # ctx = get_script_run_ctx(suppress_warning=True)
 
@@ -686,69 +699,38 @@ def st_navbar(
     if override_page_selected_id:
         default_page_selected_id = override_page_selected_id
 
-    # if key not in st.session_state:
-    #     override_app_selected_id = default_app_selected_id
-    # elif st.session_state[key] is None:
-    #     override_app_selected_id = default_app_selected_id
-    coi_scripts_instance = st.empty()
-    styles = ""
-    if not st.session_state.navbar_coi_instance:
-        st.session_state.navbar_coi_instance = True
-        styles = load_st_styles()
-        with coi_scripts_instance.container():
-            instantiate_crossorigin_interface(_component_func.name, key, is_navigation, default_page_selected_id, position_mode, sticky_nav)
-            time.sleep(0.2)
-
-    # print()
-    # print(f"FROM Override Multi: {override_app_selected_id}")
-    style = NAV_TOP_UNDER_STYLE
-
-    if position_mode == 'under':
-        style += UNDER_NAV_STYLE
-        if sticky_nav:
-            style += UNDER_NAV_STICKY_STYLE
-        else:
-            style += UNDER_NAV_FIXED_STYLE
-    elif position_mode == 'top':
-        style += NAV_TOP_STYLE
-        style += VERTICAL_ST_STYLE
-        if sticky_nav:
-            style += NAV_TOP_STICKY_STYLE
-        else:
-            style += NAV_TOP_FIXED_STYLE
-    elif position_mode == 'side':
-        style += SIDE_NAV_STYLE
-
-    if position_mode in ['top', 'under']:
-        if sticky_nav:
-            style += STICKY_NAV_STYLE
-            if position_mode == 'top':
-                style += NAV_TOP_STICKY_STYLE
-        else:
-            style += FIXED_NAV_STYLE
-
-    if hide_streamlit_markers:
-        style += HIDE_ST_STYLE
-
     input_styles = input_styles or ""
-    # st.markdown(f"<style>\n{input_styles}\n{style}\n<style>", unsafe_allow_html=True)
-    component_value = _component_func(
-        menu_definition=menu_definition, home=home_data or None, login=login_data or None,
-        override_theme=override_theme,
-        position_mode=position_mode, is_sticky=sticky_nav,
-        default_page_selected_id=default_page_selected_id,
-        override_page_selected_id=override_page_selected_id,
-        reclick_load=reclick_load,
-        styles=styles, custom_styles=input_styles,
-        is_navigation=is_navigation,
-        themes_data=themes_data,
-        theme_changer=theme_changer,
-        collapsible=collapsible,
-        prefix_url=prefix_url,
-        url_navigation=url_navigation and is_navigation,
-        default=default_page_selected_id,
-        key=key, fvalue=force_value,
-    )
+    styles = f"\ndiv:has(> .st-key-{key}_container_coi_styles) {{\nheight: 0;\nposition: absolute;\n}}\n"
+    if not st.session_state.navbar_st_styles_loaded:
+        styles += load_st_styles()
+        with coi_styles_view:
+            st.markdown(f"<style>\n{input_styles}\n{styles}\n<style>", unsafe_allow_html=True)
+
+    # if not st.session_state.navbar_coi_instance:
+    # styles = load_st_styles()
+    with coi_styles_view:
+        instantiate_crossorigin_interface(_component_func.name, key, is_navigation, default_page_selected_id, position_mode, sticky_nav)
+        st.session_state.navbar_coi_instance = True
+
+    with navbar_view:
+        component_value = _component_func(
+            menu_definition=menu_definition, home=home_data or None, login=login_data or None,
+            override_theme=override_theme,
+            position_mode=position_mode, is_sticky=sticky_nav,
+            default_page_selected_id=default_page_selected_id,
+            override_page_selected_id=override_page_selected_id,
+            reclick_load=reclick_load,
+            styles=styles, custom_styles=input_styles,
+            is_navigation=is_navigation,
+            themes_data=themes_data,
+            theme_changer=theme_changer,
+            collapsible=collapsible,
+            prefix_url=prefix_url,
+            url_navigation=url_navigation and is_navigation,
+            default=default_page_selected_id,
+            is_visible=True,
+            key=key, fvalue=force_value,
+        )
     
     # with coi_scripts_styles.container():
     #     apply_styles(key, f"`{input_styles}`")
@@ -810,7 +792,7 @@ def st_navigation(
     default_page = None
     if isinstance(pages, dict):
         st_pages = {**pages}
-        if account_page or settings_page or logout_page:
+        if account_page or settings_page or logout_page or login_page:
             st_pages["Account"] = []
         if account_page:
             st_pages["Account"].append(account_page)
@@ -818,6 +800,8 @@ def st_navigation(
             st_pages["Account"].append(settings_page)
         if logout_page:
             st_pages["Account"].append(logout_page)
+        if login_page:
+            st_pages["Account"].append(login_page)
         
         organized_pages = []
         for section, sub_pages in pages.items():
@@ -861,6 +845,8 @@ def st_navigation(
             st_pages[""].append(settings_page)
         if logout_page:
             st_pages[""].append(logout_page)
+        if login_page:
+            st_pages[""].append(login_page)
 
     if default_page is None:
         raise ValueError("You must provide a default page")
@@ -875,7 +861,8 @@ def st_navigation(
     st.session_state["navigation_menu_pages"] = menu_pages
     st.session_state["navigation_menu_account_pages"] = menu_account_pages
     st.session_state["navigation_default_page_id"] = default_page._script_hash
-    
+
+    logout_page_id, login_page_id = None, None
     if login_page:
         login_page_id = login_page._script_hash
         st.session_state["navigation_login_page_id"] = login_page_id
@@ -949,7 +936,8 @@ def st_navigation(
     # Solo si se cambia de pagina
     if prev_page_id != next_page_id:
         st.session_state["navigation_page_id"] = next_page_id
-        st.session_state["navigation_prev_page_id"] = prev_page_id
+        if prev_page_id not in [logout_page_id, login_page_id]:
+            st.session_state["navigation_prev_page_id"] = prev_page_id
         st_switch_page(next_page_id, native_way=native_way)
     
     page._can_be_called = True
@@ -982,7 +970,7 @@ def st_switch_page(page_id: str, native_way: bool = False):
     page = pages.get(page_id, None)
     if page is None:
         raise ValueError(f"Page with id {page_id} not found")
-    
+
     st.session_state["navigation_force_page_id"] = page._script_hash
     if native_way:
         st.switch_page(page)

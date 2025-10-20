@@ -93,6 +93,7 @@ interface PythonArgs {
     themes_data?: ThemeData[];
     theme_changer?: boolean;
     collapsible?: boolean;
+    is_visible?: boolean;
 }
 
 // interface NavBarRenderData extends RenderData {
@@ -108,6 +109,7 @@ interface State {
     expandSubMenu: boolean;
     fromClick: boolean;
     themeIndex: number;
+    isVisible?: boolean;
 }
 
 class StreamlitComponentBase<S = {}> extends React.PureComponent<ComponentProps, S> {
@@ -154,9 +156,9 @@ class NativeNavBar extends StreamlitComponentBase<State> {
           selectedPageId = args.default_page_selected_id;
         }
 
-        selectedPageId = this.getPageFromURL();
         if (args.url_navigation) {
             // Si se usa navegación por URL, se obtiene el id de la página desde la URL
+            selectedPageId = this.getPageFromURL();
             this.postNavbarState(selectedPageId, expandSubMenu, selectedSubMenu);
             Streamlit.setComponentValue(selectedPageId);
         }
@@ -174,7 +176,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             expandState: expandState,
             expandSubMenu: expandSubMenu,
             fromClick: false,
-            themeIndex: 0
+            themeIndex: 0,
+            isVisible: args.is_visible !== false
         };
 
 
@@ -240,8 +243,8 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // console.debug("postMessage from ", key, ": ", COI_method, data);
         return true;
     }
-    postRegister(positionMode: string, isExpanded: boolean, themeData?: ThemeData | null): void {
-        this.postMessage("register", { positionMode, isExpanded, themeData });
+    postRegister(positionMode: string, isSticky: boolean, isExpanded: boolean, themeData?: ThemeData | null): void {
+        this.postMessage("register", { positionMode, isSticky, isExpanded, themeData });
     }
     // postUpdateConfig(): void {
     //     let styles = this.styles;
@@ -296,8 +299,14 @@ class NativeNavBar extends StreamlitComponentBase<State> {
             return;
         }
 
+        if (COMPONENT_method == "setReadyRegistered") {
+            // Se vuelve a visualizar el navbar al recibir el mensaje de setReadyRegistered
+            this.setState({
+                isVisible: true
+            });
+        }
         // console.debug("handleMessage", event.data);
-        if (COMPONENT_method === "sidebarResponseInfo" && this.props.args.position_mode === "side") {
+        else if (COMPONENT_method === "sidebarResponseInfo" && this.props.args.position_mode === "side") {
             const { isSideOpen, pageId, expandSubMenu, selectedSubMenu } = event.data;
             // console.debug(key, "sidebarResponseInfo: ", "Received sidebarResponseInfo message with expandState: ", isSideOpen);
             this.setState({
@@ -374,9 +383,11 @@ class NativeNavBar extends StreamlitComponentBase<State> {
         // Register component
         this.postRegister(
           args.position_mode,
+          args.is_sticky,
           this.state.expandState,
           args.theme_changer ? this.themes_data[this.state.themeIndex] : null
         );
+        // Se acumulan estos eventos para despues procesarlos cuando se termine de montar
         this.postSetStyles(args.styles, args.custom_styles);
         this.postIframeState(args.position_mode, args.is_sticky);
         this.postSidebarGetState();
@@ -502,7 +513,7 @@ class NativeNavBar extends StreamlitComponentBase<State> {
 
         // Si el path está vacío, devuelve la página por defecto
         if (!path) {
-            return this.props.args.home.id;
+            return this.props.args.default_page_selected_id;
         }
 
         // Busca el item del menú o submenú que coincida con el path
