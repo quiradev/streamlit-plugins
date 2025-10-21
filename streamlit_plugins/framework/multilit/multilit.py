@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Any, Callable, Dict, Literal, Optional
+from typing import Any, Callable, Dict, Literal, Optional, Tuple
 
 import streamlit
 import streamlit as st
@@ -14,7 +14,7 @@ try:
 except ModuleNotFoundError:
     from streamlit.runtime.scriptrunner_utils.script_requests import ScriptRequestType, RerunData
 
-from streamlit_plugins.components.loader import BaseLoader, LoaderType
+from streamlit_plugins.components.loader import BaseLoader, LoaderType, LoadersLib
 from streamlit_plugins.components.navbar import (
     DEFAULT_THEMES,
     HEADER_HEIGHT,
@@ -112,6 +112,17 @@ class Multilit:
     Class to create a host application for combining multiple streamlit applications.
     """
 
+    def get_page_id(self, page: StreamlitPage) -> str:
+        return page._script_hash
+
+    # def _encode_hyauth(self):
+    #     user_access_level, username = self.check_access()
+    #     payload = {"exp": datetime.now(timezone.utc) + timedelta(days=1), "userid": username,"user_level":user_access_level}
+    #     return jwt.encode(payload, self._multilit_url_hash, algorithm="HS256")
+
+    # def _decode_hyauth(self,token):
+    #     return jwt.decode(token, self._multilit_url_hash, algorithms=["HS256"])
+
     def __init__(
         self,
         title='Multilit Apps',
@@ -124,7 +135,6 @@ class Multilit:
         navbar_theme=None,
         navbar_sticky=True,
         navbar_mode: NavbarPositionType = 'under',
-        use_loader=True,
         use_cookie_cache=True,
         sidebar_state: InitialSideBarState = 'auto',
         allow_url_nav=False,
@@ -138,60 +148,75 @@ class Multilit:
         login_info_session_key="logged_in",
         navigation_theme_changer=True,
         allowed_origins=None,
+        use_loader=True,
+        loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ] | None = None,
+        loading_between_pages: bool = True,
         loader: LoaderType = None,
         **kwargs
     ):
         """
-        A class to create an Multi-app Streamlit application. This class will be the host application for multiple applications that are added after instancing.
-        The secret saurce to making the different apps work together comes from the use of a global session store that is shared with any MultiHeadApp that is added to the parent MultiApp.
-        The session store is created when this class is instanced, by default the store contains the following variables that are used across the child apps:
-            - previous_page
-            - queued_page
-            - preserve_state
-            - allow_access
-            - current_user
-        More global values can be added by passing in a Dict when instancing the class, the dict needs to provide a name and default value that will be added to the global session store.
+        Initializes a Multi-page Streamlit application that allows combining several pages into a single interface, managing navigation, global state, and authentication.
+
         Parameters
-        -----------
-        title: str, 'Streamlit MultiApp'
-            The title of the parent app, this name will be used as the application (web tab) name.
-        nav_container: Streamlit.container, None
-            A container in which to populate the navigation buttons for each attached MultiHeadApp. Default will be a horizontal aligned banner style over the child applications. If the Streamlit sidebar is the target container, the navigation items will appear at the top and the default state of the sidebar will be expanded.
-        nav_horizontal: bool, True
-            To align the navigation buttons horizonally within the navigation container, if False, the items will be aligned vertically.
-        layout: str, 'wide'
-            The layout format to be used for all app pages (MultiHeadApps), same as the layout variable used in `set_page_config <https://docs.streamlit.io/en/stable/api.html?highlight=set_page_config#streamlit.set_page_config>`.
-        favicon: str
-            An inline favicon image to be used as the application favicon.
-        allow_url_nav: bool False
-            Enable navigation using url parameters, this allows for bookmarking and using internal links for navigation
-        use_navbar: bool, False
-            Use the Multilit Navbar component or internal Streamlit components to create the nav menu. Currently Multilit Navbar doesn't support dropdown menus.
-        navbar_theme: Dict, None
-            Override the Multilit Navbar theme, you can overrider only the part you wish or the entire theme by only providing details of the changes.
-                - txc_inactive: Inactive Menu Item Text color
-                - menu_background: Menu Background Color
-                - txc_active: Active Menu Item Text Color
-                - option_active: Active Menu Item Color
-            example, navbar_theme = {'txc_inactive': '#FFFFFF','menu_background':'red','txc_active':'yellow','option_active':'blue'}
-        navbar_sticky: bool, True
-            Set navbar to be sticky and fixed to the top of the window.
-        use_loader: bool, True
-            Set if to use the app loader with auto transition spinners or load directly.
-        navbar_animation: bool, False
-            Set navbar is menu transitions should be animated.
-        sidebar_state: str, 'auto'
-            The starting state of the sidebase, same as variable used in `set_page_config <https://docs.streamlit.io/en/stable/api.html?highlight=set_page_config#streamlit.set_page_config>`.
-        hide_streamlit_markers: bool, False
-            A flag to hide the default Streamlit menu hamburger button and the footer watermark.
-        use_banner_images: str or Array, None
-            A path to the image file to use as a banner above the menu or an array of paths to use multiple images spaced using the rations from the banner_spacing parameter.
-        banner_spacing: Array, None
-            An array to specify the alignment of the banner images, this is the same as the array spec used by Streamlit Columns, if you want centered with 20% padding either side -> banner_spacing =[20,60,20]
-        clear_cross_app_sessions: bool, True
-            A flag to indicate if the local session store values within individual apps should be cleared when moving to another app, if set to False, when loading sidebar controls, will be a difference between expected and selected.
-        session_params: Dict
-            A Dict of parameter name and default values that will be added to the global session store, these parameters will be available to all child applications and they can get/set values from the store during execution.
+        ----------
+        title : str, optional (default 'Multilit Pages')
+            Title of the main application (appears in the browser tab).
+        nav_container : streamlit.container, optional
+            Container where the navigation bar is rendered. If None, a default one is created.
+        nav_horizontal : bool, optional (default True)
+            If True, navigation items are aligned horizontally; if False, vertically.
+        layout : Layout, optional (default "wide")
+            Layout of the main Streamlit page.
+        favicon : str, optional (default "🤹‍♀️")
+            Emoji or image path for the application favicon.
+        use_st_navigation_navbar : bool, optional
+            **Deprecated**. Use `use_st_navigation` instead.
+        use_st_navigation : bool, optional
+            If True, uses Streamlit's native navigation.
+        navbar_theme : dict, optional
+            Dictionary to customize the navigation bar theme.
+        navbar_sticky : bool, optional (default True)
+            If True, the navigation bar remains fixed at the top.
+        navbar_mode : NavbarPositionType, optional (default 'under')
+            Position of the navigation bar: 'top', 'under', 'side', etc.
+        use_cookie_cache : bool, optional (default True)
+            If True, uses cookies to store user access state.
+        sidebar_state : InitialSideBarState, optional (default 'auto')
+            Initial state of the Streamlit sidebar.
+        allow_url_nav : bool, optional (default False)
+            Allows navigation between pages using URL parameters.
+        hide_streamlit_markers : bool, optional (default False)
+            Hides the Streamlit menu and watermark.
+        use_banner_images : str or list, optional
+            Image or list of images to display as a banner above the navigation bar.
+        banner_spacing : list, optional
+            Spacing of the banner images (similar to Streamlit column specification).
+        clear_cross_page_sessions : bool, optional (default True)
+            If True, clears session state when changing pages.
+        session_params : dict, optional
+            Dictionary of additional parameters for the global session state.
+        verbose : bool, optional (default False)
+            If True, shows detailed error messages in the interface.
+        within_fragment : bool, optional (default False)
+            If True, the navigation bar is rendered within an experimental fragment.
+        login_info_session_key : str, optional (default "logged_in")
+            Session state key to identify if the user is authenticated.
+        navigation_theme_changer : bool, optional (default True)
+            Allows changing the navigation theme from the interface.
+        allowed_origins : list, optional
+            List of allowed origins for messages between components.
+        use_loader : bool, optional (default True)
+            If True, shows a loader/spinner when changing pages.
+        loader_lib : LoadersLib or Callable, optional
+            Library or custom function for loaders.
+        loading_between_pages: bool, optional (default True)
+            If True, shows the loader when navigating between pages. If False, show loader on every page run.
+        loader : LoaderType, optional
+            Custom loader for the application.
+        **kwargs : dict
+            Other additional parameters.
+
+        The instance manages the shared global state between all pages, navigation, authentication, and visual customization.
         """
 
         if allowed_origins is None:
@@ -248,10 +273,10 @@ class Multilit:
 
         self._banners = use_banner_images
         self._banner_spacing = banner_spacing
-        
+
         self._use_cookie_cache = use_cookie_cache
         self._cookie_manager = None
-        
+
         self._session_attrs = {}
         # self._call_queue = []
         # self._other_nav = None
@@ -298,6 +323,7 @@ class Multilit:
         self._page_container = page_view.container()
 
         self._user_loader = use_loader
+        self._loading_between_pages = loading_between_pages
         if self._user_loader:
             self._loader_container = st.container(key=LOADER_MULTILIT_KEY)
             with self._loader_container:
@@ -305,7 +331,7 @@ class Multilit:
                     f"<style>\ndiv:has(>.st-key-{LOADER_MULTILIT_KEY}){{\nheight: 0; position: absolute;\n}}\n</style>",
                     unsafe_allow_html=True
                 )
-            self._default_loader = loader or LoadingEngine.get_default_loader(self._loader_container)
+            self._default_loader = loader or LoadingEngine.get_default_loader(self._loader_container, loader_lib=loader_lib)
             self._loading_engine = LoadingEngine(self._default_loader)
 
         self.cross_session_clear = clear_cross_page_sessions
@@ -329,17 +355,6 @@ class Multilit:
         for key, item in self._session_attrs.items():
             if not hasattr(st.session_state, key):
                 st.session_state[key] = item
-
-    # def _encode_hyauth(self):
-    #     user_access_level, username = self.check_access()
-    #     payload = {"exp": datetime.now(timezone.utc) + timedelta(days=1), "userid": username,"user_level":user_access_level}
-    #     return jwt.encode(payload, self._multilit_url_hash, algorithm="HS256")
-
-    # def _decode_hyauth(self,token):
-    #     return jwt.decode(token, self._multilit_url_hash, algorithms=["HS256"])
-
-    def get_page_id(self, page: StreamlitPage) -> str:
-        return page._script_hash
 
     def change_page(self, page: StreamlitPage, scope: Literal["app", "fragment"] = "app"):
         page_id = self.get_page_id(page)
@@ -770,7 +785,7 @@ class Multilit:
             )
         raise e
 
-    def _run_selected(self, page: STPageWrapper):
+    def _run_selected(self, page: STPageWrapper, has_loading=False):
         page_label = None
         try:
             # print("Running", app_label)
@@ -785,12 +800,12 @@ class Multilit:
             # with self._theme_change_container:
             #     self._run_change_theme()
 
-            if page.has_loading():
+            if page.has_loading() and has_loading:
                 loading_engine = self._loading_engine
                 if page.loading_engine is not None:
                     loading_engine = page.loading_engine
                 
-                with loading_engine.loading(status_msg=page_label or ""):
+                with loading_engine.loading(label=page_label or ""):
                     with self._page_container:
                         page.run()
             else:
@@ -997,7 +1012,8 @@ class Multilit:
                 raise ValueError(f"App id {page_id} not found in the list of apps")
 
             # Llegado a este punto, se ejecuta la pagina seleccionada
-            self._run_selected(page_wrapper)
+            has_loading = ((prev_page_id != actual_page_id) and self._loading_between_pages) or not self._loading_between_pages
+            self._run_selected(page_wrapper, has_loading=has_loading)
 
     def default_home_dashboard(self):
         def default_home_wrapper():

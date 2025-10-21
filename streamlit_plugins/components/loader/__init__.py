@@ -1,8 +1,9 @@
+import inspect
 from abc import ABC, abstractmethod
 import atexit
 import time
 from enum import Enum, auto
-from typing import TypeVar
+from typing import TypeVar, Callable, Tuple, Optional
 
 import streamlit as st
 
@@ -3380,7 +3381,7 @@ def standard_loaders(index=0):
 
     element_style = SHOWCASE2_GLOBAL_STYLES
 
-    return element_code, outer_style + element_style
+    return element_code, outer_style + element_style, ""
 
 
 def book_loader(**kwargs):
@@ -3427,9 +3428,9 @@ def book_loader(**kwargs):
             display: flex;
             justify-content: center;
         }
-        .book-container, book-parent:after {
-            opacity: 0;
-            animation: fadeInOpacity 0.5s ease-in-out forwards;
+        .book-container, .book-parent:after {
+            opacity: 1;
+            /* animation: fadeInOpacity 0.5s ease-in-out forwards; */
         }
         .book-parent {
             position: fixed;
@@ -3451,9 +3452,10 @@ def book_loader(**kwargs):
             content: "";
             position: fixed;
             top: 0;
+            left: 0;
             width: 100vw;
             height: 100vh;
-            background: #ffffff40;
+            background: ||-bcolor-||;
             backdrop-filter: blur(2px);
             z-index: 999;
         }
@@ -4364,7 +4366,7 @@ def book_loader(**kwargs):
 
     out_style = """
     <style>
-        .book-container, book-parent:after {
+        .book-container, .book-parent:after {
             animation: fadeOutOpacity 0.3s ease-in-out forwards !important;
         }
         @keyframes fadeOutOpacity {
@@ -4391,7 +4393,7 @@ class LoadersLib(Enum):
     book_loader = auto()
 
 
-def get_loader(loader_name, **kwargs) -> tuple[str, str, str]:
+def get_loader(loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ], **kwargs) -> Tuple[str, str, str]:
     loader_map = {
         LoadersLib.points_line: points_line,
         LoadersLib.grid_points: grid_points,
@@ -4402,10 +4404,12 @@ def get_loader(loader_name, **kwargs) -> tuple[str, str, str]:
         LoadersLib.pretty_loaders: showcase_pretty,
         LoadersLib.book_loader: book_loader
     }
-    if loader_name in loader_map:
-        return loader_map[loader_name](**kwargs)
+    if loader_lib in loader_map:
+        return loader_map[loader_lib](**kwargs)
+    elif inspect.isfunction(loader_lib):
+        return loader_lib(**kwargs)
     else:
-        return book_loader(**kwargs)
+        raise ValueError("Invalid loader type provided. Must be a LoadersLib enum or a callable function.")
 
 
 class BaseLoader(ABC):
@@ -4413,44 +4417,66 @@ class BaseLoader(ABC):
         atexit.register(self.stop_loader)
     
     @abstractmethod
-    def run_loader(self):
-        pass
+    def run_loader(self, label: str | None = None, height: int = None, primary_color: str = None, background_color: str = None):
+        raise NotImplementedError("Subclasses must implement run_loader method.")
 
     @abstractmethod
     def stop_loader(self):
-        pass
+        raise NotImplementedError("Subclasses must implement stop_loader method.")
 
 LoaderType = TypeVar('LoaderType', bound=BaseLoader)
 
+
 class DefaultLoader(BaseLoader):
+    LOADER_KEY = 'default_loader_container'
+
     def __init__(self,
-        loader_container=None, text='', loader_name: LoadersLib = LoadersLib.book_loader, height=256,
-        index=0, primary_color=None
+        loader_container=None,
+        label='', height=256,
+        primary_color=None, background_color=None,
+        loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ] = LoadersLib.book_loader, index=0, **kwargs
     ):
         super().__init__()
 
         if loader_container is None:
-            loader_container = st.container()
-
+            loader_container = st.container(key=self.LOADER_KEY)
+            with loader_container:
+                st.markdown(
+                    f"<style>\ndiv:has(>.st-key-{self.LOADER_KEY}){{\nheight: 0; position: absolute;\n}}\n</style>",
+                    unsafe_allow_html=True
+                )
         self.loader_container = loader_container
-        # primary_color = st.get_option('theme.primaryColor')
+
         if primary_color is None:
             if st.get_option('theme.primaryColor') is None:
                 primary_color = '#F63366'
             else:
                 primary_color = st.get_option('theme.primaryColor')
 
-        if st.get_option('theme.backgroundColor') is None:
-            background_color = '#0E1117'
-        else:
-            background_color = st.get_option('theme.primaryColor')
+        if background_color is None:
+            if st.get_option('theme.backgroundColor') is None:
+                if st.context.theme.get('type') == 'light':
+                    background_color = '#ffffff40'
+                elif st.context.theme.get('type') == 'dark':
+                    background_color = '#0e111740'
+                else:
+                    background_color = '#0e111740'
+            else:
+                background_color = st.get_option('theme.primaryColor') or '#0e111740'
 
-        height_str = '{}{}'.format(str(height), 'px')
+        self.default_label = label
+        self.default_height = height
+        self.default_primary_color = primary_color
+        self.default_background_color = background_color
 
-        loader_div, loader_style, loader_output_style = get_loader(loader_name, index=index)
+        height_css = self._parse_height_css(height)
 
-        self.element_code = loader_div.replace("||-label-||", text)
-        self.element_style = loader_style.replace('||-height-||', height_str)
+        loader_div, loader_style, loader_output_style = get_loader(loader_lib, index=index, **kwargs)
+        self.loader_div = loader_div
+        self.loader_style = loader_style
+
+        self.element_code = loader_div.replace("||-label-||", label)
+        self.element_style = loader_style.replace('||-height-||', height_css)
         self.element_style = self.element_style.replace('||-pcolor-||', primary_color)
         self.element_style = self.element_style.replace('||-bcolor-||', background_color)
 
@@ -4463,21 +4489,45 @@ class DefaultLoader(BaseLoader):
 
         atexit.register(self.stop_loader)
 
-    def run_loader(self):
+    @staticmethod
+    def _parse_height_css(height: int | str) -> str:
+        if isinstance(height, (int, float)):
+            return f'{height}px'
+        elif isinstance(height, str):
+            return height
+        else:
+            raise ValueError("Height must be an int, float, or str representing CSS height.")
+
+    def run_loader(self, label: Optional[str] = None, height: Optional[str | int] = None, primary_color: str = None, background_color: str = None):
         self.running = True
+
+        element_code = self.element_code
+        if label is not None and self.default_label != label:
+            element_code = self.loader_div.replace("||-label-||", label)
+
+        element_style = self.element_style
+        if height is not None and height != self.default_height:
+            height_css = self._parse_height_css(height)
+            element_style = self.loader_style.replace('||-height-||', height_css)
+            element_style = element_style.replace('||-pcolor-||', primary_color or self.default_primary_color)
+            element_style = element_style.replace('||-bcolor-||', background_color or self.default_background_color)
+
         with self.loader_container:
             self.display_element_out.empty()
-            self.display_element.markdown(self.element_style+self.element_code, unsafe_allow_html=True)
+            time.sleep(0.2)  # Pequeña pausa para evitar parpadeos
+            self.display_element.markdown(element_style+element_code, unsafe_allow_html=True)
+            print("Loader started.")
 
     def stop_loader(self):
         if self.running:
             with self.loader_container:
                 self.display_element_out.markdown(self.element_out_style, unsafe_allow_html=True)
-
-            time.sleep(0.3)
-            self.running = False
-            with self.loader_container:
+                # Para que se termine la animacion de salida y no se vea como parpadeos
+                time.sleep(0.3)
                 self.display_element.empty()
+                self.display_element_out.empty()
+                self.running = False
+                print("Loader stopped.")
 
     def __enter__(self):
         self.run_loader()
