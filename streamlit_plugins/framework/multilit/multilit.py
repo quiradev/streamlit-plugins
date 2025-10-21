@@ -21,7 +21,7 @@ from streamlit_plugins.components.navbar import (
     NavbarPositionType,
     init_navigation_transition, get_navigation_transition,
     set_default_page, set_force_next_page, set_navigation_transition,
-    st_navigation, st_switch_page,
+    st_navigation, st_switch_page, has_changed_page,
 )
 from .app_wrapper import STPageWrapper
 from .loading_engine import LoadingEngine
@@ -150,7 +150,7 @@ class Multilit:
         allowed_origins=None,
         use_loader=True,
         loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ] | None = None,
-        loading_between_pages: bool = True,
+        only_loading_between_pages: bool = True,
         loader: LoaderType = None,
         **kwargs
     ):
@@ -209,7 +209,7 @@ class Multilit:
             If True, shows a loader/spinner when changing pages.
         loader_lib : LoadersLib or Callable, optional
             Library or custom function for loaders.
-        loading_between_pages: bool, optional (default True)
+        only_loading_between_pages: bool, optional (default True)
             If True, shows the loader when navigating between pages. If False, show loader on every page run.
         loader : LoaderType, optional
             Custom loader for the application.
@@ -323,7 +323,7 @@ class Multilit:
         self._page_container = page_view.container()
 
         self._user_loader = use_loader
-        self._loading_between_pages = loading_between_pages
+        self._only_loading_between_pages = only_loading_between_pages
         if self._user_loader:
             self._loader_container = st.container(key=LOADER_MULTILIT_KEY)
             with self._loader_container:
@@ -343,10 +343,9 @@ class Multilit:
 
         self.login_info_session_key = login_info_session_key
         self._session_attrs = {
-            'previous_page': None, 'actual_page': None, 'queued_page': None,'force_nav_page': None,
-            'url_nav_page': None,
-            'preserve_state': preserve_state, 'allow_access': self._no_access_level,
-            login_info_session_key: None, 'access_hash': None, 'uncaught_error': None
+            'multilit_transition_state': None,
+            'multilit_preserve_state': preserve_state, 'multilit_allow_access': self._no_access_level,
+            login_info_session_key: None, 'multilit_access_hash': None, 'multilit_uncaught_error': None
         }
 
         if isinstance(self._user_session_params, dict):
@@ -361,20 +360,6 @@ class Multilit:
         if page_id not in self._pages and page_id != self._home_id:
             raise ValueError(f"Page id {page_id} not found in the list of pages")
 
-        # st.session_state["queued_page"] = page_id
-        # ctx = get_script_run_ctx()
-        # if ctx is not None:
-        #     if page_id != ctx.page_script_hash:
-        #         ctx.pages_manager.set_current_page_script_hash(page_id)
-        #         rerun_data = RerunData(
-        #             query_string=ctx.query_string,
-        #             page_script_hash=page_id,
-        #             fragment_id_queue=_new_fragment_id_queue(ctx, scope),
-        #             is_fragment_scoped_rerun=scope == "fragment",
-        #         )
-        #         raise RerunException(rerun_data)
-        # else:
-        #     st.rerun()
         st_switch_page(page_id, native_way=self._use_st_navigation)
 
     def change_page_button(self, page: StreamlitPage, label: str):
@@ -387,26 +372,30 @@ class Multilit:
         page_type: Literal["normal", "home", "login", "settings", "account"] = "normal",
         access_level: int | None = None,
         with_loader: Optional[bool] = None,
-        page_loader: BaseLoader | None = None
+        page_loader: BaseLoader | None = None,
+        page_loader_kwargs: dict = None,
     ):
         """
-        Adds a new application to this MultiApp
+        Adds a new page to this MultiApp.
+
         Parameters
         ----------
-        title: str
-            The title of the app. This is the name that will appear on the menu item for this app.
-        app: :MultiHeadApp:`~Multilit.MultiHeadApp`
-            The app class representing the app to include, it must implement inherit from MultiHeadApp classmethod.
-        icon: str
-            The icon to use on the navigation button, this will be appended to the title to be used on the navigation control.
-        app_type: str, 'normal'
-            The type of app, this will determine the behaviour of the app within the MultiApp.
-        login_callback: callable, None
-            A function to call when the login app is loaded, this function will be called with the session state and the parent MultiApp instance.
-        logout_callback: callable, None
-            A function to call when the logout app is loaded, this function will be called with the session state and the parent MultiApp instance.
-        access_level: int | None, None
-            The access level of the app.
+        page : StreamlitPage
+            The page instance to add.
+        title : str, optional
+            The title to display in the navigation menu for this page.
+        icon : str, optional
+            The icon to use in the navigation menu for this page.
+        page_type : Literal["normal", "home", "login", "settings", "account"], default "normal"
+            The type of page, which determines its behavior in the MultiApp.
+        access_level : int, optional
+            The access level required to view this page.
+        with_loader : bool, optional
+            Whether to use a loading animation when switching to this page.
+        page_loader : BaseLoader, optional
+            Custom loader to use for this page.
+        page_loader_kwargs : dict, optional
+            Additional keyword arguments for the page loader.
         """
 
         title = title or page.title
@@ -418,7 +407,10 @@ class Multilit:
 
         app_wrapper = STPageWrapper(
             page, with_loader=with_loader,
-            loading_engine=LoadingEngine(page_loader or self._default_loader)
+            loading_engine=LoadingEngine(
+                page_loader or self._default_loader.recreate_loader_with(label=title),
+                loader_kwargs=page_loader_kwargs
+            )
         )
         app_wrapper.access_level = access_level
         app_wrapper.id = page_id
@@ -518,8 +510,6 @@ class Multilit:
         return SectionWithStatement(title, _exit_fn)
 
     def _build_run_nav_menu(self) -> StreamlitPage:
-        # number_of_sections = int(self._login_page is not None) + len(self._complex_nav.keys())
-
         home_page = self._home_page.st_page if self._home_page is not None else None
         login_page = self._login_page.st_page if self._login_page is not None else None
         account_page = self._account_page.st_page if self._account_page is not None else None
@@ -529,39 +519,14 @@ class Multilit:
             logout_page = FNStreamlitPage(self._do_logout, title="Logout", icon=":material/logout:")
             self._logout_id = self.get_page_id(logout_page)
             self._pages[self._logout_id] = STPageWrapper(logout_page)
-        
-        # native_position = "sidebar" if self._use_st_navigation else "hidden"
-        natives_page_data = self.build_native_pages_data_from(
-            home_page, # login_page, account_page, settings_page, logout_page
-        )
-        # new_navigation_page = st.navigation(natives_page_data, position=native_position)
-        # new_navigation_page_id = new_navigation_page._script_hash
-        # prev, actual, queued = self.get_nav_transition()
-        # updated_with_navigation = False
-        # if new_navigation_page_id != actual:
-        #     updated_with_navigation = True
-        #     st.session_state["force_nav_page"] = new_navigation_page_id
-        #     self.update_nav_transition(actual, new_navigation_page_id, None)
 
-        # if not self._use_st_navigation_navbar:
-            # menu_definition, home_definition, account_login_definition, pages_map = build_menu_from_st_pages(
-            #     *list(self._complex_nav.values()),
-            #     home_page=home_page,
-            #     login_page=login_page, account_page=account_page, settings_page=settings_page,
-            #     logout_page=logout_page,
-            # )
-            # self.pages_map = pages_map
+        natives_page_data = self.build_native_pages_data_from(
+            home_page,
+        )
 
         with self._nav_container:
             page = self._run_navbar(natives_page_data, login_page, account_page, settings_page, logout_page)
-                # if new_navbar_page_id != st.session_state["actual_page"]:
-                #     st.session_state["queued_page"] = new_navbar_page_id
-                
-                # if updated_with_navigation:
-                #     self.update_nav_transition
-                #     st.session_state["force_nav_page"] = None
-                # st.session_state["queued_page"] = new_app_id
-        
+
         return page
 
     def build_native_pages_data_from(self, home_page, login_page=None, account_page=None, settings_page=None, logout_page=None):
@@ -592,34 +557,9 @@ class Multilit:
     def _fragment_navbar(self, natives_page_data, login_page, account_page, settings_page, logout_page, styles: str | None = None):
         new_page_id = self._standalone_navbar(natives_page_data, login_page, account_page, settings_page, logout_page, styles=styles)
 
-        # if new_page_id != st.session_state["queued_page"]:
-        #     st.session_state["queued_page"] = new_page_id
-        
-        # ctx = get_script_run_ctx()
-        # page_script_hash = ctx.active_script_hash
-        # rerun_data = RerunData(
-        #     query_string=ctx.query_string,
-        #     page_script_hash=page_script_hash,
-        # )
-        # raise RerunException(rerun_data)
-
         return new_page_id
 
     def _standalone_navbar(self, natives_page_data, login_page, account_page, settings_page, logout_page, styles: str | None = None) -> StreamlitPage:
-        # override_app_selected_id = None
-        # if st.session_state["force_nav_page"]:
-        #     override_app_selected_id = st.session_state["force_nav_page"]
-        #     st.session_state["force_nav_page"] = None
-
-        # new_app_id = st_navbar(
-        #     menu_definition=menu_definition, key="mainMultilitNavbar", home_definition=home_definition,
-        #     override_theme=self._navbar_theme, login_definition=account_login_definition,
-        #     hide_streamlit_markers=self._hide_streamlit_markers,
-        #     default_page_selected_id=override_app_selected_id or st.session_state["queued_page"],
-        #     override_page_selected_id=override_app_selected_id,
-        #     sticky_nav=self._navbar_sticky, position_mode=self._navbar_mode, reclick_load=True,
-        #     input_styles=styles
-        # )
         page = st_navigation(
             natives_page_data,
             section_info={
@@ -636,7 +576,7 @@ class Multilit:
             themes_data=self._navbar_theme,
             theme_changer=self._navigation_theme_changer
         )
-        if self.cross_session_clear and st.session_state["preserve_state"]:
+        if self.cross_session_clear and st.session_state["multilit_preserve_state"]:
             self._clear_session_values()
 
         return page
@@ -721,33 +661,6 @@ class Multilit:
 
         return page
 
-    def _get_next_app_info(self):
-        if st.session_state["queued_page"] is None:
-            page_id = st.session_state["actual_page"]
-
-        else:
-            if st.session_state["force_nav_page"] is not None:
-                st.session_state["previous_page"] = st.session_state["queued_page"]
-                st.session_state["queued_page"] = st.session_state["force_nav_page"]
-                st.session_state["force_nav_page"] = None
-
-            elif st.session_state["url_nav_page"] is not None:
-                st.session_state["previous_page"] = st.session_state["queued_page"]
-                st.session_state["queued_page"] = st.session_state["url_nav_page"]
-                st.session_state["url_nav_page"] = None
-
-            page_id = st.session_state["queued_page"]
-
-        app_label = page_id
-        if page_id in self._navbar_pointers:
-            app_label = self._navbar_pointers[page_id][0]
-        if page_id == self._home_id:
-            app_label = self._home_label[0]
-        if page_id == self._logout_id:
-            app_label = self._logout_label[0]
-
-        return page_id, app_label
-
     def _raise_base_exception(self, e, app_label):
         if isinstance(e, RerunException):
             raise e
@@ -774,7 +687,7 @@ class Multilit:
                 with script_requests._lock:
                     script_requests._state = ScriptRequestType.CONTINUE
 
-        st.session_state["uncaught_error"] = trace_err
+        st.session_state["multilit_uncaught_error"] = trace_err
 
         if self._verbose:
             st.error(
@@ -786,14 +699,14 @@ class Multilit:
         raise e
 
     def _run_selected(self, page: STPageWrapper, has_loading=False):
-        page_label = None
+        page_label = page.title
         try:
             # print("Running", app_label)
-            if self._verbose and st.session_state["uncaught_error"]:
+            if self._verbose and st.session_state["multilit_uncaught_error"]:
                 st.error(
-                    f'😭 Error triggered from page: **{st.session_state["queued_page"]}**\n\n'
+                    f'😭 Error triggered from page: **{page_label}**\n\n'
                     f'Details:\n'
-                    f'```{st.session_state["uncaught_error"]}```',
+                    f'```{st.session_state["multilit_uncaught_error"]}```',
                     icon="🚨"
                 )
 
@@ -805,14 +718,14 @@ class Multilit:
                 if page.loading_engine is not None:
                     loading_engine = page.loading_engine
                 
-                with loading_engine.loading(label=page_label or ""):
+                with loading_engine.loading(label=page_label):
                     with self._page_container:
                         page.run()
             else:
                 with self._page_container:
                     page.run()
 
-            st.session_state["uncaught_error"] = None
+            st.session_state["multilit_uncaught_error"] = None
         except Exception as e:
             self._raise_base_exception(e, page_label)
 
@@ -858,10 +771,10 @@ class Multilit:
         """
 
         # Set the global access flag
-        st.session_state["allow_access"] = allow_access
+        st.session_state["multilit_allow_access"] = allow_access
 
         # Also, who are we letting in..
-        st.session_state["current_user"] = access_user
+        st.session_state["multilit_current_user"] = access_user
 
     def check_access(self):
         """
@@ -872,36 +785,10 @@ class Multilit:
         """
         username = None
 
-        if hasattr(st.session_state, 'current_user'):
-            username = str(st.session_state["current_user"])
+        if hasattr(st.session_state, 'multilit_current_user'):
+            username = str(st.session_state["multilit_current_user"])
 
-        return int(st.session_state["allow_access"]), username
-
-    def get_nav_transition(self) -> tuple[None|str, None|str, None|str]:
-        """
-        Check the previous and current page names the user has navigated between
-        Returns
-        ---------
-        tuple: previous_page, current_app
-        """
-
-        return st.session_state.get("previous_page"), st.session_state.get("actual_page"), st.session_state.get("queued_page")
-
-    def update_nav_transition(self, prev_page_id, actual_page_id, next_page_id):
-        st.session_state["previous_page"] = actual_page_id if actual_page_id not in [self._login_id, self._logout_id, prev_page_id] else prev_page_id
-        st.session_state["actual_page"] = actual_page_id
-        st.session_state["queued_page"] = next_page_id
-
-    def _do_url_params(self):
-        if self._allow_url_nav:
-            query_params = st.query_params
-            if 'page' in query_params:
-                # and (query_params['selected'])[0] != st.session_state["previous_page"]:
-                if query_params['page'] != 'None' and query_params['page'] != st.session_state["queued_page"]:
-                    st.session_state["url_nav_page"] = query_params['page']
-                    del query_params['page']
-                else:
-                    st.session_state["url_nav_page"] = None
+        return int(st.session_state["multilit_allow_access"]), username
 
     def enable_guest_access(self, guest_access_level=1, guest_username='guest'):
         """
@@ -988,8 +875,8 @@ class Multilit:
         # Verifico la autenticacion (self.login_info_session_key) y la autorizacion (allow_access)
         if not self._check_login_callback() and page_id != self._login_id:
             # Se pasa a la pagina de login
-            st.session_state["current_user"] = None
-            st.session_state["access_hash"] = None
+            st.session_state["multilit_current_user"] = None
+            st.session_state["multilit_access_hash"] = None
             # No hay acceso, se redirige a login
             st_switch_page(self._login_id, native_way=self._use_st_navigation)
 
@@ -1012,7 +899,7 @@ class Multilit:
                 raise ValueError(f"App id {page_id} not found in the list of apps")
 
             # Llegado a este punto, se ejecuta la pagina seleccionada
-            has_loading = ((prev_page_id != actual_page_id) and self._loading_between_pages) or not self._loading_between_pages
+            has_loading = (has_changed_page() and self._only_loading_between_pages) or not self._only_loading_between_pages
             self._run_selected(page_wrapper, has_loading=has_loading)
 
     def default_home_dashboard(self):
@@ -1148,7 +1035,7 @@ def my_cool_function():
 
         def logout_wrapper(*args, **kwargs):
             st.session_state[self.login_info_session_key] = None
-            st.session_state['allow_access'] = self._no_access_level
+            st.session_state['multilit_allow_access'] = self._no_access_level
 
             prev_page_id, actual_page_id = get_navigation_transition()
             set_navigation_transition(prev_page_id, self._login_id)

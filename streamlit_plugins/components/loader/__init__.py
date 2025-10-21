@@ -4413,11 +4413,25 @@ def get_loader(loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ], *
 
 
 class BaseLoader(ABC):
-    def __init__(self):
+    LOADER_KEY = 'loader_container'
+
+    def __init__(self, loader_container=None, **kwargs):
+        if loader_container is None:
+            loader_container = st.container(key=self.LOADER_KEY)
+            with loader_container:
+                st.markdown(
+                    f"<style>\ndiv:has(>.st-key-{self.LOADER_KEY}){{\nheight: 0; position: absolute;\n}}\n</style>",
+                    unsafe_allow_html=True
+                )
+        self.loader_container = loader_container
+
         atexit.register(self.stop_loader)
-    
+
+    def recreate_loader_with(self, **loader_kwargs) -> "LoaderType":
+        return self.__class__(loader_container=self.loader_container, **loader_kwargs)
+
     @abstractmethod
-    def run_loader(self, label: str | None = None, height: int = None, primary_color: str = None, background_color: str = None):
+    def run_loader(self, **kwargs):
         raise NotImplementedError("Subclasses must implement run_loader method.")
 
     @abstractmethod
@@ -4428,24 +4442,13 @@ LoaderType = TypeVar('LoaderType', bound=BaseLoader)
 
 
 class DefaultLoader(BaseLoader):
-    LOADER_KEY = 'default_loader_container'
-
     def __init__(self,
         loader_container=None,
         label='', height=256,
         primary_color=None, background_color=None,
-        loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ] = LoadersLib.book_loader, index=0, **kwargs
+        loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ] = LoadersLib.book_loader, index=0, loader_lib_kwargs: dict = None
     ):
-        super().__init__()
-
-        if loader_container is None:
-            loader_container = st.container(key=self.LOADER_KEY)
-            with loader_container:
-                st.markdown(
-                    f"<style>\ndiv:has(>.st-key-{self.LOADER_KEY}){{\nheight: 0; position: absolute;\n}}\n</style>",
-                    unsafe_allow_html=True
-                )
-        self.loader_container = loader_container
+        super().__init__(loader_container=loader_container)
 
         if primary_color is None:
             if st.get_option('theme.primaryColor') is None:
@@ -4469,9 +4472,12 @@ class DefaultLoader(BaseLoader):
         self.default_primary_color = primary_color
         self.default_background_color = background_color
 
+        if loader_lib_kwargs is None:
+            loader_lib_kwargs = {}
+
         height_css = self._parse_height_css(height)
 
-        loader_div, loader_style, loader_output_style = get_loader(loader_lib, index=index, **kwargs)
+        loader_div, loader_style, loader_output_style = get_loader(loader_lib, index=index, **loader_lib_kwargs)
         self.loader_div = loader_div
         self.loader_style = loader_style
 
@@ -4516,7 +4522,6 @@ class DefaultLoader(BaseLoader):
             self.display_element_out.empty()
             time.sleep(0.2)  # Pequeña pausa para evitar parpadeos
             self.display_element.markdown(element_style+element_code, unsafe_allow_html=True)
-            print("Loader started.")
 
     def stop_loader(self):
         if self.running:
@@ -4527,7 +4532,6 @@ class DefaultLoader(BaseLoader):
                 self.display_element.empty()
                 self.display_element_out.empty()
                 self.running = False
-                print("Loader stopped.")
 
     def __enter__(self):
         self.run_loader()

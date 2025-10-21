@@ -175,8 +175,8 @@ def run():
 
     multilit.add_page(page=multilit.default_home_dashboard(), page_type="home")
     with multilit.new_section(title="Reports"):
-        multilit.add_page(bugs, with_loader=False)
-        multilit.add_page(alerts)
+        multilit.add_page(bugs)
+        multilit.add_page(alerts, with_loader=False)
     
     with multilit.new_section(title="Tools"):
         multilit.add_page(search)

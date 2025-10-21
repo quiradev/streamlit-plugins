@@ -238,6 +238,7 @@ See the [examples folder](examples/) for detailed implementations and usage scen
 - [ ] Permanent cookies session
 - [ ] Access levels to different pages
 - [X] Account, Settings and Login system out-of-box
+- [ ] Custom theme for every page (When change page automatically change theme on client side)
 
 ### Compontent: Navbar
 - [x] Add Navbar with sidebar mode.

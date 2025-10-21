@@ -10,20 +10,17 @@ logger = logging.getLogger(__name__)
 
 
 class LoadingWithStatement:
-    def __init__(self, loading_engine: "LoadingEngine", label: Optional[str] = None, height: Optional[str | int] = None, primary_color: str = None, background_color: str = None):
+    def __init__(
+        self, loading_engine: "LoadingEngine",
+        **run_loader_kwargs
+    ):
         self.loading_engine = loading_engine
-        self.label = label
-        self.height = height
-        self.primary_color = primary_color
-        self.background_color = background_color
+        self.run_loader_kwargs = run_loader_kwargs
     
     def __enter__(self):
         try:
             self.loading_engine.loader.run_loader(
-                label=self.label,
-                height=self.height,
-                primary_color=self.primary_color,
-                background_color=self.background_color
+                **self.run_loader_kwargs
             )
         # except RerunException as e:
         #     st.rerun()
@@ -38,20 +35,24 @@ class LoadingWithStatement:
 
 
 class LoadingEngine:
-    default_loader: LoadersLib = LoadersLib.book_loader
+    default_loader_lib: LoadersLib = LoadersLib.book_loader
 
-    def __init__(self, loader: LoaderType):
+    def __init__(self, loader: LoaderType, loader_kwargs: dict = None):
+        if loader_kwargs is not None:
+            loader = loader.recreate_loader_with(**loader_kwargs)
         self.loader = loader
 
     @classmethod
     def get_default_loader(cls, loader_container, loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ] = None):
-        loader_lib = loader_lib or cls.default_loader
+        loader_lib = loader_lib or cls.default_loader_lib
         return DefaultLoader(loader_container=loader_container, loader_lib=loader_lib)
 
-    def loading(self, label: Optional[str] = None, height: Optional[str | int] = None, primary_color: str = None, background_color: str = None):
+    def loading(self, **run_loader_kwargs):
         return LoadingWithStatement(
             self,
-            label=label, height=height,
-            primary_color=primary_color,
-            background_color=background_color
+            # Any argument that can be changed dinamically
+            **run_loader_kwargs
+            # label=label, height=height,
+            # primary_color=primary_color,
+            # background_color=background_color
         )

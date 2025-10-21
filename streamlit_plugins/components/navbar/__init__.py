@@ -778,6 +778,9 @@ def st_navigation(
     if "navigation_force_page_id" not in st.session_state:
         st.session_state.navigation_force_page_id = None
 
+    if "navigation_history" not in st.session_state:
+        st.session_state.navigation_history = []
+
     # Build state
     # {
     #     "": [dashboard],
@@ -939,9 +942,37 @@ def st_navigation(
         if prev_page_id not in [logout_page_id, login_page_id]:
             st.session_state["navigation_prev_page_id"] = prev_page_id
         st_switch_page(next_page_id, native_way=native_way)
-    
+
     page._can_be_called = True
+    add_page_to_history(page._script_hash)
     return page
+
+def add_page_to_history(page_id: str):
+    if "navigation_history" not in st.session_state:
+        st.session_state["navigation_history"] = []
+
+    if len(st.session_state.navigation_history) > 0:
+        last_page_id, runs =  st.session_state.navigation_history[-1].split("::")
+        if page_id == last_page_id:
+            st.session_state.navigation_history[-1] = f"{page_id}::{int(runs) + 1}"
+            return
+
+    st.session_state.navigation_history.append(f"{page_id}::1")
+
+def has_changed_page() -> bool:
+    history = st.session_state.get("navigation_history", [])
+    if not history or len(history) < 2:
+        return False
+
+    print("HISTORY", history[-2:])
+    # Verifica si la última página se ejecutó 2 o menos veces y es diferente de la anterior,
+    # o si hay una página antes que es diferente
+    try:
+        actual_page_id, last_runs = history[-1].split("::")
+        prev_page_id, _ = history[-2].split("::")
+        return actual_page_id != prev_page_id and int(last_runs) <= 2
+    except Exception:
+        return False
 
 def set_default_page(page_id: str):
     st.session_state["navigation_default_page_id"] = page_id
@@ -971,7 +1002,8 @@ def st_switch_page(page_id: str, native_way: bool = False):
     if page is None:
         raise ValueError(f"Page with id {page_id} not found")
 
-    st.session_state["navigation_force_page_id"] = page._script_hash
+    # add_page_to_history(page_id)
+    st.session_state["navigation_force_page_id"] = page_id
     if native_way:
         st.switch_page(page)
     else:
