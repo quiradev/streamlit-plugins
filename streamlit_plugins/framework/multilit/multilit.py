@@ -229,7 +229,13 @@ class Multilit:
         self._active_section = None
         self._active_section_icon = None
         self._verbose = verbose
+
         self._within_fragment = within_fragment
+        if within_fragment:
+            logger.warning(
+                "The 'within_fragment' parameter is experimental and may not work as expected in all Streamlit versions.\n"
+                "The known issues is that the navigation only change to other page if it finish loading the current one."
+            )
 
         self._pages: dict[str, STPageWrapper] = {}
         self.pages_map: dict[str, StreamlitPage] = {}

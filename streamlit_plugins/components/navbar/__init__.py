@@ -964,7 +964,7 @@ def has_changed_page() -> bool:
     if not history or len(history) < 2:
         return False
 
-    print("HISTORY", history[-2:])
+    # print("HISTORY", history[-2:])
     # Verifica si la última página se ejecutó 2 o menos veces y es diferente de la anterior,
     # o si hay una página antes que es diferente
     try:
