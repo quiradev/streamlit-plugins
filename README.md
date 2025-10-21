@@ -233,13 +233,22 @@ See the [examples folder](examples/) for detailed implementations and usage scen
 ## Roadmap
 
 ### Framework: Multilit
-- [ ] Use native streamlit multipage system
+- [X] Use native streamlit multipage system
+- [X] Working URL navigation
+- [ ] Permanent cookies session
+- [ ] Access levels to different pages
+- [X] Account, Settings and Login system out-of-box
 
 ### Compontent: Navbar
-- [x] Add Navbar with lateral mode.
+- [x] Add Navbar with sidebar mode.
 - [x] Support for dynamic theme changes.
-- [ ] Add more CSS customization options.
-- [ ] Improve documentation and examples.
+- [X] Add more CSS customization options.
+- [X] Improve documentation and examples.
+- [X] Control Race conditions between python back and frontend COI (It will be nice if streamlit supports for custom messages customizations on custom components)
+
+### Compontent: Theme Changer
+- [X] Client native theme changer
+- [X] Persisten browser cache
 
 ### Compontent: LabelStudio
 - [ ] Expand LabelStudio integration.
