@@ -151,7 +151,7 @@ class Multilit:
         use_loader=True,
         loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ] | None = None,
         only_loading_between_pages: bool = True,
-        loader: LoaderType = None,
+        loader: LoaderType = None, default_loader_params: Dict[str, Any] = None,
         **kwargs
     ):
         """
@@ -331,13 +331,19 @@ class Multilit:
         self._user_loader = use_loader
         self._only_loading_between_pages = only_loading_between_pages
         if self._user_loader:
-            self._loader_container = st.container(key=LOADER_MULTILIT_KEY)
-            with self._loader_container:
-                st.markdown(
-                    f"<style>\ndiv:has(>.st-key-{LOADER_MULTILIT_KEY}){{\nheight: 0; position: absolute;\n}}\n</style>",
-                    unsafe_allow_html=True
+            self._default_loader = loader
+            if loader is None:
+                self._loader_container = st.container(key=LOADER_MULTILIT_KEY)
+                with self._loader_container:
+                    st.markdown(
+                        f"<style>\ndiv:has(>.st-key-{LOADER_MULTILIT_KEY}){{\nheight: 0; position: absolute;\n}}\n</style>",
+                        unsafe_allow_html=True
+                    )
+                self._default_loader = LoadingEngine.get_default_loader(
+                    self._loader_container,
+                    loader_params=default_loader_params or {},
+                    loader_lib=loader_lib
                 )
-            self._default_loader = loader or LoadingEngine.get_default_loader(self._loader_container, loader_lib=loader_lib)
             self._loading_engine = LoadingEngine(self._default_loader)
 
         self.cross_session_clear = clear_cross_page_sessions

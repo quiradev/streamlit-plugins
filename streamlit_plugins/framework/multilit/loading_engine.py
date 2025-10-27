@@ -43,9 +43,13 @@ class LoadingEngine:
         self.loader = loader
 
     @classmethod
-    def get_default_loader(cls, loader_container, loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ] = None):
+    def get_default_loader(cls, loader_container, loader_params: dict = None, loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ] = None) -> DefaultLoader:
         loader_lib = loader_lib or cls.default_loader_lib
-        return DefaultLoader(loader_container=loader_container, loader_lib=loader_lib)
+        return DefaultLoader(
+            loader_container=loader_container,
+            **loader_params,
+            loader_lib=loader_lib
+        )
 
     def loading(self, **run_loader_kwargs):
         return LoadingWithStatement(

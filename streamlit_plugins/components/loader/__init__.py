@@ -4465,11 +4465,13 @@ class DefaultLoader(BaseLoader):
                 else:
                     background_color = '#0e111740'
             else:
-                background_color = st.get_option('theme.primaryColor') or '#0e111740'
+                background_color = st.get_option('theme.backgroundColor') or '#0e111740'
 
         self.default_label = label
         self.default_height = height
         self.default_primary_color = primary_color
+        if background_color.startswith('#') and len(background_color) == 7:
+            background_color = f"{background_color}40"
         self.default_background_color = background_color
 
         if loader_lib_kwargs is None:
@@ -4517,11 +4519,14 @@ class DefaultLoader(BaseLoader):
             element_style = self.loader_style.replace('||-height-||', height_css)
             element_style = element_style.replace('||-pcolor-||', primary_color or self.default_primary_color)
             element_style = element_style.replace('||-bcolor-||', background_color or self.default_background_color)
+            print(background_color or self.default_background_color)
+        print(self.default_background_color)
 
         with self.loader_container:
             self.display_element_out.empty()
             time.sleep(0.2)  # Pequeña pausa para evitar parpadeos
             self.display_element.markdown(element_style+element_code, unsafe_allow_html=True)
+            time.sleep(5)
 
     def stop_loader(self):
         if self.running:

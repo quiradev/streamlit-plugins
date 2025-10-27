@@ -7,5 +7,6 @@ if __name__ == '__main__':
 
     _config.set_option("browser.gatherUsageStats", False)
     _config.set_option("server.headless", True)
+    _config.set_option("server.address", "0.0.0.0")
 
     bootstrap.run(str(Path(__file__).parent / "multi_page.py"), False, [], flag_options={})
