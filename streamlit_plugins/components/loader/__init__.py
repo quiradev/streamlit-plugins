@@ -4519,8 +4519,8 @@ class DefaultLoader(BaseLoader):
             element_style = self.loader_style.replace('||-height-||', height_css)
             element_style = element_style.replace('||-pcolor-||', primary_color or self.default_primary_color)
             element_style = element_style.replace('||-bcolor-||', background_color or self.default_background_color)
-            print(background_color or self.default_background_color)
-        print(self.default_background_color)
+            # print(background_color or self.default_background_color)
+        # print(self.default_background_color)
 
         with self.loader_container:
             self.display_element_out.empty()
