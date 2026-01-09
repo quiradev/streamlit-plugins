@@ -1,0 +1,74 @@
+.custom-select-root {
+    position: relative;
+}
+
+.select-btn {
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.select-btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.select-list {
+    display: none;
+    position: absolute;
+    z-index: 999;
+    left: 0;
+    right: 0;
+    margin-top: 6px;
+    padding: 6px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    list-style: none;
+    max-height: 260px;
+    overflow: auto;
+}
+
+.select-item {
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.select-item:hover {
+    background: #f5f5f5;
+}
+
+.select-add {
+    display: flex;
+    gap: 8px;
+    padding: 6px 8px;
+}
+
+.select-add input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    margin-left: 8px;
+}
+
+.material-icon {
+    font-family: monospace;
+    background: #efefef;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+}

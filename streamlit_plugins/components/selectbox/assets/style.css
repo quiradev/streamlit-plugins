@@ -1,0 +1,222 @@
+.custom-select-root {
+    position: relative;
+}
+
+.select-btn {
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid var(--st-border-color);
+    border-radius: var(--st-base-radius);
+    background: var(--st-secondary-background-color);
+    cursor: pointer;
+}
+
+.select-btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.select-list {
+    display: none;
+    position: absolute;
+    z-index: 999;
+    left: 0;
+    right: 0;
+    margin-top: 6px;
+    padding: 6px;
+    border: 1px solid var(--st-dataframe-border-color);
+    border-radius: var(--st-base-radius);
+    background: var(--st-background-color);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    list-style: none;
+    max-height: 260px;
+    overflow: auto;
+}
+
+.select-item {
+    padding: 8px 10px;
+    border-radius: var(--st-base-radius);
+    cursor: pointer;
+}
+
+.select-item:hover {
+    background: #f5f5f5;
+}
+
+.select-add {
+    display: flex;
+    gap: 8px;
+    padding: 6px 8px;
+}
+
+.select-add input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid var(--st-border-color);
+    border-radius: var(--st-base-radius);
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    margin-left: 8px;
+}
+
+.material-icon {
+    font-family: monospace;
+    background: var(--st-gray-background-color);
+    padding: 2px 6px;
+    border-radius: var(--st-base-radius);
+    margin-left: 6px;
+}
+
+/* Shortcode classes that use CSS variables defined in :root */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    margin-left: 8px;
+    color: #fff;
+    background: var(--st-gray-color);
+}
+
+/* solid badges (use --st-<color>-color for bg and --st-<color>-text-color as foreground when available) */
+.badge--red {
+    background: var(--st-red-color);
+    color: var(--st-red-text-color, #fff);
+}
+
+.badge--orange {
+    background: var(--st-orange-color);
+    color: var(--st-orange-text-color, #000);
+}
+
+.badge--yellow {
+    background: var(--st-yellow-color);
+    color: var(--st-yellow-text-color, #000);
+}
+
+.badge--green {
+    background: var(--st-green-color);
+    color: var(--st-green-text-color, #fff);
+}
+
+.badge--blue {
+    background: var(--st-blue-color);
+    color: var(--st-blue-text-color, #fff);
+}
+
+.badge--violet {
+    background: var(--st-violet-color);
+    color: var(--st-violet-text-color, #fff);
+}
+
+.badge--gray,
+.badge--grey {
+    background: var(--st-gray-color);
+    color: var(--st-gray-text-color, #fff);
+}
+
+.badge--primary {
+    background: var(--st-primary-color);
+    color: #fff;
+}
+
+/* simple rainbow approximation using theme colors */
+.badge--rainbow {
+    background: linear-gradient(90deg, var(--st-primary-color), var(--st-orange-color));
+    color: #fff;
+}
+
+/* Background pill (soft backgrounds using --st-<color>-background-color and matching text color) */
+.bg {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 6px;
+    color: inherit;
+}
+
+.bg--red {
+    background: var(--st-red-background-color);
+    color: var(--st-red-text-color, inherit);
+}
+
+.bg--orange {
+    background: var(--st-orange-background-color);
+    color: var(--st-orange-text-color, inherit);
+}
+
+.bg--yellow {
+    background: var(--st-yellow-background-color);
+    color: var(--st-yellow-text-color, inherit);
+}
+
+.bg--green {
+    background: var(--st-green-background-color);
+    color: var(--st-green-text-color, inherit);
+}
+
+.bg--blue {
+    background: var(--st-blue-background-color);
+    color: var(--st-blue-text-color, inherit);
+}
+
+.bg--violet {
+    background: var(--st-violet-background-color);
+    color: var(--st-violet-text-color, inherit);
+}
+
+.bg--gray,
+.bg--grey {
+    background: var(--st-gray-background-color);
+    color: var(--st-gray-text-color, inherit);
+}
+
+.bg--primary {
+    background: var(--st-code-background-color);
+    color: var(--st-heading-color, inherit);
+}
+
+/* Text color helpers */
+.text--red {
+    color: var(--st-red-text-color, var(--st-red-color));
+}
+
+.text--orange {
+    color: var(--st-orange-text-color, var(--st-orange-color));
+}
+
+.text--yellow {
+    color: var(--st-yellow-text-color, var(--st-yellow-color));
+}
+
+.text--green {
+    color: var(--st-green-text-color, var(--st-green-color));
+}
+
+.text--blue {
+    color: var(--st-blue-text-color, var(--st-blue-color));
+}
+
+.text--violet {
+    color: var(--st-violet-text-color, var(--st-violet-color));
+}
+
+.text--gray,
+.text--grey {
+    color: var(--st-gray-text-color, var(--st-gray-color));
+}
+
+.text--primary {
+    color: var(--st-primary-color);
+}
+
+.text--rainbow {
+    background: linear-gradient(90deg, var(--st-primary-color), var(--st-orange-color));
+    -webkit-background-clip: text;
+    color: transparent;
+}

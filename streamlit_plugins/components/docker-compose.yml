@@ -132,5 +132,50 @@ services:
       - ./snakeviz/frontend/src:/frontend/src
       - ./snakeviz/frontend/build:/frontend/build
 
+  selectbox_rich_dev:
+    image: streamlit-component-selectbox-rich
+    build: selectbox_rich/frontend
+    ports:
+      - "3000:3000"
+      - "9229:9229"
+    command: tail -f /dev/null
+    volumes:
+      - ./selectbox_rich/frontend/.env:/frontend/.env
+      - ./selectbox_rich/frontend/package.json:/frontend/package.json
+      - ./selectbox_rich/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./selectbox_rich/frontend/public:/frontend/public
+      - ./selectbox_rich/frontend/src:/frontend/src
+      - ./selectbox_rich/frontend/build:/frontend/build
+    networks:
+      - streamlit-components-network
+
+  selectbox_rich_frontend:
+    image: streamlit-component-selectbox-rich
+    build: selectbox_rich/frontend
+    ports:
+      - "3000:3000"
+    command: npm run start
+    volumes:
+      - ./selectbox_rich/frontend/.env:/frontend/.env
+      - ./selectbox_rich/frontend/package.json:/frontend/package.json
+      - ./selectbox_rich/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./selectbox_rich/frontend/public:/frontend/public
+      - ./selectbox_rich/frontend/src:/frontend/src
+      - ./selectbox_rich/frontend/build:/frontend/build
+    networks:
+      - streamlit-components-network
+
+  selectbox_rich_build:
+    image: streamlit-component-selectbox-rich
+    build: selectbox_rich/frontend
+    command: npm run build
+    volumes:
+      - ./selectbox_rich/frontend/.env:/frontend/.env
+      - ./selectbox_rich/frontend/package.json:/frontend/package.json
+      - ./selectbox_rich/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./selectbox_rich/frontend/public:/frontend/public
+      - ./selectbox_rich/frontend/src:/frontend/src
+      - ./selectbox_rich/frontend/build:/frontend/build
+
 networks:
   streamlit-components-network:
