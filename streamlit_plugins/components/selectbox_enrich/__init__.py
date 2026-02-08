@@ -26,20 +26,6 @@ def _convert_shortcodes_to_html(s: str) -> str:
     if not isinstance(s, str):
         return str(s)
 
-    # mapa de colores (bg, text). Ajustar valores si se desea otro look.
-    COLORS = {
-        "red": ("#e53935", "#fff"),
-        "orange": ("#ffb74d", "#000"),
-        "yellow": ("#ffd54f", "#000"),
-        "green": ("#43a047", "#fff"),
-        "blue": ("#1976d2", "#fff"),
-        "violet": ("#8e24aa", "#fff"),
-        "gray": ("#9e9e9e", "#fff"),
-        "grey": ("#9e9e9e", "#fff"),
-        "primary": ("#0f62fe", "#fff"),
-        # rainbow will be a gradient
-        "rainbow": ("linear-gradient(90deg,#ff5f6d,#ffc371)", "#fff"),
-    }
 
     def _badge_repl(match):
         color = match.group(1).lower()
@@ -95,7 +81,7 @@ def _convert_shortcodes_to_html(s: str) -> str:
 T = TypeVar("T")
 
 
-ASSETS_PATH = Path(__file__).parent / "assets"
+ASSETS_PATH = Path(__file__).parent / "frontend" / "public"
 HTML_PATH = ASSETS_PATH / "part.html"
 CSS_PATH = ASSETS_PATH / "style.css"
 JS_PATH = ASSETS_PATH / "script.js"
@@ -132,7 +118,7 @@ def st_selectbox_custom(
     placeholder: str | None = None,
     disabled: bool = False,
     label_visibility: Literal["visible", "hidden", "collapsed"] = "visible",
-    # accept_new_options: Literal[False] = False,
+    accept_new_options: Literal[False] = False,
     width: int | Literal["stretch"] = "stretch",
     unsafe_allow_html: bool = True,
 ):
@@ -153,8 +139,8 @@ def st_selectbox_custom(
     maybe_raise_label_warnings(label, label_visibility)
     opt = convert_anything_to_list(options)
     check_python_comparable(opt)
-    if unsafe_allow_html:
-        opt = [_convert_shortcodes_to_html(opt) for opt in opt]
+    # if unsafe_allow_html:
+    #     opt = [_convert_shortcodes_to_html(opt) for opt in opt]
 
     if not isinstance(index, int) and index is not None:
         raise StreamlitAPIException(
@@ -252,31 +238,40 @@ def st_selectbox_custom(
 
     component_name = f"html_select_{key}"
 
+    if index is None:
+        index = st.session_state.get(f"{key}_index", None)
+    
     data = {
         "options": opt,
         "index": index,
+        "label": label,
+        "unsafeAllowHtml": bool(unsafe_allow_html),
+        "labelVisibility": label_visibility,
         "placeholder": placeholder or "Selecciona una opción ▾",
-        # "accept_new_options": bool(accept_new_options),
+        "acceptNewOptions": bool(accept_new_options),
         "disabled": bool(disabled),
         "help": help or "",
         "theme": st.context.theme,
     }
 
-    my_comp = component(component_name, html=HTML, css=CSS, js=JS)
+    my_comp = component(component_name, html=HTML, css=CSS, js=JS, isolate_styles=False)
     # El parámetro on_selected_change se invocará cuando el componente llame a setTriggerValue('selected', ...)
     # Actualizamos session_state con el HTML seleccionado (puedes almacenarlo como quieras)
     result = my_comp(
         key=key,
         data=data,
         width=width,
-        isolate_styles=False,
         on_selected_change=lambda v=None: print(v)
     )
     selected = result.get("selected", None) if result else None
 
     if selected:
-        st.session_state[key] = options[int(selected)]
+        st.session_state[f"{key}_index"] = int(selected)
         return options[int(selected)]
 
-    prev_val = st.session_state.get(key, None)
-    return prev_val
+    # Si por lo que sea selected es None, se busca con el index
+    if index is not None and 0 <= index < len(options):
+        st.session_state[f"{key}_index"] = int(index)
+        return options[int(index)]
+
+    return None
