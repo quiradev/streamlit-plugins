@@ -79,11 +79,18 @@ init_theme_data = dict(
 
 if st.session_state.get("theme_data") is None:
     st.session_state["theme_data"] = init_theme_data
+    st_theme_changer(themes_data=init_theme_data, render_mode="init", default_init_theme_name="soft_dark")
 
 theme_data = st.session_state["theme_data"]
 
-st_theme_changer(themes_data=theme_data, render_mode="init", default_init_theme_name="soft_dark")
-st_theme_changer(themes_data=theme_data, rerun_whole_st=True)
+with st.sidebar:
+    st_theme_changer(
+        themes_data=theme_data, render_mode="pills",
+        connected_theme_changers=["default"], key="first_pills",
+
+    )
+
+st_theme_changer(themes_data=theme_data, connected_theme_changers=["first_pills"], key="default")
 
 with st.expander("Theme Editor", expanded=False):
     with st.container(border=False):
@@ -151,9 +158,5 @@ with st.expander("Theme Editor", expanded=False):
                             st_theme_changer(themes_data=theme_data, render_mode="change", default_init_theme_name=theme_key)
                             st.rerun()
 
-with st.sidebar:
-    st_theme_changer(
-        themes_data=theme_data, render_mode="pills",
-        rerun_whole_st=True, key="first_pills"
-    )
+
 

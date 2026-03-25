@@ -48,15 +48,9 @@ def my_sidebar():
             # key="native_way"
             key="native_way_input"
         )
-        url_navigation = st.checkbox(
-            "URL navigation",
-            value=st.session_state.get("url_navigation", True),
-            key="url_navigation_input"
-        )
         st.session_state["position_mode"] = position_mode
         st.session_state["sticky_nav"] = sticky_nav
         st.session_state["native_way"] = native_way
-        st.session_state["url_navigation"] = url_navigation
 
 
 def my_heading():
@@ -162,7 +156,7 @@ my_sidebar()
 position_mode: NavbarPositionType = st.session_state["position_mode"]
 sticky_nav = st.session_state["sticky_nav"]
 native_way = st.session_state["native_way"]
-url_navigation = st.session_state["url_navigation"]
+
 
 if st.session_state.logged_in:
     if position_mode == "top":
@@ -183,7 +177,7 @@ page = st_navigation(
     account_page=account_page,
     settings_page=settings_page,
     native_way=native_way,
-    url_navigation=url_navigation
+    # url_navigation=url_navigation
 )
 print(f"{page.title=}, {native_way=}, {sticky_nav=}, {position_mode=}")
 print()

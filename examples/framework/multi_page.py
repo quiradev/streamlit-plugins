@@ -160,7 +160,7 @@ def run():
                 },
                 {
                     'id': "Example 2".lower().replace(" ", "_"),
-                    'label': "Example 1",
+                    'label': "Example 2",
                     # 'submenu': submenu,
                     'icon': ":material/settings:",
                     'ttip': "Example 2",

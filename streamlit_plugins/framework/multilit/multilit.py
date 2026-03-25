@@ -4,7 +4,11 @@ from typing import Any, Callable, Dict, Literal, Optional, Tuple
 
 import streamlit
 import streamlit as st
-from streamlit.web.server.routes import _DEFAULT_ALLOWED_MESSAGE_ORIGINS
+try:
+    from streamlit.web.server.routes import _DEFAULT_ALLOWED_MESSAGE_ORIGINS
+except ImportError as e:
+    _DEFAULT_ALLOWED_MESSAGE_ORIGINS = None
+
 from streamlit.commands.page_config import Layout, InitialSideBarState
 from streamlit.navigation.page import StreamlitPage
 from streamlit.runtime.scriptrunner import RerunException, StopException, get_script_run_ctx
@@ -50,44 +54,64 @@ if major == 1:
         DEFAULT_NAVBAR_PARENT_SELECTOR = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"].st-key-NavigationComponent > div > iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
         DEFAULT_NAVBAR_PARENT_SELECTOR_FRAGMENT = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"].st-key-NavigationComponent > div > iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
 
+
+def add_trusted_url(url: str):
+    if _DEFAULT_ALLOWED_MESSAGE_ORIGINS is not None:
+        if url not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
+            streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(url)
+    else:
+        try:
+            allowed_origins = list(st._config.get_option("client.allowedOrigins"))
+        except RuntimeError:
+            allowed_origins = []
+
+        if url not in allowed_origins:
+            allowed_origins.append(url)
+
+        st._config.set_option("client.allowedOrigins", allowed_origins)
+
+
+add_trusted_url("http://localhost")
+
+
 class FNStreamlitPage(StreamlitPage):
-    def __init__(
-        self,
-        page: Callable[[], None],
-        *,
-        title: str | None = None,
-        icon: str | None = None,
-        url_path: str | None = None,
-        default: bool = False,
-    ):
-        # Must appear before the return so all pages, even if running in bare Python,
-        # have a _default property. This way we can always tell which script needs to run.
-        self._default: bool = default
-
-        inferred_name = "Uknown"
-        inferred_icon = ":material/uknown:"
-        if hasattr(page, "__name__"):
-            inferred_name = str(page.__name__)
-
-        self._page: Callable[[], None] = page
-        self._title: str = title or inferred_name.replace("_", " ")
-        self._icon: str = icon or inferred_icon
-
-        if self._title.strip() == "":
-            raise ValueError(
-                "The title of the page cannot be empty or consist of underscores/spaces only"
-            )
-
-        self._url_path: str = inferred_name
-        if url_path is not None:
-            if url_path.strip() == "" and not default:
-                raise ValueError(
-                    "The URL path cannot be an empty string unless the page is the default page."
-                )
-
-            self._url_path = url_path.strip("/")
-
-        self._can_be_called: bool = True
+    # def __init__(
+    #     self,
+    #     page: Callable[[], None],
+    #     *,
+    #     title: str | None = None,
+    #     icon: str | None = None,
+    #     url_path: str | None = None,
+    #     default: bool = False,
+    # ):
+    #     # Must appear before the return so all pages, even if running in bare Python,
+    #     # have a _default property. This way we can always tell which script needs to run.
+    #     self._default: bool = default
+    #
+    #     inferred_name = "Uknown"
+    #     inferred_icon = ":material/uknown:"
+    #     if hasattr(page, "__name__"):
+    #         inferred_name = str(page.__name__)
+    #
+    #     self._page: Callable[[], None] = page
+    #     self._title: str = title or inferred_name.replace("_", " ")
+    #     self._icon: str = icon or inferred_icon
+    #
+    #     if self._title.strip() == "":
+    #         raise ValueError(
+    #             "The title of the page cannot be empty or consist of underscores/spaces only"
+    #         )
+    #
+    #     self._url_path: str = inferred_name
+    #     if url_path is not None:
+    #         if url_path.strip() == "" and not default:
+    #             raise ValueError(
+    #                 "The URL path cannot be an empty string unless the page is the default page."
+    #             )
+    #
+    #         self._url_path = url_path.strip("/")
+    #
+    #     self._can_be_called: bool = True
 
     def run(self):
         self._page()
@@ -137,7 +161,7 @@ class Multilit:
         navbar_mode: NavbarPositionType = 'under',
         use_cookie_cache=True,
         sidebar_state: InitialSideBarState = 'auto',
-        allow_url_nav=False,
+        # allow_url_nav=False,
         hide_streamlit_markers=False,
         use_banner_images=None,
         banner_spacing=None,
@@ -183,8 +207,6 @@ class Multilit:
             If True, uses cookies to store user access state.
         sidebar_state : InitialSideBarState, optional (default 'auto')
             Initial state of the Streamlit sidebar.
-        allow_url_nav : bool, optional (default False)
-            Allows navigation between pages using URL parameters.
         hide_streamlit_markers : bool, optional (default False)
             Hides the Streamlit menu and watermark.
         use_banner_images : str or list, optional
@@ -223,8 +245,7 @@ class Multilit:
             allowed_origins = []
 
         for origin in allowed_origins:
-            if origin not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
-                streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(origin)
+            add_trusted_url(origin)
 
         self._active_section = None
         self._active_section_icon = None
@@ -260,7 +281,7 @@ class Multilit:
         self._complex_nav: dict[str, dict | StreamlitPage] = dict()
         self._navbar_mode: NavbarPositionType = navbar_mode
         self._navbar_active_index = 0
-        self._allow_url_nav = allow_url_nav
+        # self._allow_url_nav = allow_url_nav
         self._navbar_sticky = navbar_sticky
         self._nav_item_count = 0
 
@@ -583,7 +604,7 @@ class Multilit:
             account_page=account_page,
             settings_page=settings_page,
             native_way=self._use_st_navigation,
-            url_navigation=self._allow_url_nav,
+            # url_navigation=self._allow_url_nav,
             input_styles=styles,
             themes_data=self._navbar_theme,
             theme_changer=self._navigation_theme_changer

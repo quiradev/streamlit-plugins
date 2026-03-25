@@ -1,11 +1,34 @@
-import streamlit
-from streamlit.web.server.routes import _DEFAULT_ALLOWED_MESSAGE_ORIGINS
+import logging
+
+import streamlit as st
 from streamlit.errors import StreamlitAPIException
+from streamlit.runtime.scriptrunner_utils.script_run_context import get_script_run_ctx
+
+logger = logging.getLogger(__name__)
 
 from streamlit_plugins.extension.button_group import st_button_group
+try:
+    from streamlit.web.server.routes import _DEFAULT_ALLOWED_MESSAGE_ORIGINS
+except ImportError as e:
+    _DEFAULT_ALLOWED_MESSAGE_ORIGINS = None
 
-if "http://localhost:8501" not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
-    streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append("http://localhost:8501")
+
+def add_trusted_url(url: str):
+    if _DEFAULT_ALLOWED_MESSAGE_ORIGINS is not None:
+        if url not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
+            st.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(url)
+    else:
+        try:
+            allowed_origins = list(st._config.get_option("client.allowedOrigins"))
+        except RuntimeError:
+            allowed_origins = []
+
+        if url not in allowed_origins:
+            allowed_origins.append(url)
+
+        st._config.set_option("client.allowedOrigins", allowed_origins)
+
+add_trusted_url("http://localhost")
 
 import time
 
@@ -81,31 +104,98 @@ DEFAULT_THEMES = {
 }
 
 
+@st.fragment
+def _button_mode(theme_names, unique_key, render_mode, themes_data, timeout_rendering_theme_change, cross_key_theme_changers):
+    theme_index: str = st.session_state[f"{KEY}_theme_index"]
+    change_theme = st.button(
+        icon=themes_data[theme_index].icon, label="Change Theme",
+        key=f"{unique_key}_{render_mode}"
+    )
+    st.session_state[f"{unique_key}_need_update"] = False
+    st.session_state[unique_key] = theme_index
+
+    if change_theme:
+        current_key = theme_names[theme_names.index(theme_index)]
+        theme_index = theme_names[(theme_names.index(current_key) + 1) % len(theme_names)]
+
+        # print(f"Changing theme to {themes_data[theme_index].name} from button[{unique_key}]")
+        st.session_state[f"{KEY}_theme_index"] = theme_index
+
+        for cross_theme_key in cross_key_theme_changers:
+            st.session_state[f"{cross_theme_key}_need_update"] = True
+
+        change_theme_coi(KEY, themes_data[theme_index])
+        time.sleep(timeout_rendering_theme_change)
+        if cross_key_theme_changers:
+            st.rerun()
+        else:
+            st.rerun(scope="fragment")
+
+@st.fragment
+def _pills_mode(theme_names, unique_key, render_mode, themes_data, timeout_rendering_theme_change, cross_key_theme_changers):
+    theme_index: str = st.session_state[f"{KEY}_theme_index"]
+    if f"{unique_key}_{render_mode}" in st.session_state:
+        new_theme_index = st.session_state[f"{unique_key}_{render_mode}"]
+
+        # Si tiene valor significa que se esta ejecutando localmente, lanzado por la interfaz
+        if st.session_state[f"{unique_key}_need_update"]:
+            if theme_index != new_theme_index:
+                # Actualizacion valor visual
+                st.session_state[f"{unique_key}_{render_mode}"] = theme_index
+                # Actualizacion valor interno
+                st.session_state[unique_key] = theme_index
+                # Desactivar flag de modificacion cruzada
+                st.session_state[f"{unique_key}_need_update"] = False
+
+    new_theme_index = st.pills(
+        "Change Theme",
+        theme_names,
+        default=theme_index,
+        format_func=lambda option: themes_data[option].icon,
+        # style="pills", # selection_visualization="only_selected",
+        # keep_selection="always_visible",
+        selection_mode="single",
+        key=f"{unique_key}_{render_mode}",
+    )
+
+    if theme_index != new_theme_index:
+        # print(f"Changing theme to {themes_data[new_theme_index].name} from pills[{unique_key}]")
+        st.session_state[f"{KEY}_theme_index"] = new_theme_index
+        # A partir de aqui continua si se cambio activamente en el pills widget
+        for cross_theme_key in cross_key_theme_changers:
+            st.session_state[f"{cross_theme_key}_need_update"] = True
+
+        change_theme_coi(KEY, themes_data[new_theme_index])
+        time.sleep(timeout_rendering_theme_change)
+        st.rerun()
+
 def st_theme_changer(
     themes_data: dict[str, ThemeInput] | None = None,
     render_mode: Literal["init", "change", "next", "button", "pills"] = "button",
     default_init_theme_name: str | None = None,
-    rerun_whole_st: bool = False,
     timeout_rendering_theme_change: float = 0.2,
     key: str = "default",
+    connected_theme_changers: list[str] = None
 ):
     """
     A Streamlit component to change the theme of the app.
     """
+
+    if connected_theme_changers is None:
+        connected_theme_changers = []
+    cross_key_theme_changers = []
+    for cross_theme_key in connected_theme_changers:
+        cross_key_theme_changers.append(f"{KEY}_{cross_theme_key}")
+
     # -------------------------
     # Verification key index (Is different o each instance)
     if KEY not in st.session_state:
         st.session_state[KEY] = True
 
-    # i = 0
-    # if render_mode != "none":
-    #     if f"{KEY}_{i}_{render_mode}_check" in st.session_state:
-    #         # Exist a button with this value
-    #         if st.session_state[f"{KEY}_{i}_{render_mode}_check"]:
-    #             i += 1
-    #             st.session_state[f"{KEY}_{i}_{render_mode}_check"] = False
-
     unique_key = f"{KEY}_{key}"
+    if f"{unique_key}_need_update" not in st.session_state:
+        st.session_state[unique_key] = None
+        st.session_state[f"{unique_key}_need_update"] = False
     # -------------------------
 
     if themes_data is None:
@@ -149,66 +239,12 @@ def st_theme_changer(
             change_theme_coi(KEY, themes_data[st.session_state[f"{KEY}_theme_index"]])
 
             if render_mode == "next" or render_mode == "change":
-                if rerun_whole_st:
+                if connected_theme_changers:
                     st.rerun()
         
         time.sleep(0.1)  # Ensure enough time for client to load the script
         st_void.empty()
 
-    # -------------------------
-    
-    @st.fragment
-    def button_mode():
-        theme_index: str = st.session_state[f"{KEY}_theme_index"]
-        change_theme = st.button(
-            icon=themes_data[theme_index].icon, label="Change Theme",
-            key=f"{unique_key}_{render_mode}"
-        )
-        # st.session_state[f"{unique_key}_{render_mode}_check"] = True
-
-        if change_theme:
-            current_key = theme_names[theme_names.index(theme_index)]
-            next_key = theme_names[(theme_names.index(current_key) + 1) % len(theme_names)]
-            theme_index = next_key
-            # print(f"Changing theme to {themes_data[theme_index].name}")
-            st.session_state[f"{KEY}_theme_index"] = theme_index
-
-            change_theme_coi(KEY, themes_data[theme_index])
-            time.sleep(timeout_rendering_theme_change)
-            # TODO: How to prevent to make a rerun and change button icon without rerun?
-            if rerun_whole_st:
-                st.rerun()
-            else:
-                st.rerun(scope="fragment")
-
-    @st.fragment
-    def pills_mode():
-        # view = st.empty()
-        # if st.session_state.get(f"{unique_key}_pills") is None:
-        #     st.session_state[f"{unique_key}_pills"] = st.session_state[f"{KEY}_theme_index"]
-        # with view:
-        new_theme_index = st_button_group(
-            theme_names,
-            label="Change Theme",
-            default=st.session_state[f"{KEY}_theme_index"],
-            format_func=lambda option: themes_data[option].icon,
-            style="pills", selection_visualization="only_selected",
-            keep_selection="always_visible",
-            selection_mode="single",
-            key=f"{unique_key}_{render_mode}",
-        )
-        # st.session_state[f"{unique_key}_{render_mode}_check"] = True
-
-        if new_theme_index:
-            theme_index: str = st.session_state[f"{KEY}_theme_index"]
-            if theme_index != new_theme_index:
-                st.session_state[f"{KEY}_theme_index"] = new_theme_index
-                change_theme_coi(KEY, themes_data[new_theme_index])
-                time.sleep(timeout_rendering_theme_change)
-                if rerun_whole_st:
-                    st.rerun()
-                else:
-                    st.rerun(scope="fragment")
 
     # ctx = get_script_run_ctx()
     # Una vez creado el fragment_id, almacenarlo, y despues recuperarlo con el fragment_storage
@@ -229,16 +265,11 @@ def st_theme_changer(
     # -------------------------
 
     if render_mode == "button":
-        button_mode()
+        _button_mode(theme_names, unique_key, render_mode, themes_data, timeout_rendering_theme_change, cross_key_theme_changers)
 
     elif render_mode == "pills":
-        pills_mode()
+        _pills_mode(theme_names, unique_key, render_mode, themes_data, timeout_rendering_theme_change, cross_key_theme_changers)
 
-def add_trusted_url(url: str):
-    if url not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
-        _DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(url)
-    if url not in streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS:
-        streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(url)
 
 def get_active_theme_key() -> str | None:
     return st.session_state.get(f"{KEY}_theme_index", None)

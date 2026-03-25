@@ -7,12 +7,17 @@ from urllib.parse import urlparse
 
 import requests
 import streamlit
-from streamlit.web.server.routes import _DEFAULT_ALLOWED_MESSAGE_ORIGINS
+
 import streamlit as st
 import streamlit.components.v1 as components
 from streamlit.navigation.page import StreamlitPage
-from streamlit.runtime.scriptrunner import RerunException, get_script_run_ctx
-from streamlit.proto.WidgetStates_pb2 import WidgetState, WidgetStates
+# from streamlit.runtime.scriptrunner import RerunException, get_script_run_ctx
+# from streamlit.proto.WidgetStates_pb2 import WidgetState, WidgetStates
+try:
+    from streamlit.web.server.routes import _DEFAULT_ALLOWED_MESSAGE_ORIGINS
+except ImportError as e:
+    _DEFAULT_ALLOWED_MESSAGE_ORIGINS = None
+
 try:
     from streamlit.runtime.scriptrunner.script_requests import ScriptRequestType, RerunData
 except ModuleNotFoundError:
@@ -26,8 +31,6 @@ if _RELEASE:
 else:
     _component_func = components.declare_component("nav_bar", url=dev_url)
 
-if "http://localhost:8501" not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
-    streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append("http://localhost:8501")
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +56,25 @@ if major == 1:
     if minnor >= 38:
         APP_VIEWER_SELECTOR = ".stAppViewContainer"
         COLLAPSE_CONTROLL_CLASS = "stSidebarCollapsedControl"
+
+
+def add_trusted_url(url: str):
+    if _DEFAULT_ALLOWED_MESSAGE_ORIGINS is not None:
+        if url not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
+            streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(url)
+    else:
+        try:
+            allowed_origins = list(st._config.get_option("client.allowedOrigins"))
+        except RuntimeError:
+            allowed_origins = []
+
+        if url not in allowed_origins:
+            allowed_origins.append(url)
+
+        st._config.set_option("client.allowedOrigins", allowed_origins)
+
+add_trusted_url("http://localhost")
+
 
 NAV_TOP_UNDER_STYLE = f"""
 div:has(> iframe[title="{_component_func.name}"]) [data-testid="stSkeleton"] {{
@@ -598,7 +620,7 @@ def st_navbar(
     theme_changer: bool = False,
     collapsible: bool = True,
     prefix_url: str = "",
-    url_navigation: bool = False,
+    # url_navigation: bool = False,
     key="NavBarComponent",
 ):
     if home_definition is None:
@@ -726,7 +748,7 @@ def st_navbar(
             theme_changer=theme_changer,
             collapsible=collapsible,
             prefix_url=prefix_url,
-            url_navigation=url_navigation and is_navigation,
+            # url_navigation=url_navigation and is_navigation,
             default=default_page_selected_id,
             is_visible=True,
             key=key, fvalue=force_value,
@@ -759,7 +781,7 @@ def st_navigation(
     logout_page: StreamlitPage | None = None,
     account_page: StreamlitPage | None = None,
     settings_page: StreamlitPage | None = None,
-    native_way=False, url_navigation=False,
+    native_way=False, # url_navigation=False,
     input_styles: str | None = None,
     themes_data: list[dict]| None = None,
     theme_changer: bool = True,
@@ -902,7 +924,7 @@ def st_navigation(
         themes_data=themes_data,
         theme_changer=theme_changer,
         prefix_url=prefix_url,
-        url_navigation=native_way and url_navigation,
+        # url_navigation=native_way,  # and url_navigation,
         key=key,
     )
     st.session_state["navigation_force_page_id"] = None
@@ -913,17 +935,17 @@ def st_navigation(
         # Si la url es el path igual al que devuelve el `next_page_id` quiere decir que la navegacion es por url
         # En este punto el navigation de streamlit siempre devolvera la pagina actual
         #  ya que no se usara su navegacion frontal para seleccionar una pagina
-        if url_navigation:
-            url_page_id = get_page_id_by_url_path(
-                pages_map, st.context.url, prefix_url=prefix_url
-            )
-            # print("URL PAGE", pages_map[url_page_id].title)
-            if url_page_id != st.session_state["navigation_prev_url_page_id"]:
-                # Navegacion por url
-                # Give enough time to the custom component to update
-                time.sleep(0.1)
-                st.session_state["navigation_prev_url_page_id"] = url_page_id
-                next_page_id = url_page_id
+        # if url_navigation:
+        #     url_page_id = get_page_id_by_url_path(
+        #         pages_map, st.context.url, prefix_url=prefix_url
+        #     )
+        #     # print("URL PAGE", pages_map[url_page_id].title)
+        #     if url_page_id != st.session_state["navigation_prev_url_page_id"]:
+        #         # Navegacion por url
+        #         # Give enough time to the custom component to update
+        #         time.sleep(0.1)
+        #         st.session_state["navigation_prev_url_page_id"] = url_page_id
+        #         next_page_id = url_page_id
 
         page = st.navigation(
             st_pages,
@@ -1036,9 +1058,3 @@ def get_pages_info() -> tuple[dict[str, str], str, list[dict], list[dict], str |
     menu_account_pages = st.session_state["navigation_menu_account_pages"]
 
     return pages, default_page_id, menu_pages, menu_account_pages, login_page_id, logout_page_id, account_page_id, settings_page_id
-
-def add_trusted_url(url: str):
-    if url not in _DEFAULT_ALLOWED_MESSAGE_ORIGINS:
-        _DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(url)
-    if url not in streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS:
-        streamlit.web.server.routes._DEFAULT_ALLOWED_MESSAGE_ORIGINS.append(url)
