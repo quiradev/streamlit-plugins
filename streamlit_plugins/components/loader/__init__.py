@@ -4446,10 +4446,11 @@ class DefaultLoader(BaseLoader):
         loader_container=None,
         label='', height=256,
         primary_color=None, background_color=None,
-        loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ] = LoadersLib.book_loader, index=0, loader_lib_kwargs: dict = None
+        loader_lib: LoadersLib | Callable[..., Tuple[str, str ,str], ] = LoadersLib.book_loader, index=0, loader_lib_kwargs: dict = None,
+        sleep_animation_time: float = 0.1
     ):
         super().__init__(loader_container=loader_container)
-
+        self.sleep_animation_time = sleep_animation_time
         if primary_color is None:
             if st.get_option('theme.primaryColor') is None:
                 primary_color = '#F63366'
@@ -4524,16 +4525,19 @@ class DefaultLoader(BaseLoader):
 
         with self.loader_container:
             self.display_element_out.empty()
-            time.sleep(0.2)  # Pequeña pausa para evitar parpadeos
+            if self.sleep_animation_time:
+                time.sleep(self.sleep_animation_time)  # Pequeña pausa para evitar parpadeos
             self.display_element.markdown(element_style+element_code, unsafe_allow_html=True)
-            time.sleep(5)
+            if self.sleep_animation_time:
+                time.sleep(self.sleep_animation_time)
 
     def stop_loader(self):
         if self.running:
             with self.loader_container:
                 self.display_element_out.markdown(self.element_out_style, unsafe_allow_html=True)
                 # Para que se termine la animacion de salida y no se vea como parpadeos
-                time.sleep(0.3)
+                if self.sleep_animation_time:
+                    time.sleep(self.sleep_animation_time)
                 self.display_element.empty()
                 self.display_element_out.empty()
                 self.running = False
