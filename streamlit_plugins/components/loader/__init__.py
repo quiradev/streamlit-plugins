@@ -4528,8 +4528,6 @@ class DefaultLoader(BaseLoader):
             if self.sleep_animation_time:
                 time.sleep(self.sleep_animation_time)  # Pequeña pausa para evitar parpadeos
             self.display_element.markdown(element_style+element_code, unsafe_allow_html=True)
-            if self.sleep_animation_time:
-                time.sleep(self.sleep_animation_time)
 
     def stop_loader(self):
         if self.running:
