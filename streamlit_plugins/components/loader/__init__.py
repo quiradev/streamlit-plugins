@@ -1,6 +1,5 @@
 import inspect
 from abc import ABC, abstractmethod
-import atexit
 import time
 from enum import Enum, auto
 from typing import TypeVar, Callable, Tuple, Optional
@@ -4425,8 +4424,6 @@ class BaseLoader(ABC):
                 )
         self.loader_container = loader_container
 
-        atexit.register(self.stop_loader)
-
     def recreate_loader_with(self, **loader_kwargs) -> "LoaderType":
         return self.__class__(loader_container=self.loader_container, **loader_kwargs)
 
@@ -4495,8 +4492,6 @@ class DefaultLoader(BaseLoader):
         with self.loader_container:
             self.display_element = st.empty()
             self.display_element_out = st.empty()
-
-        atexit.register(self.stop_loader)
 
     @staticmethod
     def _parse_height_css(height: int | str) -> str:
