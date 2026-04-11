@@ -59,10 +59,14 @@ _FRAGMENT_ID_TO_NAME: dict[str, str]
 
 ```python
 st.session_state._reactive_graph_state:
-  - rerun_queue: list[str]      # Fragmentos a ejecutar
-  - executing: Set[str]         # En ejecución ahora
-  - last_params: dict           # Últimos parámetros
-  - fragment_ids: dict          # Mapeos de IDs
+  - rerun_queue: list[str]           # Fragmentos a ejecutar
+  - executing: Set[str]              # En ejecución ahora
+  - last_params: dict                # Últimos parámetros
+  - fragment_ids: dict               # Mapeos de IDs
+  - global_rerun_count: int          # Contador de global reruns
+  - global_rerun_triggered: bool     # Flag para evitar bugs múltiples
+  - cycle_detected: bool             # ¿Se detectó ciclo?
+  - cycle_fragments: Set[str]        # Fragmentos con ciclos
 
 st.session_state._fragment_state_{name}:
   - params: dict                # Parámetros actuales
@@ -144,6 +148,34 @@ _process_rerun_queue()
          ├─ Streamlit rerunnea ese fragmento
          │
          └─ Al terminar, loop del siguiente
+```
+
+### Fase 4: Detección de Ciclos Complejos
+
+```
+En cada ejecución de fragmento:
+         │
+         ├─ ¿global_rerun_triggered = True?
+         │  ├─ SÍ → Mostrar warning y abort
+         │  └─ NO → Continuar
+         │
+         ├─ _detect_complex_cycles()
+         │  ├─ ¿Hay ciclos?
+         │     ├─ SÍ → Set cycle_detected = True
+         │     │      Set cycle_fragments = {list}
+         │     │
+         │     └─ ¿Fragmento actual en ciclo?
+         │        ├─ SÍ → _trigger_global_rerun()
+         │        │      ├─ ¿global_rerun_triggered ya True?
+         │        │      │  ├─ SÍ → ERROR CRÍTICO (bug detectado)
+         │        │      │  └─ NO → Set flag, reset state, st.rerun()
+         │        │      │
+         │        │      └─ _reset_reactive_session_state()
+         │        │         └─ Limpia fragmentos, preserva contador
+         │        │
+         │        └─ NO → Continuar ejecución normal
+         │
+         └─ Ejecutar fragmento
 ```
 
 ## 🧮 Detección de Cambios
