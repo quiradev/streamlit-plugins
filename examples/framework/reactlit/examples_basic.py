@@ -34,8 +34,6 @@ def fragment_counter_input():
 
     if new_val != st.session_state.counter:
         st.session_state.counter = new_val
-        enqueue_fragment_rerun("fragment_counter_display", "counter changed")
-        st.rerun(scope="fragment")
 
 
 @reactive_fragment(
