@@ -18,7 +18,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from streamlit_plugins.framework.reactlit import (
-    reactive_fragment,
+    reactlit_fragment,
     debug_dependency_graph,
     reset_reactive_state,
 )
@@ -105,7 +105,7 @@ def generate_sample_data():
 # 🎛️ FRAGMENTO 1: CONTROLES (ROOT)
 # =============================================================================
 
-@reactive_fragment(watch_params=True)
+@reactlit_fragment(watch_params=True)
 def fragment_filters():
     """
     Panel de controles (Root Fragment)
@@ -165,7 +165,7 @@ def fragment_filters():
 # 🔄 FRAGMENTO 2: FILTRADO DE DATOS (DEPENDS ON CONTROLES)
 # =============================================================================
 
-@reactive_fragment(
+@reactlit_fragment(
     dependencies=['date_range', 'selected_regions'],
     watch_params=True
 )
@@ -202,7 +202,7 @@ def fragment_filter_data():
 # 📈 FRAGMENTO 3: AGREGACIÓN (DEPENDS ON FILTERED DATA)
 # =============================================================================
 
-@reactive_fragment(
+@reactlit_fragment(
     dependencies=['filtered_data', 'selected_metric'],
     watch_params=True
 )
@@ -246,7 +246,7 @@ def fragment_aggregate():
 # 📊 FRAGMENTO 4: METRICS DISPLAY (DEPENDS ON AGGREGATED DATA)
 # =============================================================================
 
-@reactive_fragment(
+@reactlit_fragment(
     dependencies=['aggregated_data', 'selected_metric'],
     watch_params=True
 )
@@ -301,7 +301,7 @@ def fragment_metrics():
 # 📉 FRAGMENTO 5: CHARTS (DEPENDS ON AGGREGATED DATA)
 # =============================================================================
 
-@reactive_fragment(
+@reactlit_fragment(
     dependencies=['aggregated_data', 'selected_metric'],
     watch_params=True
 )
@@ -341,7 +341,7 @@ def fragment_charts():
 # 📋 FRAGMENTO 6: DETAILED TABLE (DEPENDS ON FILTERED DATA)
 # =============================================================================
 
-@reactive_fragment(
+@reactlit_fragment(
     dependencies=['filtered_data'],
     watch_params=True
 )

@@ -86,19 +86,22 @@ from streamlit_plugins.framework.reactlit import reactive_fragment
 
 ```python
 import streamlit as st
-from streamlit_plugins.framework.reactlit import reactive_fragment
+from streamlit_plugins.framework.reactlit import reactlit_fragment
+
 
 # Input - independiente
-@reactive_fragment(watch_params=True)
+@reactlit_fragment(watch_params=True)
 def controles():
     val = st.slider("Valor:", 0, 100)
     st.session_state.valor = val
 
+
 # Output - depende del anterior
-@reactive_fragment(dependencies=['valor'])
+@reactlit_fragment(dependencies=['valor'])
 def resultado():
     val = st.session_state.get('valor', 0)
     st.metric("Cuadrado", val ** 2)
+
 
 # Ejecuta
 controles()

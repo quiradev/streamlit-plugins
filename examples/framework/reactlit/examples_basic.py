@@ -9,8 +9,8 @@ Demuestra:
 """
 
 import streamlit as st
-from streamlit_plugins.framework.reactlit.reactive import (
-    reactive_fragment,
+from streamlit_plugins.framework.reactlit.reactlit import (
+    reactlit_fragment,
     enqueue_fragment_rerun,
     debug_dependency_graph,
 )
@@ -21,7 +21,7 @@ def init_state():
         st.session_state.counter = 0
 
 
-@reactive_fragment(watch_params=True)
+@reactlit_fragment(watch_params=True)
 def fragment_counter_input():
     """Input para el contador"""
     st.subheader("Contador")
@@ -36,7 +36,7 @@ def fragment_counter_input():
         st.session_state.counter = new_val
 
 
-@reactive_fragment(
+@reactlit_fragment(
     dependencies=['counter'],
     watch_params=True
 )

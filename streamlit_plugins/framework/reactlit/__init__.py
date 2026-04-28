@@ -27,9 +27,9 @@ Uso básico:
         st.write("This updates when my_panel changes")
 """
 
-from .reactive import (
+from .reactlit import (
     # Decorators
-    reactive_fragment,
+    reactlit_fragment,
     # Registration
     register_dependency,
     register_dependencies,
@@ -53,7 +53,7 @@ from .reactive import (
 
 __all__ = [
     # Decorators
-    "reactive_fragment",
+    "reactlit_fragment",
     # Registration
     "register_dependency",
     "register_dependencies",

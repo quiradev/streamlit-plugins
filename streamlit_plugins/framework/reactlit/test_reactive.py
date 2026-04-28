@@ -10,7 +10,7 @@ import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from streamlit_plugins.framework.reactlit import (
-    reactive_fragment,
+    reactlit_fragment,
     register_dependency,
     get_dependency_chain,
     has_dependency_cycle,
@@ -136,7 +136,7 @@ def test_reactive_fragment_registration():
     """Test que el decorador registra fragmentos"""
     reset_reactive_state()
 
-    @reactive_fragment(dependencies=['test_key'])
+    @reactlit_fragment(dependencies=['test_key'])
     def my_test_fragment():
         pass
 
@@ -148,7 +148,7 @@ def test_reactive_fragment_with_dependencies():
     """Test que se registran dependencias correctamente"""
     reset_reactive_state()
 
-    @reactive_fragment(
+    @reactlit_fragment(
         dependencies=['key1', 'key2'],
         watch_params=True
     )
@@ -162,7 +162,7 @@ def test_reactive_fragment_with_dependencies():
 
 def test_param_change_detection():
     """Test detección de cambios en parámetros"""
-    from streamlit_plugins.framework.reactlit.reactive import (
+    from streamlit_plugins.framework.reactlit.reactlit import (
         _detect_param_changes,
         _get_or_init_fragment_state,
     )
@@ -197,7 +197,7 @@ def test_param_change_detection():
 
 def test_fragment_state_initialization():
     """Test que se inicializa estado para fragmentos"""
-    from streamlit_plugins.framework.reactlit.reactive import (
+    from streamlit_plugins.framework.reactlit.reactlit import (
         _get_or_init_fragment_state,
     )
 
@@ -211,7 +211,7 @@ def test_fragment_state_initialization():
 
 def test_session_graph_state():
     """Test que se gestiona estado del grafo en sesión"""
-    from streamlit_plugins.framework.reactlit.reactive import (
+    from streamlit_plugins.framework.reactlit.reactlit import (
         _get_session_graph,
     )
 
@@ -229,7 +229,7 @@ def test_session_graph_state():
 
 def test_enqueue_fragment_rerun():
     """Test que se pueden encolar fragmentos para rerun"""
-    from streamlit_plugins.framework.reactlit.reactive import (
+    from streamlit_plugins.framework.reactlit.reactlit import (
         _get_session_graph,
     )
 
@@ -243,7 +243,7 @@ def test_enqueue_fragment_rerun():
 
 def test_set_fragment_dirty():
     """Test que se puede marcar un fragmento como dirty"""
-    from streamlit_plugins.framework.reactlit.reactive import (
+    from streamlit_plugins.framework.reactlit.reactlit import (
         set_fragment_dirty,
         get_fragment_state,
     )
@@ -266,11 +266,11 @@ def test_fragment_workflow():
 
     # Simula: Fragment A → Fragment B
 
-    @reactive_fragment(watch_params=True)
+    @reactlit_fragment(watch_params=True)
     def fragment_a():
         st.session_state.shared_value = 42
 
-    @reactive_fragment(dependencies=['shared_value'])
+    @reactlit_fragment(dependencies=['shared_value'])
     def fragment_b():
         value = st.session_state.shared_value
         return value * 2
@@ -343,7 +343,7 @@ def test_fragment_state_machine():
 
 def test_nonexistent_fragment_rerun():
     """Test que rerunear fragmento inexistente es seguro"""
-    from streamlit_plugins.framework.reactlit.reactive import (
+    from streamlit_plugins.framework.reactlit.reactlit import (
         _trigger_fragment_rerun,
     )
 
@@ -360,7 +360,7 @@ def test_reset_reactive_state():
     reset_reactive_state()
 
     # Simula estado
-    from streamlit_plugins.framework.reactlit.reactive import (
+    from streamlit_plugins.framework.reactlit.reactlit import (
         _get_session_graph,
         _get_or_init_fragment_state,
     )
