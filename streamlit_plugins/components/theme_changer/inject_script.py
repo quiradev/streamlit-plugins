@@ -1,6 +1,16 @@
-import json
+from typing import Literal
 
-import streamlit.components.v1 as components
+import streamlit as st
+
+WIDTH: Literal["stretch", "content"] | int = "content"
+HEIGHT: Literal["stretch", "content"] | int = "content"
+try:
+    iframe = st.iframe
+except Exception as e:
+    import streamlit.components.v1 as components
+    iframe = components.html
+    WIDTH = 0
+    HEIGHT = 0
 
 from .entity import ThemeInput
 from .config import build_path
@@ -18,7 +28,7 @@ def inject_crossorigin_interface():
     # This works because streamlit.components.v1.html() creates an iframe from same domain as the parent scope
     # Same domain can bypass sandbox restrictions to create an interface for cross-origin iframes
     # This allows custom components to interact with parent scope
-    components.html(
+    iframe(
         f"""<script>
 frameElement.parentElement.style.display = 'none';
 if (!window.parent.ThemeChangerCOI_injected) {{
@@ -29,18 +39,18 @@ if (!window.parent.ThemeChangerCOI_injected) {{
     window.parent.document.head.appendChild(script);
 }}
 </script>""",
-        height=0,
-        width=0,
+        height=HEIGHT,
+        width=WIDTH
     )
 
 
 def change_theme_coi(key, theme_data: ThemeInput):
     theme_data_raw = theme_data.model_dump_json(exclude_none=True)
-    components.html(
+    iframe(
         f"""<script>
     // frameElement.parentElement.style.display = 'none';
     window.parent.changeThemeWithCOI('{key}', {theme_data_raw});
     </script>""",
-        height=0,
-        width=0,
+        height=HEIGHT,
+        width=WIDTH
     )

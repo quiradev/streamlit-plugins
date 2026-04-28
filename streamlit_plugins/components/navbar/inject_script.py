@@ -1,7 +1,19 @@
 import json
+from typing import Literal
 
 import requests
-import streamlit.components.v1 as components
+
+import streamlit as st
+
+WIDTH: Literal["stretch", "content"] | int = "content"
+HEIGHT: Literal["stretch", "content"] | int = "content"
+try:
+    iframe = st.iframe
+except Exception as e:
+    import streamlit.components.v1 as components
+    iframe = components.html
+    WIDTH = 0
+    HEIGHT = 0
 
 from .config import _RELEASE, build_path, dev_url
 
@@ -25,7 +37,7 @@ def inject_crossorigin_interface():
     # Same domain can bypass sandbox restrictions to create an interface for cross-origin iframes
     # This allows custom components to interact with parent scope
     escaped_content = content.replace("`", r"\`").replace("${", r"\${")
-    components.html(
+    iframe(
         f"""<script>
 frameElement.parentElement.style.display = 'none';
 if (!window.parent.NavbarCOI_injected) {{
@@ -36,22 +48,22 @@ if (!window.parent.NavbarCOI_injected) {{
     window.parent.document.head.appendChild(script);
 }}
 </script>""",
-        height=0,
-        width=0,
+        height=HEIGHT,
+        width=WIDTH
     )
 
 
 def instantiate_crossorigin_interface(component_name: str, key: str, is_navigation: bool, default_page_id: str, position_mode: str, sticky_nav: bool):
     """Instantiate the CrossOriginInterface in the parent scope that responds to messages for key."""
-    components.html(
+    iframe(
         f"""<script>
 frameElement.parentElement.style.display = 'none';
 if (!window.parent.navbarCOI) {{
     window.parent.navbarCOI = new window.parent.instantiateNavbarCOI('{component_name}', '{key}', {json.dumps(is_navigation)}, '{default_page_id}', '{position_mode}', {json.dumps(sticky_nav)});
 }}
 </script>""",
-        height=0,
-        width=0,
+        height=HEIGHT,
+        width=WIDTH,
     )
 
 def apply_styles(key: str, custom_styles: str):
@@ -65,10 +77,10 @@ def apply_styles(key: str, custom_styles: str):
         content = response.text
         pass
 
-    components.html(
+    iframe(
         f"""<script>
     window.parent.navbarCOI.applyNavbarStyles('{key}', `{content}`, {custom_styles})
     </script>""",
-        height=0,
-        width=0,
+        height=HEIGHT,
+        width=WIDTH,
     )
