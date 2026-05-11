@@ -1,0 +1,1352 @@
+<html lang="en" style="--op-suggest: 0.2;">
+<head>
+    <meta charset="UTF-8">
+    <title>Sankey interactivo avanzado v2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --panel-bg: #ffffff;
+            --text-main: #2d3436;
+            --text-light: #636e72;
+            --inactive-gray: #dfe6e9;
+            --inactive-node: #b2bec3;
+            --group-bg: #f8f9fa;
+            --group-border: #dcdde1;
+            --op-inactive: 0.5;
+            --op-suggest: 0.1;
+            --op-partial: 0.35;
+            --op-active: 0.8;
+        }
+
+        body {
+            font-family: "Inter",
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+        }
+
+        /* --- CONTROLES Y PRESENTACIÓN --- */
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #a55eea;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4b7bec;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .mode-label {
+            color: var(--text-light);
+            transition: color 0.3s;
+        }
+
+        .mode-label.active {
+            color: var(--text-main);
+        }
+
+        /* Ocultar en modo presentación */
+        body.is-presentation .controls {
+            display: none;
+        }
+
+        body.is-presentation .sankey-node,
+        body.is-presentation .group-item,
+        body.is-presentation .route-group {
+            pointer-events: none !important;
+        }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
+        .sankey-card {
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            width: 95%;
+            max-width: 1100px;
+            box-sizing: border-box;
+            overflow-x: auto;
+        }
+
+        #sankey-svg {
+            width: 100%;
+            height: auto;
+            min-width: 600px;
+            display: block;
+        }
+
+        /* =========================================
+           SISTEMA DE CAPAS Y CAMINOS
+        ========================================= */
+
+
+        /* 1. Grupos Gooey (Aplicado a cada tramo A->B individualmente) */
+        .gooey-group-inactive {
+            opacity: var(--op-inactive);
+            filter: none; /* Por defecto SIN filtro para proteger los caminos únicos */
+        }
+
+        .gooey-group-active {
+            opacity: var(--op-active);
+            filter: none; /* Por defecto SIN filtro */
+        }
+
+        /* ¡LA MAGIA CSS!
+           Aplica el filtro Gooey SOLO si encuentra al menos un path visible,
+           que tenga por delante a OTRO path que también sea visible.
+           Es decir: 2 o más caminos activos. */
+        .gooey-group-inactive:has(path:not([style*="display: none"]) ~ path:not([style*="display: none"])) {
+            filter: url(#gooey);
+        }
+
+        .gooey-group-active:has(path:not([style*="display: none"]) ~ path:not([style*="display: none"])) {
+            filter: url(#gooey);
+        }
+
+        .path-inactive {
+            fill: none;
+            stroke: var(--inactive-gray);
+        }
+
+        .path-active {
+            fill: none;
+            display: none;
+        }
+
+        /* 2. Capa de Interacción y Caminos Directos (Hover sin Gooey) */
+        .route-group {
+            cursor: pointer;
+        }
+
+        .route-segment {
+            fill: none;
+            stroke-opacity: 0;
+            transition: stroke-opacity 0.2s ease;
+        }
+
+        .route-group:hover .route-segment {
+            stroke: var(--route-gradient);
+            stroke-opacity: var(--op-active) !important;
+            filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .route-group:not(:hover).is-node-hovered .route-segment {
+            stroke-opacity: var(--op-partial) !important;
+        }
+
+        /* LA CAPA BASIC/HOVER SIEMPRE VISIBLE PERO TENUE */
+        .layer-hover-basic {
+            opacity: 1; /* El wrapper es totalmente opaco */
+        }
+
+        /* NUEVO: Selección Parcial manejada por JS */
+        .route-group:not(:hover).is-partial .route-segment {
+            stroke-opacity: var(--op-partial) !important;
+        }
+
+        .route-group:not(:hover):not(.is-node-hovered).is-suggested .route-segment {
+            stroke-opacity: var(--op-suggest) !important;
+        }
+
+        /* 3. Capa de Interacción y Caminos Directos (Hover sin Gooey) */
+        .route-group {
+            cursor: pointer;
+        }
+
+        .route-segment {
+            fill: none;
+            stroke: var(--inactive-gray);
+            stroke-opacity: 0; /* Invisible por defecto */
+            transition: stroke-opacity 0.2s ease;
+        }
+
+
+        /* Para cuando se hace hover sobre un NODO (activado por JS) */
+        .route-group.is-node-hovered .route-segment {
+            stroke-opacity: 0.3 !important;
+        }
+
+        /* =========================================
+                   NODOS
+                ========================================= */
+        .sankey-node {
+            cursor: pointer;
+            transform-origin: center;
+            transform-box: fill-box;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .sankey-node:hover {
+            transform: scale(1.03);
+        }
+
+        .sankey-node .node-bar {
+            fill: var(--inactive-node);
+            transition: fill 0.3s ease;
+        }
+
+        .label-bg {
+            fill: rgba(30, 39, 46, 0.85);
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 1px;
+            pointer-events: none;
+            transition: fill 0.3s;
+        }
+
+        .sankey-node.active .label-bg {
+            fill: rgba(0, 0, 0, 0.95);
+        }
+
+        .node-label-text {
+            fill: white;
+            font-size: 11px;
+            font-weight: 600;
+            pointer-events: none;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .group-container {
+            fill: var(--group-bg);
+            stroke: var(--group-border);
+            stroke-width: 2px;
+            rx: 12px;
+            ry: 12px;
+        }
+
+        .group-main-bar, .group-item-bar {
+            transition: fill 0.3s ease;
+        }
+
+        .group-title {
+            fill: var(--text-light);
+            font-size: 11px;
+            font-weight: bold;
+            text-anchor: middle;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .group-item {
+            cursor: pointer;
+        }
+
+        .group-item rect.hitbox {
+            fill: transparent;
+            rx: 6px;
+            transition: background 0.2s;
+        }
+
+        .group-item:hover rect.hitbox {
+            fill: rgba(0, 0, 0, 0.05);
+        }
+
+        .group-item text {
+            fill: var(--text-main);
+            font-size: 13px;
+            dominant-baseline: middle;
+            pointer-events: none;
+            font-weight: 500;
+        }
+
+        .item-icon {
+            fill: white;
+            stroke: var(--inactive-node);
+            stroke-width: 2px;
+            transition: all 0.2s;
+        }
+
+        .item-icon.radio {
+            rx: 50%;
+            ry: 50%;
+        }
+
+        .item-icon.checkbox {
+            rx: 3px;
+            ry: 3px;
+        }
+
+    </style>
+</head>
+
+<body>
+<div class="controls" id="controls-sliders" style="margin-bottom: 15px">
+    <label style="
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text-light);
+      font-size: 13px;
+    ">
+        Inactivos
+        <input type="range" id="slider-inactive" min="0" max="1" step="0.05" value="0.5">
+    </label>
+    <span style="
+      border-left: 2px solid var(--inactive-gray);
+      height: 20px;
+      margin: 0 5px;
+    "></span>
+
+    <label style="
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text-light);
+      font-size: 13px;
+    ">
+        Sugeridos
+        <input type="range" id="slider-suggest" min="0" max="1" step="0.05" value="0.1">
+    </label>
+    <span style="
+      border-left: 2px solid var(--inactive-gray);
+      height: 20px;
+      margin: 0 5px;
+    "></span>
+
+    <label style="
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text-light);
+      font-size: 13px;
+    ">
+        Parciales
+        <input type="range" id="slider-partial" min="0" max="1" step="0.05" value="0.35">
+    </label>
+    <span style="
+      border-left: 2px solid var(--inactive-gray);
+      height: 20px;
+      margin: 0 5px;
+    "></span>
+    <label style="
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text-light);
+      font-size: 13px;
+    ">
+        Activos
+        <input type="range" id="slider-active" min="0" max="1" step="0.05" value="0.8">
+    </label>
+</div>
+
+<div class="controls" id="controls-toggles">
+    <span class="mode-label active" id="label-multi">Multi Path</span>
+    <label class="switch">
+        <input type="checkbox" id="mode-toggle">
+        <span class="slider"></span>
+    </label>
+    <span class="mode-label" id="label-single">Single Path</span>
+
+    <span style="
+      border-left: 2px solid var(--inactive-gray);
+      height: 24px;
+      margin: 0 10px;
+    "></span>
+
+    <span class="mode-label" id="label-split">Destinos Múltiples</span>
+    <label class="switch">
+        <input type="checkbox" id="converge-toggle">
+        <span class="slider"></span>
+    </label>
+    <span class="mode-label active" id="label-converge">Destino Único</span>
+
+    <span style="
+      border-left: 2px solid var(--inactive-gray);
+      height: 24px;
+      margin: 0 10px;
+    "></span>
+
+    <span class="mode-label active" id="label-sugg-off">Ocultar Sugerencias</span>
+    <label class="switch">
+        <input type="checkbox" id="suggest-toggle">
+        <span class="slider"></span>
+    </label>
+    <span class="mode-label" id="label-sugg-on">Ver Sugerencias</span>
+</div>
+
+<div class="sankey-card">
+    <svg id="sankey-svg" viewBox="0 0 950 550">
+        <defs id="svg-defs">
+            <filter id="gooey" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur"/>
+                <feColorMatrix
+                        in="blur"
+                        mode="matrix"
+                        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -8"
+                        result="goo"
+                />
+            </filter>
+        </defs>
+
+        <g id="layer-inactive" class="layer-inactive"></g>
+        <g id="layer-active" class="layer-active"></g>
+        <g id="layer-hover-basic"></g>
+        <g id="layer-nodes"></g>
+    </svg>
+</div>
+
+<script>
+    // --- 1. CONFIGURACIÓN Y MODO PRESENTACIÓN ---
+    const PRESENTACION = false; // <-- CAMBIAR A TRUE PARA MODO SOLO LECTURA
+
+    const APP_CONFIG = {
+        useGradients: true,
+        showSuggestions: true,
+        columnColors: ["#ff7675", "#74b9ff", "#55efc4", "#fdcb6e", "#a55eea"]
+    };
+
+    const config = [
+        {
+            id: "col0",
+            title: "Región",
+            type: "radio",
+            color: APP_CONFIG.columnColors[0],
+            nodes: [
+                {id: "n1_1", label: "América", targets: ["n2_1", "n2_2", "n2_4"]},
+                {id: "n1_2", label: "Europa", targets: ["n2_2", "n2_3"]},
+                {id: "n1_3", label: "Asia", targets: ["n2_3", "n2_4"]}
+            ]
+        },
+        {
+            id: "col1",
+            title: "Plataforma",
+            type: "radio",
+            color: APP_CONFIG.columnColors[1],
+            nodes: [
+                {id: "n2_1", label: "AWS", targets: ["n3_1", "n3_2"]},
+                {id: "n2_2", label: "Azure", targets: ["n3_2", "n3_3"]},
+                {id: "n2_3", label: "GCP", targets: ["n3_3", "n3_4"]},
+                {id: "n2_4", label: "On-Premise", targets: ["n3_1", "n3_4"]}
+            ]
+        },
+        {
+            id: "col2",
+            title: "Base de Datos",
+            type: "radio",
+            color: APP_CONFIG.columnColors[2],
+            nodes: [
+                {id: "n3_1", label: "PostgreSQL", targets: ["n4_1", "n4_2"]},
+                {id: "n3_2", label: "MongoDB", targets: ["n4_2"]},
+                {id: "n3_3", label: "Redis", targets: ["n4_2", "n4_3"]},
+                {id: "n3_4", label: "Oracle", targets: ["n4_1", "n4_3"]}
+            ]
+        },
+        {
+            id: "col3",
+            title: "Nivel SLA",
+            type: "radio",
+            color: APP_CONFIG.columnColors[3],
+            nodes: [
+                {id: "n4_1", label: "Básico 99%", targets: ["n5_1", "n5_3"]},
+                {id: "n4_2", label: "Premium 99.9%", targets: ["n5_1", "n5_2", "n5_4"]},
+                {id: "n4_3", label: "Crítico 99.99%", targets: ["n5_2", "n5_5"]}
+            ]
+        },
+        {
+            id: "col4",
+            title: "Módulos",
+            type: "group",
+            converge: true,
+            color: APP_CONFIG.columnColors[4],
+            nodes: [
+                {id: "n5_1", label: "Auth Service"},
+                {id: "n5_2", label: "Data Analytics"},
+                {id: "n5_3", label: "File Storage"},
+                {id: "n5_4", label: "Cache Layer"},
+                {id: "n5_5", label: "AI Processing"}
+            ]
+        }
+    ];
+
+    const DIAGRAM_OPTIONS = {
+        marginTop: 60,
+        marginBottom: 60,
+        marginLeft: 40,
+        marginRight: 40,
+        minNodeGapY: 35,
+        columnSpacing: 180
+    };
+    const PATH_THICKNESS = 12;
+    const NORMAL_NODE_WIDTH = 20;
+    const GROUP_WIDTH = 170;
+
+    let SVG_WIDTH = 0,
+        SVG_HEIGHT = 0;
+    let isSinglePathMode = false;
+    let isGroupConvergeMode = false;
+    let selections = config.map(() => []);
+
+    const defsLayer = document.getElementById("svg-defs");
+    const inactiveLayer = document.getElementById("layer-inactive");
+    const activeLayer = document.getElementById("layer-active");
+    const hoverBasicLayer = document.getElementById("layer-hover-basic");
+    const nodesLayer = document.getElementById("layer-nodes");
+
+    let nodesDataMap = {},
+        allPaths = [],
+        nodePaths = {},
+        sourceGroups = {},
+        activePathElements = {},
+        inactivePathElements = {};
+    let convergentPathsY = {};
+    const createdGradients = new Set();
+
+    // Aplica el modo presentación a la interfaz
+    if (PRESENTACION) document.body.classList.add("is-presentation");
+
+    function init() {
+        inactiveLayer.innerHTML = "";
+        activeLayer.innerHTML = "";
+        hoverBasicLayer.innerHTML = "";
+        nodesLayer.innerHTML = "";
+        nodesDataMap = {};
+        allPaths = [];
+        nodePaths = {};
+        sourceGroups = {};
+        activePathElements = {};
+        inactivePathElements = {};
+
+        // --- REORDENAMIENTO ANTI-CRUCES (Barycenter Algorithm) ---
+        // Ordena los nodos según la posición de sus conexiones para evitar Spaghetti
+        for (let i = 1; i < config.length; i++) {
+            config[i].nodes.forEach((node) => {
+                let sumY = 0,
+                    count = 0;
+                config[i - 1].nodes.forEach((prevNode, pIdx) => {
+                    if (prevNode.targets && prevNode.targets.includes(node.id)) {
+                        sumY += pIdx;
+                        count++;
+                    }
+                });
+                node.orderScore = count > 0 ? sumY / count : 0;
+            });
+            config[i].nodes.sort((a, b) => a.orderScore - b.orderScore);
+        }
+
+        function generatePaths(currentNodeId, currentPath, colIndex) {
+            if (colIndex === config.length - 1) {
+                allPaths.push({id: currentPath.join("-"), nodes: [...currentPath]});
+                return;
+            }
+            const node = config[colIndex].nodes.find((n) => n.id === currentNodeId);
+            if (node && node.targets)
+                node.targets.forEach((t) =>
+                    generatePaths(t, [...currentPath, t], colIndex + 1)
+                );
+        }
+
+        config[0].nodes.forEach((n) => generatePaths(n.id, [n.id], 0));
+
+        config.forEach((col) =>
+            col.nodes.forEach((n) => {
+                nodePaths[n.id] = [];
+            })
+        );
+        allPaths.forEach((p) =>
+            p.nodes.forEach((nodeId) => {
+                if (nodePaths[nodeId]) nodePaths[nodeId].push(p);
+            })
+        );
+
+        // Reordenamos los "puertos" de salida de los nodos para que coincidan con el nuevo orden físico
+        config.forEach((col, colIdx) => {
+            if (colIdx === config.length - 1) return;
+            col.nodes.forEach((node) => {
+                nodePaths[node.id].sort((pA, pB) => {
+                    const nextNodeA = pA.nodes[colIdx + 1],
+                        nextNodeB = pB.nodes[colIdx + 1];
+                    const idxA = config[colIdx + 1].nodes.findIndex(
+                        (n) => n.id === nextNodeA
+                    );
+                    const idxB = config[colIdx + 1].nodes.findIndex(
+                        (n) => n.id === nextNodeB
+                    );
+                    return idxA - idxB;
+                });
+            });
+        });
+
+        const nodeHeights = {};
+        config.forEach((col) => {
+            col.nodes.forEach((node) => {
+                const flowHeight = nodePaths[node.id].length * PATH_THICKNESS;
+                nodeHeights[node.id] =
+                    col.type === "radio"
+                        ? Math.max(50, flowHeight + 10)
+                        : Math.max(34, flowHeight + 12);
+            });
+        });
+
+        let maxRequiredHeight = 0;
+        config.forEach((col) => {
+            if (col.type === "radio")
+                maxRequiredHeight = Math.max(
+                    maxRequiredHeight,
+                    col.nodes.reduce((s, n) => s + nodeHeights[n.id], 0) +
+                    DIAGRAM_OPTIONS.minNodeGapY * (col.nodes.length - 1)
+                );
+            else
+                maxRequiredHeight = Math.max(
+                    maxRequiredHeight,
+                    col.nodes.reduce((s, n) => s + nodeHeights[n.id] + 8, 0) + 50
+                );
+        });
+
+        SVG_HEIGHT =
+            maxRequiredHeight +
+            DIAGRAM_OPTIONS.marginTop +
+            DIAGRAM_OPTIONS.marginBottom;
+        SVG_WIDTH =
+            (config.length - 1) * NORMAL_NODE_WIDTH +
+            GROUP_WIDTH +
+            (config.length - 1) * DIAGRAM_OPTIONS.columnSpacing +
+            DIAGRAM_OPTIONS.marginLeft +
+            DIAGRAM_OPTIONS.marginRight;
+        document
+            .getElementById("sankey-svg")
+            .setAttribute("viewBox", `0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`);
+
+        let currentX = DIAGRAM_OPTIONS.marginLeft;
+        config.forEach((col) => {
+            col.x = currentX;
+            currentX +=
+                (col.type === "group" ? GROUP_WIDTH : NORMAL_NODE_WIDTH) +
+                DIAGRAM_OPTIONS.columnSpacing;
+        });
+
+        // --- DIBUJAR NODOS ---
+        config.forEach((col, colIdx) => {
+            const x = col.x;
+            if (col.type === "radio") {
+                let totalNodesH = col.nodes.reduce(
+                    (sum, n) => sum + nodeHeights[n.id],
+                    0
+                );
+                let availableH =
+                    SVG_HEIGHT - DIAGRAM_OPTIONS.marginTop - DIAGRAM_OPTIONS.marginBottom;
+                let gap =
+                    col.nodes.length > 1
+                        ? (availableH - totalNodesH) / (col.nodes.length - 1)
+                        : 0;
+                let currentY =
+                    DIAGRAM_OPTIONS.marginTop +
+                    (col.nodes.length === 1 ? (availableH - totalNodesH) / 2 : 0);
+
+                col.nodes.forEach((node) => {
+                    const h = nodeHeights[node.id];
+                    nodesDataMap[node.id] = {
+                        x,
+                        y: currentY,
+                        colIdx,
+                        width: NORMAL_NODE_WIDTH,
+                        height: h
+                    };
+
+                    const g = createSVGElement("g", {
+                        class: "sankey-node",
+                        "data-col": colIdx,
+                        "data-id": node.id
+                    });
+                    g.appendChild(
+                        createSVGElement("rect", {
+                            x,
+                            y: currentY,
+                            width: NORMAL_NODE_WIDTH,
+                            height: h,
+                            class: "node-bar",
+                            rx: 6,
+                            ry: 6
+                        })
+                    );
+
+                    const pillW = node.label.length * 7 + 16,
+                        pillH = 24;
+                    g.appendChild(
+                        createSVGElement("rect", {
+                            x: x + NORMAL_NODE_WIDTH / 2 - pillW / 2,
+                            y: currentY + h / 2 - pillH / 2,
+                            width: pillW,
+                            height: pillH,
+                            rx: 12,
+                            ry: 12,
+                            class: "label-bg"
+                        })
+                    );
+
+                    const text = createSVGElement("text", {
+                        x: x + NORMAL_NODE_WIDTH / 2,
+                        y: currentY + h / 2 + 1,
+                        class: "node-label-text"
+                    });
+                    text.textContent = node.label;
+                    g.append(text);
+
+                    if (!PRESENTACION) {
+                        g.onclick = () => handleSelection(colIdx, node.id);
+                        g.onmouseenter = () => handleNodeHover(node.id, true);
+                        g.onmouseleave = () => handleNodeHover(node.id, false);
+                    }
+                    nodesLayer.appendChild(g);
+                    currentY += h + gap;
+                });
+            } else if (col.type === "group") {
+                const groupHeight =
+                    col.nodes.reduce((sum, n) => sum + nodeHeights[n.id] + 8, 0) + 50;
+                const y = SVG_HEIGHT / 2 - groupHeight / 2;
+                const groupCenterY = y + groupHeight / 2;
+
+                const groupG = createSVGElement("g", {class: "sankey-group"});
+                // Panel de fondo opaco
+                groupG.appendChild(
+                    createSVGElement("rect", {
+                        x,
+                        y,
+                        width: GROUP_WIDTH,
+                        height: groupHeight,
+                        class: "group-container"
+                    })
+                );
+
+                // --- BARRAS DEL GRUPO (Por debajo del texto, encima del panel) ---
+                if (col.converge) {
+                    const leftBar = createSVGElement("rect", {
+                        x,
+                        y,
+                        width: NORMAL_NODE_WIDTH / 2,
+                        height: groupHeight,
+                        fill: "var(--inactive-node)",
+                        rx: 4,
+                        ry: 4,
+                        class: "group-main-bar",
+                        "data-col": colIdx
+                    });
+                    const rightBar = createSVGElement("rect", {
+                        x: x + GROUP_WIDTH - NORMAL_NODE_WIDTH / 2,
+                        y,
+                        width: NORMAL_NODE_WIDTH / 2,
+                        height: groupHeight,
+                        fill: "var(--inactive-node)",
+                        rx: 4,
+                        ry: 4,
+                        class: "group-main-bar",
+                        "data-col": colIdx
+                    });
+                    groupG.appendChild(leftBar);
+                    groupG.appendChild(rightBar);
+                }
+
+                const titleText = createSVGElement("text", {
+                    x: x + GROUP_WIDTH / 2,
+                    y: y + 25,
+                    class: "group-title"
+                });
+                titleText.textContent = col.title;
+                groupG.appendChild(titleText);
+
+                let itemY = y + 40;
+                col.nodes.forEach((node) => {
+                    const h = nodeHeights[node.id];
+                    nodesDataMap[node.id] = {
+                        x,
+                        y: itemY,
+                        colIdx,
+                        width: GROUP_WIDTH,
+                        height: h,
+                        type: "item",
+                        groupCenterY: groupCenterY
+                    };
+
+                    const itemG = createSVGElement("g", {
+                        class: "group-item",
+                        "data-col": colIdx,
+                        "data-id": node.id
+                    });
+
+                    // --- BARRAS INDIVIDUALES ---
+                    // Modo Múltiple: Subdividimos las barras por cada elemento
+                    if (!col.converge) {
+                        const leftBar = createSVGElement("rect", {
+                            x,
+                            y: itemY,
+                            width: NORMAL_NODE_WIDTH / 2,
+                            height: h,
+                            fill: "var(--inactive-node)",
+                            rx: 4,
+                            ry: 4,
+                            class: "group-item-bar",
+                            "data-col": colIdx,
+                            "data-id": node.id
+                        });
+                        const rightBar = createSVGElement("rect", {
+                            x: x + GROUP_WIDTH - NORMAL_NODE_WIDTH / 2,
+                            y: itemY,
+                            width: NORMAL_NODE_WIDTH / 2,
+                            height: h,
+                            fill: "var(--inactive-node)",
+                            rx: 4,
+                            ry: 4,
+                            class: "group-item-bar",
+                            "data-col": colIdx,
+                            "data-id": node.id
+                        });
+                        itemG.appendChild(leftBar);
+                        itemG.appendChild(rightBar);
+                    }
+
+                    itemG.appendChild(
+                        createSVGElement("rect", {
+                            x,
+                            y: itemY,
+                            width: GROUP_WIDTH,
+                            height: h,
+                            class: "hitbox"
+                        })
+                    );
+                    itemG.appendChild(
+                        createSVGElement("rect", {
+                            x: x + 15,
+                            y: itemY + h / 2 - 7,
+                            width: 14,
+                            height: 14,
+                            class: `item-icon ${isSinglePathMode ? "radio" : "checkbox"}`
+                        })
+                    );
+
+                    const text = createSVGElement("text", {
+                        x: x + 40,
+                        y: itemY + h / 2 + 1
+                    });
+                    text.textContent = node.label;
+                    itemG.append(text);
+
+                    if (!PRESENTACION) {
+                        itemG.onclick = () => handleSelection(colIdx, node.id);
+                        itemG.onmouseenter = () => handleNodeHover(node.id, true);
+                        itemG.onmouseleave = () => handleNodeHover(node.id, false);
+                    }
+                    groupG.appendChild(itemG);
+                    itemY += h + 8;
+                });
+                nodesLayer.appendChild(groupG);
+            }
+        });
+
+        // --- CÁLCULO DE CABLES EQUIDISTANTES PARA GRUPOS CONVERGENTES ---
+        convergentPathsY = {};
+        config.forEach((col, colIdx) => {
+            if (col.converge && colIdx > 0) {
+                let incomingPaths = allPaths.filter((p) => p.nodes[colIdx]);
+
+                // Ordenamos los cables según la altura de la que vienen en la columna anterior
+                incomingPaths.sort((pA, pB) => {
+                    const sIdA = pA.nodes[colIdx - 1];
+                    const sIdB = pB.nodes[colIdx - 1];
+                    return getPathPortY(sIdA, pA.id) - getPathPortY(sIdB, pB.id);
+                });
+
+                // Distribuimos equitativamente alrededor del centro absoluto del grupo
+                const groupCenterY = SVG_HEIGHT / 2;
+                const totalHeight = incomingPaths.length * PATH_THICKNESS;
+                const startY = groupCenterY - totalHeight / 2 + PATH_THICKNESS / 2;
+
+                incomingPaths.forEach((p, idx) => {
+                    convergentPathsY[p.id + "-" + colIdx] = startY + idx * PATH_THICKNESS;
+                });
+            }
+        });
+
+        // --- DIBUJAR CAMINOS Y CAPAS ---
+        // 1. Agrupar por ORIGEN Y DESTINO (Para que el Gooey solo fusione hilos paralelos)
+        let segmentGroups = {};
+        allPaths.forEach((p) => {
+            for (let i = 0; i < p.nodes.length - 1; i++) {
+                const sId = p.nodes[i],
+                    tId = p.nodes[i + 1];
+                const segId = sId + "-" + tId; // Agrupación estricta A -> B
+
+                if (!segmentGroups[segId])
+                    segmentGroups[segId] = {sId, tId, colIdx: i, paths: []};
+                segmentGroups[segId].paths.push({pathId: p.id});
+            }
+        });
+
+        Object.keys(segmentGroups).forEach((segId) => {
+            const groupData = segmentGroups[segId];
+            const sId = groupData.sId,
+                tId = groupData.tId;
+            const sNode = nodesDataMap[sId],
+                tNode = nodesDataMap[tId];
+            if (!sNode || !tNode) return;
+
+            const startX = sNode.x + sNode.width;
+            const endX = tNode.x;
+
+            // Creamos los grupos Gooey ESPECÍFICOS para este segmento
+            const inG = createSVGElement("g", {class: "gooey-group-inactive"});
+            const actG = createSVGElement("g", {class: "gooey-group-active"});
+            inactiveLayer.appendChild(inG);
+            activeLayer.appendChild(actG);
+
+            groupData.paths.forEach((pd) => {
+                const startY = getPathPortY(sId, pd.pathId);
+                const endY = getPathPortY(tId, pd.pathId);
+                const d = calculatePath(startX, startY, endX, endY);
+                const strokeWidthStr = `${PATH_THICKNESS + 2}px`;
+
+                const uniqueKey = pd.pathId + "-" + sId + "-" + tId;
+
+                // Path Inactivo
+                const pInactive = createSVGElement("path", {
+                    class: "path-inactive",
+                    d: d,
+                    style: `stroke-width: ${strokeWidthStr};`
+                });
+                inactivePathElements[uniqueKey] = pInactive; // <--- USAR LA NUEVA KEY
+                inG.appendChild(pInactive);
+
+                // Path Activo
+                const pColor = getGradientColor(
+                    config[groupData.colIdx].color,
+                    config[groupData.colIdx + 1].color,
+                    startX,
+                    endX
+                );
+                const pActive = createSVGElement("path", {
+                    class: "path-active",
+                    d: d,
+                    style: `stroke-width: ${strokeWidthStr}; stroke: ${pColor};`
+                });
+                activePathElements[uniqueKey] = pActive; // <--- USAR LA NUEVA KEY
+                actG.appendChild(pActive);
+            });
+        });
+
+        // 2. Capa Basic/Hover (Agrupados por Ruta Completa para iluminar CSS)
+        allPaths.forEach((p) => {
+            const routeGroup = createSVGElement("g", {
+                class: "route-group",
+                "data-path-id": p.id
+            });
+
+            let pathColorGradient = "var(--inactive-gray)"; // Valor por defecto
+
+            for (let i = 0; i < p.nodes.length - 1; i++) {
+                const sId = p.nodes[i],
+                    tId = p.nodes[i + 1];
+                if (!nodesDataMap[sId] || !nodesDataMap[tId]) continue;
+
+                const startX = nodesDataMap[sId].x + nodesDataMap[sId].width,
+                    endX = nodesDataMap[tId].x;
+                const startY = getPathPortY(sId, p.id),
+                    endY = getPathPortY(tId, p.id);
+
+                // Calculamos el color una vez por tramo
+                pathColorGradient = getGradientColor(
+                    config[i].color,
+                    config[i + 1].color,
+                    startX,
+                    endX
+                );
+
+                routeGroup.appendChild(
+                    createSVGElement("path", {
+                        class: "route-segment",
+                        d: calculatePath(startX, startY, endX, endY),
+                        // Asignamos el color específico a CADA segmento pero lo dejamos invisible vía CSS opacidad 0.1
+                        style: `stroke-width: 14px; stroke: ${pathColorGradient};`
+                    })
+                );
+            }
+            hoverBasicLayer.appendChild(routeGroup);
+        });
+
+        updateVisuals();
+    }
+
+    function getPathPortY(nodeId, pathId) {
+        const node = nodesDataMap[nodeId],
+            paths = nodePaths[nodeId];
+        if (!node || !paths) return 0;
+
+        const colConfig = config[node.colIdx];
+        if (colConfig && colConfig.converge && node.type === "item") {
+            // Usamos la coordenada equidistante pre-calculada
+            const precalcY = convergentPathsY[pathId + "-" + node.colIdx];
+            if (precalcY !== undefined) return precalcY;
+            return node.groupCenterY;
+        }
+
+        const idx = paths.findIndex((p) => p.id === pathId);
+        if (idx === -1) return node.y + node.height / 2;
+        const totalBlockHeight = paths.length * PATH_THICKNESS;
+        return (
+            node.y +
+            node.height / 2 -
+            totalBlockHeight / 2 +
+            idx * PATH_THICKNESS +
+            PATH_THICKNESS / 2
+        );
+    }
+
+    function getGradientColor(c1, c2, x1, x2) {
+        if (!APP_CONFIG.useGradients) return c1;
+        const gradientId = `grad-${c1.replace("#", "")}-${c2.replace("#", "")}-${Math.round(x1)}-${Math.round(x2)}`;
+        if (!createdGradients.has(gradientId)) {
+            const lg = createSVGElement("linearGradient", {
+                id: gradientId,
+                gradientUnits: "userSpaceOnUse",
+                x1: x1,
+                y1: 0,
+                x2: x2,
+                y2: 0
+            });
+            lg.appendChild(
+                createSVGElement("stop", {offset: "0%", "stop-color": c1})
+            );
+            lg.appendChild(
+                createSVGElement("stop", {offset: "100%", "stop-color": c2})
+            );
+            defsLayer.appendChild(lg);
+            createdGradients.add(gradientId);
+        }
+        return `url(#${gradientId})`;
+    }
+
+    function handleSelection(colIdx, nodeId) {
+        if (PRESENTACION) return;
+        const isCurrentlySelected = selections[colIdx].includes(nodeId);
+        const isGroup = config[colIdx].type === "group";
+
+        // Si es Single Mode y NO es un grupo, fuerza 1 sola selección
+        if (isSinglePathMode && !isGroup) {
+            selections[colIdx] = isCurrentlySelected ? [] : [nodeId];
+        } else {
+            if (isCurrentlySelected)
+                selections[colIdx] = selections[colIdx].filter((id) => id !== nodeId);
+            else selections[colIdx].push(nodeId);
+        }
+        updateVisuals();
+    }
+
+    function handleNodeHover(nodeId, isEnter) {
+        if (PRESENTACION) return;
+        const nodeInfo = nodesDataMap[nodeId];
+
+        // Si es un grupo convergente, BLOQUEAMOS el efecto visual del hover individual
+        if (nodeInfo && config[nodeInfo.colIdx].converge) return;
+
+        const relatedPaths = allPaths
+            .filter((p) => p.nodes.includes(nodeId))
+            .map((p) => p.id);
+        relatedPaths.forEach((pathId) => {
+            const group = document.querySelector(
+                `.route-group[data-path-id="${pathId}"]`
+            );
+            if (group)
+                isEnter
+                    ? group.classList.add("is-node-hovered")
+                    : group.classList.remove("is-node-hovered");
+        });
+    }
+
+    function updateVisuals() {
+        const activeColsCount = selections.filter((s) => s.length > 0).length;
+
+        // 1. Colores Nodos Normales
+        document.querySelectorAll(".sankey-node").forEach((nodeElem) => {
+            const id = nodeElem.getAttribute("data-id"),
+                colIdx = parseInt(nodeElem.getAttribute("data-col")),
+                rect = nodeElem.querySelector(".node-bar");
+            if (selections[colIdx].includes(id)) {
+                rect.style.fill = config[colIdx].color;
+                nodeElem.classList.add("active");
+            } else {
+                rect.style.fill = "var(--inactive-node)";
+                nodeElem.classList.remove("active");
+            }
+        });
+
+        // 2. Colores Checkboxes del Grupo
+        document.querySelectorAll(".group-item").forEach((itemElem) => {
+            const id = itemElem.getAttribute("data-id"),
+                colIdx = parseInt(itemElem.getAttribute("data-col")),
+                icon = itemElem.querySelector(".item-icon"),
+                text = itemElem.querySelector("text");
+            icon.className.baseVal = `item-icon ${isSinglePathMode ? "radio" : "checkbox"}`;
+            if (selections[colIdx].includes(id)) {
+                icon.style.fill = config[colIdx].color;
+                icon.style.stroke = config[colIdx].color;
+                text.style.fontWeight = "700";
+                text.style.fill = config[colIdx].color;
+            } else {
+                icon.style.fill = "transparent";
+                icon.style.stroke = "var(--inactive-node)";
+                text.style.fontWeight = "500";
+                text.style.fill = "var(--text-main)";
+            }
+        });
+
+        // 3. Barras Laterales Gigantes
+        document.querySelectorAll(".group-main-bar").forEach((bar) => {
+            const colIdx = parseInt(bar.getAttribute("data-col"));
+            if (selections[colIdx].length > 0) bar.style.fill = config[colIdx].color;
+            else bar.style.fill = "var(--inactive-node)";
+        });
+
+        // 4. Barras Laterales Individuales
+        document.querySelectorAll(".group-item-bar").forEach((bar) => {
+            const colIdx = parseInt(bar.getAttribute("data-col")),
+                id = bar.getAttribute("data-id");
+            if (selections[colIdx].includes(id)) bar.style.fill = config[colIdx].color;
+            else bar.style.fill = "var(--inactive-node)";
+        });
+
+        // --- LÓGICA DE CAMINOS DIVIDIDA (ESTRICTA VS SUGERIDA) ---
+        allPaths.forEach((p) => {
+            let isStrictCompatible = true;
+            let matchesCount = 0;
+            let convergeMatch = false;
+
+            for (let i = 0; i < config.length; i++) {
+                const sel = selections[i];
+                if (sel.length > 0) {
+                    // Si el destino es un grupo convergente, marcamos que afecta a TODOS los paths que llegan a él
+                    if (config[i].converge) {
+                        convergeMatch = true;
+                        continue;
+                    }
+
+                    if (sel.includes(p.nodes[i])) {
+                        matchesCount++;
+                    } else {
+                        isStrictCompatible = false;
+                    }
+                }
+            }
+
+            const requiredRadioCols = config.filter((c) => !c.converge).length;
+            const selectedRadioCols = selections.filter((s, i) => s.length > 0 && !config[i].converge).length;
+
+            // 1. FULLY ACTIVE (Gooey Color Brillante)
+            const isFullyActive = isStrictCompatible && (activeColsCount === config.length);
+
+            // 2. PARCIAL (El camino es ESTRICTAMENTE válido según tus clics, pero no está terminado)
+            const isPartiallyActive = isStrictCompatible && selectedRadioCols > 0 && !isFullyActive;
+
+            // 3. SUGERIDO (El camino choca, pero no cumple todos los pasos estritos. Incluye el clic en un grupo Convergente)
+            const isSuggested = APP_CONFIG.showSuggestions && !isFullyActive && !isPartiallyActive && (matchesCount > 0 || convergeMatch);
+
+            // --- ACTUALIZAR VISUALES CSS ---
+            const routeGroup = document.querySelector(
+                `.route-group[data-path-id="${p.id}"]`
+            );
+            if (routeGroup) {
+                routeGroup.classList.remove("is-partial", "is-suggested"); // Limpiamos
+
+                if (isPartiallyActive) {
+                    routeGroup.classList.add("is-partial");
+                } else if (isSuggested) {
+                    routeGroup.classList.add("is-suggested");
+                }
+            }
+
+            // Capa Gooey
+            for (let i = 0; i < p.nodes.length - 1; i++) {
+                const sId = p.nodes[i],
+                    tId = p.nodes[i + 1];
+                const key = p.id + "-" + sId + "-" + tId;
+                const pInactive = inactivePathElements[key],
+                    pActive = activePathElements[key];
+
+                if (pInactive && pActive) {
+                    if (isFullyActive) {
+                        pInactive.style.display = "none";
+                        pActive.style.display = "block";
+                    } else {
+                        pInactive.style.display = "block";
+                        pActive.style.display = "none";
+                    }
+                }
+            }
+        });
+    }
+
+    function calculatePath(startX, startY, endX, endY) {
+        const midX = startX + (endX - startX) * 0.45;
+        return `M${startX},${startY} C${midX},${startY} ${midX},${endY} ${endX},${endY}`;
+    }
+
+    function createSVGElement(tag, attrs) {
+        const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+        for (let key in attrs) el.setAttribute(key, attrs[key]);
+        return el;
+    }
+
+    // --- EVENT LISTENERS ---
+    const toggleInput = document.getElementById("mode-toggle");
+    const labelMulti = document.getElementById("label-multi");
+    const labelSingle = document.getElementById("label-single");
+
+    const convergeToggle = document.getElementById("converge-toggle");
+    const labelSplit = document.getElementById("label-split");
+    const labelConverge = document.getElementById("label-converge");
+
+    const suggestToggle = document.getElementById("suggest-toggle");
+    const labelSuggOn = document.getElementById("label-sugg-on");
+    const labelSuggOff = document.getElementById("label-sugg-off");
+
+    // 1. INICIALIZAR DESDE LA CONFIGURACIÓN (Busca si hay algún grupo con converge: true)
+    const groupCol = config.find((c) => c.type === "group");
+    isGroupConvergeMode = groupCol ? !!groupCol.converge : false;
+    convergeToggle.checked = isGroupConvergeMode;
+    if (isGroupConvergeMode) {
+        labelConverge.classList.add("active");
+        labelSplit.classList.remove("active");
+    }
+
+    // 2. TOGGLES
+    toggleInput.addEventListener("change", (e) => {
+        isSinglePathMode = e.target.checked;
+        if (isSinglePathMode) {
+            labelSingle.classList.add("active");
+            labelMulti.classList.remove("active");
+            selections = selections.map((colSelections, i) =>
+                colSelections.length > 0 && config[i].type !== "group"
+                    ? [colSelections[0]]
+                    : colSelections
+            );
+        } else {
+            labelMulti.classList.add("active");
+            labelSingle.classList.remove("active");
+        }
+        updateVisuals();
+    });
+
+    convergeToggle.addEventListener("change", (e) => {
+        isGroupConvergeMode = e.target.checked;
+        if (groupCol) groupCol.converge = isGroupConvergeMode; // Mantiene sincronizado el config
+        if (isGroupConvergeMode) {
+            labelConverge.classList.add("active");
+            labelSplit.classList.remove("active");
+        } else {
+            labelSplit.classList.add("active");
+            labelConverge.classList.remove("active");
+        }
+        init();
+    });
+
+    suggestToggle.checked = APP_CONFIG.showSuggestions;
+    if (APP_CONFIG.showSuggestions) {
+        labelSuggOn.classList.add("active");
+        labelSuggOff.classList.remove("active");
+    } else {
+        labelSuggOff.classList.add("active");
+        labelSuggOn.classList.remove("active");
+    }
+
+    suggestToggle.addEventListener("change", (e) => {
+        APP_CONFIG.showSuggestions = e.target.checked;
+        if (APP_CONFIG.showSuggestions) {
+            labelSuggOn.classList.add("active");
+            labelSuggOff.classList.remove("active");
+        } else {
+            labelSuggOff.classList.add("active");
+            labelSuggOn.classList.remove("active");
+        }
+        updateVisuals();
+    });
+
+    // 3. SLIDERS OPACIDAD
+    document
+        .getElementById("slider-inactive")
+        .addEventListener("input", (e) =>
+            document.documentElement.style.setProperty("--op-inactive", e.target.value)
+        );
+    document
+        .getElementById("slider-partial")
+        .addEventListener("input", (e) =>
+            document.documentElement.style.setProperty("--op-partial", e.target.value)
+        );
+    document
+        .getElementById("slider-active")
+        .addEventListener("input", (e) =>
+            document.documentElement.style.setProperty("--op-active", e.target.value)
+        );
+
+    document
+        .getElementById("slider-suggest")
+        .addEventListener("input", (e) =>
+            document.documentElement.style.setProperty("--op-suggest", e.target.value)
+        );
+
+    init();
+
+
+</script>
+
+</body>
+</html>
