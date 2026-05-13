@@ -26,14 +26,27 @@ _HTML = """
 
 _CSS = """
 .sankey-container {
-    --bg-color: #f0f2f5;
-    --panel-bg: #ffffff;
-    --text-main: #2d3436;
-    --text-light: #636e72;
-    --inactive-gray: #dfe6e9;
-    --inactive-node: #b2bec3;
-    --group-bg: #f8f9fa;
-    --group-border: #dcdde1;
+    /* Defaults ligados al tema de Streamlit con fallback a los valores actuales */
+    --bg-color: var(--st-secondary-background-color, #f0f2f5);
+    --panel-bg: var(--st-background-color, #ffffff);
+    --text-main: var(--st-text-color, #2d3436);
+    --text-light: var(--st-gray-text-color, #636e72);
+    --inactive-gray: var(--st-border-color-light, #dfe6e9);
+    --inactive-node: var(--st-gray-color, #b2bec3);
+    --group-bg: var(--st-secondary-background-color, #f8f9fa);
+    --group-border: var(--st-border-color, #dcdde1);
+    --base-radius: var(--st-base-radius, 0.5rem);
+    --button-radius: var(--st-button-radius, 0.5rem);
+    --base-font-size: var(--st-base-font-size, 16px);
+    --base-font-weight: var(--st-base-font-weight, 400);
+    --code-font-size: var(--st-code-font-size, 0.875rem);
+    --code-font-weight: var(--st-code-font-weight, 400);
+    --card-padding: calc(var(--st-base-font-size, 16px) * 1.875);
+    --node-label-font-size: 11px;
+    --group-title-font-size: 11px;
+    --group-item-font-size: 13px;
+    --route-stroke-width: 14px;
+    --route-hover-stroke-width: 18px;
     --op-inactive: 0.5;
     --op-suggest: 0.2;
     --op-partial: 0.35;
@@ -41,12 +54,13 @@ _CSS = """
 }
 
 .sankey-container {
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--st-font, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+    font-size: var(--base-font-size);
+    font-weight: var(--base-font-weight);
     color: var(--text-main);
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px 0;
 }
 
 .sankey-container.is-presentation .sankey-node,
@@ -61,8 +75,8 @@ _CSS = """
 
 .sankey-card {
     background: var(--panel-bg);
-    padding: 30px;
-    border-radius: 20px;
+    padding: var(--card-padding);
+    border-radius: var(--base-radius);
     box-shadow: 0 20px 40px rgba(0,0,0,0.08);
     width: 95%;
     max-width: 1100px;
@@ -82,8 +96,18 @@ _CSS = """
 .path-active { fill: none; display: none; }
 
 .route-group { cursor: pointer; }
-.route-segment { fill: none; stroke: var(--inactive-gray); stroke-opacity: 0; transition: stroke-opacity 0.2s ease; }
-.route-group:hover .route-segment { stroke-opacity: var(--op-active) !important; filter: drop-shadow(0 0 4px rgba(0,0,0,0.2)); }
+.route-segment {
+    fill: none;
+    stroke: var(--inactive-gray);
+    stroke-opacity: 0;
+    stroke-width: var(--route-hit-stroke-width, var(--route-stroke-width));
+    transition: stroke-opacity 0.2s ease, stroke-width 0.2s ease;
+}
+.route-group:hover .route-segment {
+    stroke-opacity: var(--op-active) !important;
+    stroke-width: var(--route-hover-stroke-width) !important;
+    filter: drop-shadow(0 0 4px rgba(0,0,0,0.2));
+}
 .route-group:not(:hover).is-node-hovered .route-segment { stroke-opacity: var(--op-partial) !important; }
 .layer-hover-basic { opacity: 1; }
 .route-group:not(:hover).is-partial .route-segment { stroke-opacity: var(--op-partial) !important; }
@@ -96,16 +120,16 @@ _CSS = """
 
 .label-bg { fill: rgba(30,39,46,0.85); stroke: rgba(255,255,255,0.1); stroke-width: 1px; pointer-events: none; transition: fill 0.3s; }
 .sankey-node.active .label-bg { fill: rgba(0,0,0,0.95); }
-.node-label-text { fill: white; font-size: 11px; font-weight: 600; pointer-events: none; text-anchor: middle; dominant-baseline: middle; }
+.node-label-text { fill: white; font-size: var(--node-label-font-size); font-weight: 600; pointer-events: none; text-anchor: middle; dominant-baseline: middle; }
 
 .group-container { fill: var(--group-bg); stroke: var(--group-border); stroke-width: 2px; }
 .group-main-bar, .group-item-bar { transition: fill 0.3s ease; }
-.group-title { fill: var(--text-light); font-size: 11px; font-weight: bold; text-anchor: middle; letter-spacing: 1px; text-transform: uppercase; }
+.group-title { fill: var(--text-light); font-size: var(--group-title-font-size); font-weight: bold; text-anchor: middle; letter-spacing: 1px; text-transform: uppercase; }
 
 .group-item { cursor: pointer; }
 .group-item rect.hitbox { fill: transparent; transition: background 0.2s; }
 .group-item:hover rect.hitbox { fill: rgba(0,0,0,0.05); }
-.group-item text { fill: var(--text-main); font-size: 13px; dominant-baseline: middle; pointer-events: none; font-weight: 500; }
+.group-item text { fill: var(--text-main); font-size: var(--group-item-font-size); dominant-baseline: middle; pointer-events: none; font-weight: 500; }
 
 .item-icon { fill: white; stroke: var(--inactive-node); stroke-width: 2px; transition: all 0.2s; }
 .item-icon.radio { rx: 50%; ry: 50%; }
@@ -114,7 +138,40 @@ _CSS = """
 
 _JS = """
 export default function({ parentElement, data, setStateValue }) {
-    const DEFAULT_COLORS = ["#ff7675", "#74b9ff", "#55efc4", "#fdcb6e", "#a55eea"];
+    // Fallback si no existen vars de tema o no se pueden parsear
+    const FALLBACK_COLORS = ["#0068c9", "#83c9ff", "#ff2b2b", "#ffabab", "#29b09d", "#7defa1", "#ff8700", "#ffd16a", "#6d3fc0", "#d5dae5"];
+
+    function parseCsvColors(value) {
+        if (!value || typeof value !== "string") return [];
+        return value.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+
+    function getThemePalette(name) {
+        const container = parentElement.querySelector(".sankey-container");
+        const rootStyles = window.getComputedStyle(container);
+        const key = (name || "categorical").toLowerCase();
+        if (key === "sequential") return parseCsvColors(rootStyles.getPropertyValue("--st-chart-sequential-colors"));
+        if (key === "diverging") return parseCsvColors(rootStyles.getPropertyValue("--st-chart-diverging-colors"));
+        return parseCsvColors(rootStyles.getPropertyValue("--st-chart-categorical-colors"));
+    }
+
+    const rawAppConfig = data?.app_config || {};
+
+    // Soporta el nombre pedido por usuario: `pallete` (y también `palette`)
+    const requestedPalette = rawAppConfig.pallete ?? rawAppConfig.palette;
+
+    let resolvedPalette = [];
+    if (Array.isArray(rawAppConfig.columnColors) && rawAppConfig.columnColors.length > 0) {
+        // Compatibilidad: override explícito existente
+        resolvedPalette = rawAppConfig.columnColors;
+    } else if (Array.isArray(requestedPalette) && requestedPalette.length > 0) {
+        // pallete como lista de colores
+        resolvedPalette = requestedPalette;
+    } else {
+        // pallete como nombre de paleta de Streamlit: categorical|sequential|diverging
+        const themePalette = getThemePalette(typeof requestedPalette === "string" ? requestedPalette : "categorical");
+        resolvedPalette = themePalette.length > 0 ? themePalette : FALLBACK_COLORS;
+    }
 
     const APP_CONFIG = {
         useGradients: true,
@@ -125,8 +182,10 @@ export default function({ parentElement, data, setStateValue }) {
         opSuggest: 0.2,
         opPartial: 0.35,
         opActive: 0.8,
-        columnColors: DEFAULT_COLORS,
-        ...(data?.app_config || {})
+        columnColors: resolvedPalette,
+        ...rawAppConfig,
+        // Se fuerza después del spread para que `pallete/palette` mande sobre defaults
+        columnColors: resolvedPalette,
     };
 
     const rawConfig = data?.config || [];
@@ -148,6 +207,8 @@ export default function({ parentElement, data, setStateValue }) {
     const NORMAL_NODE_WIDTH = data?.normal_node_width || 20;
     const GROUP_WIDTH = data?.group_width || 170;
 
+    const STYLE_CONFIG = data?.style_config || {};
+
     const container = parentElement.querySelector(".sankey-container");
     if (PRESENTATION && container) container.classList.add("is-presentation");
     if (VIEW_ONLY && container) container.classList.add("is-view-only");
@@ -155,6 +216,40 @@ export default function({ parentElement, data, setStateValue }) {
     container.style.setProperty("--op-suggest", String(APP_CONFIG.opSuggest));
     container.style.setProperty("--op-partial", String(APP_CONFIG.opPartial));
     container.style.setProperty("--op-active", String(APP_CONFIG.opActive));
+
+    // Colores CSS configurables
+    const CSS_VAR_MAP = {
+        bgColor:        "--bg-color",
+        panelBg:        "--panel-bg",
+        textMain:       "--text-main",
+        textLight:      "--text-light",
+        inactiveGray:   "--inactive-gray",
+        inactiveNode:   "--inactive-node",
+        groupBg:        "--group-bg",
+        groupBorder:    "--group-border",
+        baseRadius:     "--base-radius",
+        buttonRadius:   "--button-radius",
+        baseFontSize:   "--base-font-size",
+        baseFontWeight: "--base-font-weight",
+        codeFontSize:   "--code-font-size",
+        codeFontWeight: "--code-font-weight",
+        cardPadding:    "--card-padding",
+        nodeLabelFontSize: "--node-label-font-size",
+        groupTitleFontSize: "--group-title-font-size",
+        groupItemFontSize:  "--group-item-font-size",
+        routeStrokeWidth: "--route-stroke-width",
+        routeHoverStrokeWidth: "--route-hover-stroke-width",
+    };
+    Object.entries(CSS_VAR_MAP).forEach(([key, cssVar]) => {
+        if (STYLE_CONFIG[key]) container.style.setProperty(cssVar, STYLE_CONFIG[key]);
+    });
+
+    // Dimensiones de la tarjeta
+    const card = parentElement.querySelector(".sankey-card");
+    if (card) {
+        if (data?.width != null)  { card.style.maxWidth = `${data.width}px`; card.style.width = "100%"; }
+        if (data?.height != null) { card.style.minHeight = `${data.height}px`; }
+    }
 
     const defsLayer = parentElement.querySelector("#svg-defs");
     const inactiveLayer = parentElement.querySelector("#layer-inactive");
@@ -201,6 +296,12 @@ export default function({ parentElement, data, setStateValue }) {
         } catch (error) {
             // No-op: localStorage puede estar bloqueado por el navegador.
         }
+    }
+
+    function getCssSizePx(cssVarName, fallbackPx) {
+        const raw = window.getComputedStyle(container).getPropertyValue(cssVarName);
+        const value = Number.parseFloat(raw);
+        return Number.isFinite(value) ? value : fallbackPx;
     }
 
     const hasInitialSelections = Array.isArray(data?.initial_selections);
@@ -307,13 +408,23 @@ export default function({ parentElement, data, setStateValue }) {
                     nodesDataMap[node.id] = { x, y: currentY, colIdx, width: NORMAL_NODE_WIDTH, height: h };
                     const g = createSVGElement("g", { class: "sankey-node", "data-col": colIdx, "data-id": node.id });
                     g.appendChild(createSVGElement("rect", { x, y: currentY, width: NORMAL_NODE_WIDTH, height: h, class: "node-bar", rx: 6, ry: 6 }));
-                    const pillW = node.label.length * 7 + 16, pillH = 24;
-                    g.appendChild(createSVGElement("rect", {
-                        x: x + NORMAL_NODE_WIDTH / 2 - pillW / 2, y: currentY + h / 2 - pillH / 2,
-                        width: pillW, height: pillH, rx: 12, ry: 12, class: "label-bg"
-                    }));
+
+                    const labelFontSize = getCssSizePx("--node-label-font-size", 11);
+                    const pillPadX = Math.max(6, labelFontSize * 0.73);
+                    const pillH = Math.max(20, labelFontSize * 2.1);
+                    const pillRadius = pillH / 2;
+                    const labelBg = createSVGElement("rect", {
+                        x: x + NORMAL_NODE_WIDTH / 2 - pillPadX,
+                        y: currentY + h / 2 - pillH / 2,
+                        width: pillPadX * 2,
+                        height: pillH,
+                        rx: pillRadius,
+                        ry: pillRadius,
+                        class: "label-bg"
+                    });
                     const text = createSVGElement("text", { x: x + NORMAL_NODE_WIDTH / 2, y: currentY + h / 2 + 1, class: "node-label-text" });
                     text.textContent = node.label;
+                    g.appendChild(labelBg);
                     g.append(text);
                     if (!VIEW_ONLY) {
                         g.onclick = () => handleSelection(colIdx, node.id);
@@ -321,6 +432,17 @@ export default function({ parentElement, data, setStateValue }) {
                         g.onmouseleave = () => handleNodeHover(node.id, false);
                     }
                     nodesLayer.appendChild(g);
+
+                    // Mide el texto ya insertado para que el fondo respete el font-size real.
+                    let pillW = node.label.length * 7 + 16;
+                    try {
+                        pillW = Math.max(pillW, text.getBBox().width + pillPadX * 2);
+                    } catch (error) {
+                        // Fallback si el navegador no puede medir el bbox en este momento.
+                    }
+                    labelBg.setAttribute("x", String(x + NORMAL_NODE_WIDTH / 2 - pillW / 2));
+                    labelBg.setAttribute("width", String(pillW));
+
                     currentY += h + gap;
                 });
             } else if (col.type === "group") {
@@ -345,9 +467,19 @@ export default function({ parentElement, data, setStateValue }) {
                         itemG.appendChild(createSVGElement("rect", { x, y: itemY, width: NORMAL_NODE_WIDTH / 2, height: h, fill: "var(--inactive-node)", rx: 4, ry: 4, class: "group-item-bar", "data-col": colIdx, "data-id": node.id }));
                         itemG.appendChild(createSVGElement("rect", { x: x + GROUP_WIDTH - NORMAL_NODE_WIDTH / 2, y: itemY, width: NORMAL_NODE_WIDTH / 2, height: h, fill: "var(--inactive-node)", rx: 4, ry: 4, class: "group-item-bar", "data-col": colIdx, "data-id": node.id }));
                     }
+                    const groupItemFontSize = getCssSizePx("--group-item-font-size", 13);
+                    const iconSize = Math.max(12, groupItemFontSize * 1.08);
+                    const iconInsetX = Math.max(12, groupItemFontSize * 1.15);
+                    const labelGap = Math.max(10, groupItemFontSize * 0.85);
                     itemG.appendChild(createSVGElement("rect", { x, y: itemY, width: GROUP_WIDTH, height: h, class: "hitbox" }));
-                    itemG.appendChild(createSVGElement("rect", { x: x + 15, y: itemY + h / 2 - 7, width: 14, height: 14, class: `item-icon ${isSinglePathMode ? "radio" : "checkbox"}` }));
-                    const text = createSVGElement("text", { x: x + 40, y: itemY + h / 2 + 1 });
+                    itemG.appendChild(createSVGElement("rect", {
+                        x: x + iconInsetX,
+                        y: itemY + h / 2 - iconSize / 2,
+                        width: iconSize,
+                        height: iconSize,
+                        class: `item-icon ${isSinglePathMode ? "radio" : "checkbox"}`
+                    }));
+                    const text = createSVGElement("text", { x: x + iconInsetX + iconSize + labelGap, y: itemY + h / 2 + 1 });
                     text.textContent = node.label;
                     itemG.append(text);
                     if (!VIEW_ONLY) {
@@ -420,7 +552,7 @@ export default function({ parentElement, data, setStateValue }) {
                 routeGroup.appendChild(createSVGElement("path", {
                     class: "route-segment",
                     d: calculatePath(startX, startY, endX, endY),
-                    style: `stroke-width: 14px; stroke: ${pathColor};`
+                    style: `--route-hit-stroke-width: 14px; stroke: ${pathColor};`
                 }));
             }
             hoverBasicLayer.appendChild(routeGroup);
@@ -590,6 +722,9 @@ def sankey_input(
     path_thickness: int = 12,
     normal_node_width: int = 20,
     group_width: int = 170,
+    width: Optional[int] = None,
+    height: Optional[int] = None,
+    style_config: Optional[Dict[str, Any]] = None,
     key: Optional[str] = None,
 ):
     """
@@ -603,7 +738,8 @@ def sankey_input(
             - color: (opcional) color hex; si no se indica usa app_config.columnColors[i]
             - converge: (solo type="group") True para barra única convergente
             - nodes: lista de nodos con id, label y targets (excepto última columna)
-        app_config: Opciones visuales (useGradients, showSuggestions, columnColors).
+        app_config: Opciones visuales (useGradients, showSuggestions, columnColors,
+            opInactive, opSuggest, opPartial, opActive).
         initial_selections: Selecciones iniciales por columna.
         diagram_options: Opciones de layout (marginTop/Bottom/Left/Right, minNodeGapY, columnSpacing).
         presentation: Si True deshabilita interacción y oculta controles.
@@ -612,6 +748,14 @@ def sankey_input(
         path_thickness: Grosor en px de los caminos (default 12).
         normal_node_width: Ancho en px de nodos tipo radio (default 20).
         group_width: Ancho en px del panel de grupo (default 170).
+        width: Ancho máximo de la tarjeta en px. None = sin límite (95% del contenedor).
+        height: Alto mínimo de la tarjeta en px. None = alto automático.
+        style_config: Sobreescritura de variables CSS. Claves admitidas:
+            bgColor, panelBg, textMain, textLight,
+            inactiveGray, inactiveNode, groupBg, groupBorder,
+            baseRadius, buttonRadius, baseFontSize, baseFontWeight,
+            codeFontSize, codeFontWeight, cardPadding,
+            nodeLabelFontSize, groupTitleFontSize, groupItemFontSize.
         key: Clave única del componente Streamlit.
 
     Returns:
@@ -630,6 +774,9 @@ def sankey_input(
             "path_thickness": path_thickness,
             "normal_node_width": normal_node_width,
             "group_width": group_width,
+            "width": width,
+            "height": height,
+            "style_config": style_config or {},
         },
         default={"selections": initial_selections or [[] for _ in config]},
         width= "stretch",
@@ -637,3 +784,4 @@ def sankey_input(
         on_selections_change=lambda: None,
         key=key,
     )
+
