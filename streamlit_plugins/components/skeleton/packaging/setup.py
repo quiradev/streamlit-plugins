@@ -19,7 +19,7 @@ with open(main_folder / "VERSION", "r") as reader:
     VERSION = reader.read().strip()
 
 setup(
-    name='streamlit-component-sankey-input',
+    name='streamlit-component-skeleton',
     version=VERSION,
     license='MIT',
     url='https://github.com/quiradev/streamlit-plugins',
@@ -28,7 +28,7 @@ setup(
     long_description_content_type="text/markdown",
     author_email='v.quilonr@gmail.com',
     author='Victor Quilon Ranera',
-    packages=find_packages(include=["streamlit_plugins.components.sankey_input", "streamlit_plugins.components.sankey_input.*"]),
+    packages=find_packages(include=["streamlit_plugins.components.skeleton", "streamlit_plugins.components.skeleton.*"]),
     python_requires='>=3.10',
     install_requires=requirements,
     include_package_data=True,
@@ -40,8 +40,8 @@ setup(
     ],
     keywords=["streamlit", "plugins", "components", "loader"],
     options={
-        'sdist': {'dist_dir': './dist/streamlit-plugins-component-sankey-input'},
-        'bdist_wheel': {'dist_dir': './dist/streamlit-plugins-component-sankey-input'},
-        'build': {'build_base': './build/streamlit-plugins-component-sankey-input'}
+        'sdist': {'dist_dir': './dist/streamlit-plugins-component-skeleton'},
+        'bdist_wheel': {'dist_dir': './dist/streamlit-plugins-component-skeleton'},
+        'build': {'build_base': './build/streamlit-plugins-component-skeleton'}
     }
 )
