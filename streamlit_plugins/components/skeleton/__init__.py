@@ -1,6 +1,5 @@
 import contextlib
 import sys
-import time
 import uuid
 from typing import Literal, Any, Iterator
 
@@ -9,6 +8,8 @@ from streamlit.components.v2 import component as create_component
 from streamlit.delta_generator import DeltaGenerator
 from streamlit.elements.lib.layout_utils import Width
 from streamlit.proto.Skeleton_pb2 import Skeleton as SkeletonProto
+
+from .template_builder import StreamlitSkeletonBuilder
 
 SKELETON_BASE_CSS = """
 <style>
@@ -267,10 +268,18 @@ def st_skeleton(
         *,
         base_style: Literal["list", "page"] | None = None,
         template: str | None = None,
+        builder: StreamlitSkeletonBuilder | None = None,
         width: Width | int = "stretch",
         height: int | str | None = None,
         key: str | None = None,
 ) -> SkeletonResult:
+    if builder is not None:
+        if template is not None:
+            raise ValueError("No puedes usar `template` y `builder` al mismo tiempo.")
+        if base_style is not None:
+            raise ValueError("No puedes usar `base_style` y `builder` al mismo tiempo.")
+        template = builder.build()
+
     key_id: str = key or f"skeleton-{uuid.uuid4().hex}"
     return SkeletonResult(
         base_style=base_style,
@@ -285,3 +294,5 @@ st._main.skeleton = st_skeleton
 st.skeleton = st_skeleton
 sys.modules["streamlit"].skeleton = st_skeleton
 sys.modules["streamlit"] = st
+
+__all__ = ["StreamlitSkeletonBuilder", "st_skeleton"]
