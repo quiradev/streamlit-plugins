@@ -3,6 +3,34 @@
 Component to use when you want to have a navbar in your streamlit app.
 It can be used with native multipage streamlit, or use the multilit framework.
 
+## Component versions
+
+The package includes both implementations. The existing top-level `st_navbar` import continues to point to V1 for backwards compatibility. Use `st_navbar_v1` or `st_navbar_v2` to select a version explicitly; the `v1` and `v2` modules also expose that version's complete API, including its navigation helpers. V2 uses Streamlit's custom-component v2 API and requires Streamlit 1.51 or newer; V1 remains available on the existing supported versions.
+
+```python
+from streamlit_plugins.components.navbar import st_navbar_v1, st_navbar_v2
+
+# Existing V1 applications continue working without changes.
+legacy_selection = st_navbar_v1(
+    menu_definition=[
+        {"id": "home", "label": "Home"},
+        {"id": "settings", "label": "Settings"},
+    ],
+    position_mode="static",
+)
+
+# Use V2 explicitly; direct navbar rendering uses the static position.
+selection = st_navbar_v2(
+    menu_definition=[{"id": "settings", "label": "Settings"}],
+    home_definition={"id": "home", "label": "Home"},
+    position_mode="static",
+)
+```
+
+Install the published navbar package to use V2:
+
+For local V2 development and testing from a repository checkout, see the [V2 development guide](v2/README.md). V1's existing top-level imports remain unchanged.
+
 If you want to use the native multipage streamlit, you can use the `st_navbar` function to create the navbar.
 
 This component it returns the id of the defined menu that has to run the page.

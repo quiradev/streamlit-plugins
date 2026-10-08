@@ -148,8 +148,20 @@ history = st.Page("tools/history.py", title="History", icon=":material/history:"
 logout_page = st.Page(logout, title="Log out", icon=":material/logout:", url_path="logout")
 
 # HERE IS THE CHANGE
-from streamlit_plugins.components.navbar import NavbarPositionType, st_navigation, st_switch_home, st_navbar, \
-    set_force_next_page, st_switch_page
+with st.sidebar:
+    version = st.pills(
+        "Version del componente",
+        ["v1", "v2"],
+        default="v1"
+    )
+
+if version == "v1":
+    from streamlit_plugins.components.navbar import NavbarPositionType, st_navigation, st_switch_home, st_navbar, \
+        set_force_next_page, st_switch_page
+
+elif version == "v2":
+    from streamlit_plugins.components.navbar.v2 import NavbarPositionType, st_navigation, st_switch_home, st_navbar, \
+        set_force_next_page, st_switch_page
 
 my_sidebar()
 

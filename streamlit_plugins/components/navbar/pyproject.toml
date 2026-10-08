@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=77.0.3", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "streamlit-component-navbar"
+version = "0.7.17"
+dynamic = ["dependencies"]
+description = "Streamlit navbar component"
+readme = "README.md"
+requires-python = ">=3.10"
+
+[[tool.streamlit.component.components]]
+name = "nav_bar"
+asset_dir = "v2/frontend/build"
+
+[tool.setuptools]
+package-dir = { "" = "../../../" }
+include-package-data = true
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["packaging/requirements.txt"] }
+
+[tool.setuptools.packages.find]
+where = ["../../../"]
+include = [
+  "streamlit_plugins.extension",
+  "streamlit_plugins.extension.*",
+  "streamlit_plugins.components.navbar",
+  "streamlit_plugins.components.navbar.*",
+]
+
+[tool.setuptools.package-data]
+"streamlit_plugins.components.navbar" = ["pyproject.toml"]
+"streamlit_plugins.components.navbar.v1" = ["frontend/build/**/*"]
+"streamlit_plugins.components.navbar.v2" = ["frontend/build/**/*", "pyproject.toml"]

@@ -3,7 +3,7 @@ version: "3"
 services:
   navbar_dev:
     image: streamlit-component-navbar
-    build: navbar/frontend
+    build: navbar/v1/frontend
     ports:
       - "3000:3000"
       - "9229:9229"
@@ -20,7 +20,7 @@ services:
 
   navbar_frontend:
     image: streamlit-component-navbar
-    build: navbar/frontend
+    build: navbar/v1/frontend
     ports:
       - "3000:3000"
     command: npm run start
@@ -36,7 +36,7 @@ services:
 
   navbar_build:
     image: streamlit-component-navbar
-    build: navbar/frontend
+    build: navbar/v1/frontend
     command: npm run build
     volumes:
       - ./navbar/frontend/.env:/frontend/.env
@@ -45,6 +45,18 @@ services:
       - ./navbar/frontend/public:/frontend/public
       - ./navbar/frontend/src:/frontend/src
       - ./navbar/frontend/build:/frontend/build
+
+  navbar_v2:
+    image: streamlit-component-navbar-v2
+    build: navbar/v2/frontend
+    command: npm run dev
+    volumes:
+      - ./navbar/v2/frontend/.env:/frontend/.env
+      - ./navbar/v2/frontend/public:/frontend/public
+      - ./navbar/v2/frontend/src:/frontend/src
+      - ./navbar/v2/frontend/tsconfig.json:/frontend/tsconfig.json
+      - ./navbar/v2/frontend/vite.config.ts:/frontend/vite.config.ts
+      - ./navbar/v2/frontend/build:/frontend/build
 
   label_studio_dev:
     image: streamlit-component-labelstudio

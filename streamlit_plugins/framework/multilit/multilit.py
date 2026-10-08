@@ -37,24 +37,24 @@ logger = logging.getLogger(__name__)
 major, minnor, bug = st.__version__.split('.')
 major, minnor, bug = int(major), int(minnor), int(bug)
 # minnor == 36, 37
-DEFAULT_NAVBAR_PARENT_SELECTOR_FRAGMENT = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] > [data-testid="element-container"] > iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
-DEFAULT_NAVBAR_PARENT_SELECTOR = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="element-container"] > iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
+DEFAULT_NAVBAR_PARENT_SELECTOR_FRAGMENT = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] > [data-testid="element-container"] > iframe[title="streamlit_plugins.components.navbar.v1.nav_bar"])"""
+DEFAULT_NAVBAR_PARENT_SELECTOR = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="element-container"] > iframe[title="streamlit_plugins.components.navbar.v1.nav_bar"])"""
 if major == 1:
     if minnor == 36:
         st.fragment = st.experimental_fragment
     if 36 <= minnor <= 37:
         ...
     if minnor == 38:
-        DEFAULT_NAVBAR_PARENT_SELECTOR = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="element-container"] > iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
-        DEFAULT_NAVBAR_PARENT_SELECTOR_FRAGMENT = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] > [data-testid="element-container"] > iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
+        DEFAULT_NAVBAR_PARENT_SELECTOR = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="element-container"] > iframe[title="streamlit_plugins.components.navbar.v1.nav_bar"])"""
+        DEFAULT_NAVBAR_PARENT_SELECTOR_FRAGMENT = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] > [data-testid="element-container"] > iframe[title="streamlit_plugins.components.navbar.v1.nav_bar"])"""
 
     if minnor >= 39:
-        DEFAULT_NAVBAR_PARENT_SELECTOR = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] > iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
-        DEFAULT_NAVBAR_PARENT_SELECTOR_FRAGMENT = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] > iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
+        DEFAULT_NAVBAR_PARENT_SELECTOR = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] > iframe[title="streamlit_plugins.components.navbar.v1.nav_bar"])"""
+        DEFAULT_NAVBAR_PARENT_SELECTOR_FRAGMENT = """[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] > iframe[title="streamlit_plugins.components.navbar.v1.nav_bar"])"""
 
     if minnor >= 43:
-        DEFAULT_NAVBAR_PARENT_SELECTOR = f"""[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"].st-key-{NAVIGATION_COMPONENT_KEY} > div > iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
-        DEFAULT_NAVBAR_PARENT_SELECTOR_FRAGMENT = f"""[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"].st-key-{NAVIGATION_COMPONENT_KEY} > div > iframe[title="streamlit_plugins.components.navbar.nav_bar"])"""
+        DEFAULT_NAVBAR_PARENT_SELECTOR = f"""[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"].st-key-{NAVIGATION_COMPONENT_KEY} > div > iframe[title="streamlit_plugins.components.navbar.v1.nav_bar"])"""
+        DEFAULT_NAVBAR_PARENT_SELECTOR_FRAGMENT = f"""[data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"] > div > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"].st-key-{NAVIGATION_COMPONENT_KEY} > div > iframe[title="streamlit_plugins.components.navbar.v1.nav_bar"])"""
 
 
 def add_trusted_url(url: str):

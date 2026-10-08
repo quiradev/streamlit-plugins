@@ -33,7 +33,9 @@ setup(
     install_requires=requirements,
     include_package_data=True,
     package_data={
-          "streamlit_plugins.components.navbar": ["frontend/build/**/*"]
+        "streamlit_plugins.components.navbar": ["pyproject.toml"],
+        "streamlit_plugins.components.navbar.v1": ["frontend/build/**/*"],
+        "streamlit_plugins.components.navbar.v2": ["frontend/build/**/*", "pyproject.toml"]
     },
     classifiers=[
         'Intended Audience :: Developers',

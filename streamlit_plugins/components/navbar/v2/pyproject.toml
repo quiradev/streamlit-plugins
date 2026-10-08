@@ -1,0 +1,8 @@
+# Ship a minimal metadata file that can be picked up by Streamlit at runtime.
+[project]
+name = "streamlit-component-navbar"
+version = "0.7.17"
+
+[[tool.streamlit.component.components]]
+name = "nav_bar"
+asset_dir = "frontend/build"
