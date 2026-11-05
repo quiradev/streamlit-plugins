@@ -64,7 +64,7 @@ __CSS = """
   flex: 1;
   max-width: 550px;
   background: #fff;
-  padding: 10px;
+  padding: 0;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
@@ -952,8 +952,31 @@ def st_documents_blocks_info(
         tab_order: Optional[list[Literal["Blocks", "JSON", "HTML", "Markdown"] | str]] = None,
         custom_tabs: Optional[list[str]] = None,
         format_raw_code: bool = False,
+        set_state_on: Literal["hover", "click"] = "hover",
+        right_col_width: int | str = "100%",
 ) -> Generator[tuple[list[dict], list[TabContainer]], Any, None]:
-    main_container = st.container(horizontal=True)
+    st.write(
+        f"""
+        <style>
+        .st-key-documents_blocks_container {{
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+        }}
+        .st-key-documents_blocks_container > div:first-child {{
+            flex: 0 0 fit-content;
+        }}
+        .st-key-documents_blocks_container > div:last-child {{
+            width: {right_col_width};
+            flex: 1 1 auto;
+            max-width: 100%;
+            overflow: auto;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    main_container = st.container(horizontal=True, key="documents_blocks_container", gap="xxsmall")
     page_selected = 1
     if document.pages > 1:
         with st.container(horizontal_alignment="right"):
@@ -988,7 +1011,7 @@ def st_documents_blocks_info(
                 reading_order=reading_order,
                 custom_styles=custom_styles,
                 default_selected=dynamic_selected_block_id,
-                set_state_on="hover",
+                set_state_on=set_state_on,
                 width="content",
                 height=600,
                 key="document_blocks"
@@ -1135,22 +1158,21 @@ def st_documents_blocks_info(
         elif json_col and json_col.open:
             with json_col:
                 with st_dynamic_container(
-                        container_source_key="document_blocks",
-                        key="view-container", mimic_vertical=True, border=True
+                    container_source_key="document_blocks",
+                    key="view-container", border=True
                 ):
                     st.json(blocks_page)
 
         elif html_col and html_col.open:
             with html_col:
-                render_col, raw_col = st.tabs(
-                    ["Renderer", "Raw"],
-                    on_change=on_tab_change
-                )
                 with st_dynamic_container(
                         container_source_key="document_blocks",
-                        key="view-container", mimic_vertical=True, border=True
+                        key="view-container", border=True
                 ):
-
+                    render_col, raw_col = st.tabs(
+                        ["Renderer", "Raw"],
+                        on_change=on_tab_change
+                    )
                     html_content = _concat_content(blocks_normalized, content_type="html", parent_content_has_children=parent_content_has_children)
                     if not html_content:
                         st.warning("HTML content is empty. Please ensure that the blocks contain valid HTML content.")
@@ -1167,7 +1189,7 @@ def st_documents_blocks_info(
             with markdown_col:
                 with st_dynamic_container(
                     container_source_key="document_blocks",
-                    key="view-container", mimic_vertical=True, border=True
+                    key="view-container", border=True
                 ):
                     render_col, raw_col = st.tabs(
                         ["Renderer", "Raw"],
