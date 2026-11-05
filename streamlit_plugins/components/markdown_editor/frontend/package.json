@@ -1,0 +1,16 @@
+{
+  "name": "markdown-editor-renderers",
+  "private": true,
+  "scripts": {
+    "build": "node build.cjs"
+  },
+  "dependencies": {
+    "diff": "^8.0.2",
+    "highlight.js": "^11.11.1",
+    "katex": "^0.16.22",
+    "mermaid": "^11.12.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12"
+  }
+}

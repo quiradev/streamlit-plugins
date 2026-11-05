@@ -1,0 +1,10 @@
+{
+  "name": "markdown-block-editor-browser-tests",
+  "private": true,
+  "scripts": {
+    "test": "node --test markdown_editor.browser.test.cjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.2"
+  }
+}

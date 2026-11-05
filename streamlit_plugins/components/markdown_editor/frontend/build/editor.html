@@ -1,0 +1,183 @@
+<div class="md-editor">
+    <div class="md-toolbar" role="group" aria-label="Controles del editor">
+        <div class="md-quickbar" role="toolbar" aria-label="Acciones y vista del documento">
+            <div class="md-quickbar-start">
+                <div class="md-history-controls" data-toolbar-section="history" role="group" aria-label="Historial">
+                    <button type="button" data-history="undo" title="Deshacer (Ctrl+Z)" aria-label="Deshacer"
+                            disabled><span class="md-icon" aria-hidden="true">undo</span></button>
+                    <button type="button" data-history="redo" title="Rehacer (Ctrl+Y o Ctrl+Shift+Z)"
+                            aria-label="Rehacer" disabled><span class="md-icon" aria-hidden="true">redo</span></button>
+                </div>
+                <div class="md-save-controls" data-toolbar-section="changes" role="group"
+                     aria-label="Guardar y revisar cambios">
+                    <button type="button" class="md-save" title="Guardar cambios" aria-label="Guardar cambios"
+                            hidden><span class="md-icon" aria-hidden="true">save</span></button>
+                    <button type="button" class="md-review-button" title="Ver cambios sin guardar"
+                            aria-label="Ver cambios sin guardar" hidden><span class="md-icon"
+                                                                              aria-hidden="true">difference</span>
+                    </button>
+                </div>
+            </div>
+            <div class="md-quickbar-end" data-toolbar-section="view">
+                <div class="md-editor-mode" role="group" aria-label="Modo de edición">
+                    <button type="button" data-mode="raw_visual" title="Raw: sintaxis Markdown"
+                            aria-label="Modo raw"
+                            aria-pressed="true"><span class="md-icon" aria-hidden="true">markdown</span>
+                    </button>
+                    <button type="button" data-mode="visual" title="Visual: documento renderizado"
+                            aria-label="Modo visual" aria-pressed="false"><span class="md-icon"
+                                                                                aria-hidden="true">visibility</span>
+                    </button>
+                </div>
+                <button type="button" class="md-copy-all" title="Copiar todo" aria-label="Copiar todo"><span
+                        class="md-icon" aria-hidden="true">content_copy</span></button>
+                <button type="button" class="md-help-toggle" title="Ayuda y atajos de teclado"
+                        aria-label="Ayuda y atajos de teclado" aria-expanded="false"><span class="md-icon"
+                                                                                           aria-hidden="true">help_outline</span>
+                </button>
+            </div>
+        </div>
+        <div class="md-edit-row md-ribbon-panel" role="toolbar" aria-label="Herramientas de edición">
+            <div class="md-ribbon-groups">
+                <details class="md-toolbar-group" data-toolbar-section="format" open>
+                    <summary><span>Formato</span></summary>
+                    <div class="md-toolbar-group-body">
+                        <button type="button" data-format="**" title="Negrita" aria-label="Negrita"><span
+                                class="md-icon" aria-hidden="true">format_bold</span></button>
+                        <button type="button" data-format="*" title="Cursiva" aria-label="Cursiva"><span
+                                class="md-icon" aria-hidden="true">format_italic</span></button>
+                        <button type="button" data-format="~~" title="Tachado" aria-label="Tachado"><span
+                                class="md-icon" aria-hidden="true">format_strikethrough</span></button>
+                        <button type="button" data-format="`" title="Código en línea" aria-label="Código en línea">
+                            <span class="md-icon" aria-hidden="true">code</span></button>
+                    </div>
+                </details>
+                <details class="md-toolbar-group" data-toolbar-section="block" open>
+                    <summary><span>Bloque</span></summary>
+                    <div class="md-toolbar-group-body">
+                        <select class="md-block-type" aria-label="Tipo para el bloque">
+                            <option value="paragraph">Párrafo</option>
+                            <option value="h1">Título 1</option>
+                            <option value="h2">Título 2</option>
+                            <option value="h3">Título 3</option>
+                            <option value="h4">Título 4</option>
+                            <option value="h5">Título 5</option>
+                            <option value="h6">Título 6</option>
+                            <option value="quote">Cita</option>
+                            <option value="list">Lista</option>
+                            <option value="ordered_list">Lista numerada</option>
+                            <option value="task_list">Lista de tareas</option>
+                            <option value="code">Código</option>
+                            <option value="table">Tabla</option>
+                            <option value="image">Imagen</option>
+                            <option value="link">Enlace</option>
+                            <option value="mermaid">Mermaid</option>
+                            <option value="math">LaTeX</option>
+                            <option value="rule">Separador</option>
+                        </select>
+                        <button type="button" class="md-add-block" title="Añadir bloque del tipo seleccionado"
+                                aria-label="Añadir bloque"><span class="md-icon" aria-hidden="true">add</span>
+                        </button>
+                    </div>
+                </details>
+            </div>
+            <button type="button" class="md-ribbon-toggle" title="Ocultar herramientas de edición"
+                    aria-label="Ocultar herramientas de edición" aria-expanded="true">
+                <span class="md-icon" aria-hidden="true">expand_less</span>
+            </button>
+        </div>
+    </div>
+    <div class="md-review-toolbar" aria-label="Revisión de versiones" hidden>
+        <div class="md-quickbar" role="toolbar" aria-label="Controles de revisión">
+            <button type="button" class="md-back-editor" title="Volver al borrador sin guardar" hidden><span
+                    class="md-icon" aria-hidden="true">arrow_back</span>Volver al editor
+            </button>
+            <span class="md-review-caption"></span>
+            <div class="md-quickbar-end">
+                <div class="md-review-switch" role="group" aria-label="Formato de comparación">
+                    <button type="button" data-review-mode="visual" aria-pressed="true"
+                            title="Comparación visual">
+                        <span class="md-icon" aria-hidden="true">visibility</span>Visual
+                    </button>
+                    <button type="button" data-review-mode="markdown" aria-pressed="false"
+                            title="Diff del Markdown original"><span class="md-icon"
+                                                                     aria-hidden="true">difference</span>Diff
+                        Markdown
+                    </button>
+                </div>
+                <button type="button" class="md-copy-all" title="Copiar la versión Después sin marcas"
+                        aria-label="Copiar la versión Después sin marcas"><span class="md-icon"
+                                                                                aria-hidden="true">content_copy</span>
+                </button>
+            </div>
+        </div>
+        <div class="md-review-versions md-ribbon-panel" role="toolbar" aria-label="Versiones de revisión">
+            <div class="md-ribbon-groups">
+                <details class="md-toolbar-group" open>
+                    <summary><span>Versión</span></summary>
+                    <div class="md-toolbar-group-body">
+                        <div class="md-review-switch md-review-layouts" role="group" aria-label="Versión visible">
+                            <button type="button" data-review-layout="before" title="Ver versión anterior"
+                                    aria-pressed="false">
+                                Antes
+                            </button>
+                            <button type="button" data-review-layout="after" title="Ver versión nueva"
+                                    aria-pressed="false">
+                                Después
+                            </button>
+                            <button type="button" data-review-layout="split" title="Ver ambas versiones lado a lado"
+                                    aria-pressed="true">Split
+                            </button>
+                            <button type="button" data-review-layout="blocks"
+                                    title="Ver cambios de contenido, movimientos y sustituciones por bloques"
+                                    aria-pressed="false">Bloques
+                            </button>
+                        </div>
+                    </div>
+                </details>
+            </div>
+            <button type="button" class="md-ribbon-toggle" title="Ocultar controles de versión"
+                    aria-label="Ocultar controles de versión" aria-expanded="true">
+                <span class="md-icon" aria-hidden="true">expand_less</span>
+            </button>
+        </div>
+    </div>
+    <div class="md-help" role="note" aria-label="Comandos y atajos de teclado" hidden>
+        <strong>Comandos y atajos</strong>
+        <dl>
+            <dt>Grupos de herramientas</dt>
+            <dd>Pulsar el título para colapsar o expandir, también con Enter o Espacio. El título permanece vertical
+                a la izquierda.
+            </dd>
+            <dt>Ocultar herramientas</dt>
+            <dd>La flecha de la esquina inferior derecha oculta o muestra la fila de grupos sin ocultar la barra superior.</dd>
+            <dt>Enter</dt>
+            <dd>Salto en párrafos y código; nuevo bloque en títulos; nuevo ítem en listas; fila debajo en tablas.</dd>
+            <dt>Ctrl/Cmd+Enter</dt>
+            <dd>Párrafo nuevo debajo.</dd>
+            <dt>Shift+Enter</dt>
+            <dd>Salto dentro del bloque o ítem; columna a la derecha en tablas.</dd>
+            <dt>Tab / Shift+Tab</dt>
+            <dd>Indentar o desindentar listas, citas y código; navegar entre celdas en tablas.</dd>
+            <dt>Ctrl/Cmd+Z</dt>
+            <dd>Deshacer.</dd>
+            <dt>Ctrl/Cmd+Shift+Z / Ctrl+Y</dt>
+            <dd>Rehacer.</dd>
+            <dt>Shift+F10 / Escape</dt>
+            <dd>Abrir el menú del bloque / cerrar menú o ayuda.</dd>
+            <dt>Arrastrar ⋮⋮</dt>
+            <dd>Reordenar bloques.</dd>
+        </dl>
+    </div>
+    <div class="md-canvas" role="list" aria-label="Bloques del documento"></div>
+    <div class="md-floating-menu" role="toolbar" aria-label="Opciones del bloque" hidden>
+        <button type="button" data-scroll="-1" title="Opciones anteriores" aria-label="Opciones anteriores"><span
+                class="md-icon" aria-hidden="true">chevron_left</span></button>
+        <div class="md-floating-actions"></div>
+        <button type="button" data-scroll="1" title="Opciones siguientes" aria-label="Opciones siguientes"><span
+                class="md-icon" aria-hidden="true">chevron_right</span></button>
+    </div>
+    <div class="md-review-content" hidden></div>
+    <div class="md-status" aria-live="polite"></div>
+    <div class="md-feedback" role="status" aria-live="polite" hidden></div>
+</div>
