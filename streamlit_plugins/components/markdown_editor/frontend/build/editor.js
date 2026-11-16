@@ -7,11 +7,14 @@ export default function ({ parentElement, data, setStateValue }) {
   const status = root.querySelector('.md-status');
   const modeSelector = root.querySelector('.md-editor-mode');
   const typeSelector = root.querySelector('.md-block-type');
-  const syncModeButtons = () => modeSelector.querySelectorAll('[data-mode]').forEach((button) => {
-    button.hidden = !runtime.options.editorModes.includes(button.dataset.mode);
-    button.dataset.single = String(runtime.options.editorModes.length === 1);
-    button.setAttribute('aria-pressed', String(button.dataset.mode === runtime.mode));
-  });
+  const syncModeButtons = () => {
+    modeSelector.hidden = runtime.options.editorModes.length < 2;
+    modeSelector.querySelectorAll('[data-mode]').forEach((button) => {
+      button.hidden = !runtime.options.editorModes.includes(button.dataset.mode);
+      button.dataset.single = String(runtime.options.editorModes.length === 1);
+      button.setAttribute('aria-pressed', String(button.dataset.mode === runtime.mode));
+    });
+  };
   const saveButton = root.querySelector('.md-save');
   const reviewButton = root.querySelector('.md-review-button');
   const reviewToolbar = root.querySelector('.md-review-toolbar');
@@ -21,17 +24,23 @@ export default function ({ parentElement, data, setStateValue }) {
   const help = root.querySelector('.md-help');
   const helpToggle = root.querySelector('.md-help-toggle');
   const feedback = root.querySelector('.md-feedback');
+  const propertiesDialog = root.querySelector('.md-properties-dialog');
+  const linkButton = root.querySelector('.md-edit-link');
   root.dataset.debug = String(Boolean(data?.debug_blocks));
   root.style.height = typeof data?.height === 'number' ? `${data.height}px`
     : data?.height === 'stretch' ? '100%' : data?.height === 'content' ? 'auto' : '760px';
   const inputFingerprint = JSON.stringify({
     blocks: data?.blocks ?? [],
+    initialMarkdown: data?.initial_markdown ?? null,
     onlyView: data?.only_view ?? false,
     diff: data?.diff ?? null,
     mode: data?.mode ?? 'raw_visual',
     saveMode: data?.save_mode ?? 'auto',
   });
-  const blocksFingerprint = JSON.stringify(data?.blocks ?? []);
+  const blocksFingerprint = JSON.stringify({
+    blocks: data?.blocks ?? [],
+    initialMarkdown: data?.initial_markdown ?? null,
+  });
   const diffFingerprint = JSON.stringify(data?.diff ?? null);
   const revision = String(data?.revision ?? 0);
   const runtime = root.__markdownEditorRuntime ?? {
@@ -56,6 +65,7 @@ export default function ({ parentElement, data, setStateValue }) {
     reviewLayout: 'split',
   };
   runtime.setStateValue = setStateValue;
+  if (data?.only_view && !runtime.onlyView) runtime.flushPending?.();
   runtime.mode = runtime.mode ?? data?.mode ?? 'raw_visual';
   runtime.saveMode = data?.save_mode ?? runtime.saveMode ?? 'auto';
   runtime.onlyView = Boolean(data?.only_view) || runtime.reviewing;
@@ -70,6 +80,14 @@ export default function ({ parentElement, data, setStateValue }) {
     showCopy: data?.show_copy_button ?? true,
     showStatus: data?.show_status_bar ?? true,
     toolbarSections: data?.toolbar_sections ?? ['view', 'format', 'block', 'history', 'changes'],
+    allowedBlockTypes: data?.allowed_block_types ?? [
+      'paragraph', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'quote', 'list',
+      'ordered_list', 'task_list', 'code', 'table', 'image', 'link', 'mermaid', 'math', 'rule',
+    ],
+    reorderMode: data?.reorder_mode ?? 'drag_buttons',
+    autosaveDelay: data.autosave_delay,
+    mermaidConfig: data?.mermaid_config ?? {},
+    tableStyles: data?.table_styles ?? {},
   };
   const optionsFingerprint = JSON.stringify(runtime.options);
   const optionsChanged = root.dataset.optionsFingerprint !== optionsFingerprint;
@@ -87,8 +105,8 @@ export default function ({ parentElement, data, setStateValue }) {
     if (/^\s*(?:[-*+]|\d+[.)])\s+\[[ xX]\](?:\s|$)/.test(markdown)) return 'task_list';
     if (/^\s*[-*+]\s/.test(markdown)) return 'list';
     if (/^\s*\d+[.)]\s/.test(markdown)) return 'ordered_list';
-    if (/^!\[[^\]]*\]\(/.test(markdown)) return 'image';
-    if (/^\[[^\]]+\]\(/.test(markdown)) return 'link';
+    if (/^!\[[^\]]*\]\([^)]+\)$/.test(markdown)) return 'image';
+    if (/^\[[^\]]+\]\([^)]+\)$/.test(markdown)) return 'link';
     if (/^(---+|\*\*\*+|___+)\s*$/.test(markdown)) return 'rule';
     return 'paragraph';
   };
@@ -394,6 +412,7 @@ export default function ({ parentElement, data, setStateValue }) {
         });
         table.append(tr);
       });
+      applyTableStyles(table);
       editable.append(table);
       return;
     }
@@ -498,6 +517,7 @@ export default function ({ parentElement, data, setStateValue }) {
     article.dataset.blockId = String(item.id ?? `block-${crypto.randomUUID()}`);
     article.dataset.type = type;
     article.dataset.mode = mode;
+    article.dataset.reorderMode = runtime.options.reorderMode;
     article.dataset.readonly = String(readOnly);
     article.setAttribute('role', 'listitem');
 
@@ -543,6 +563,22 @@ export default function ({ parentElement, data, setStateValue }) {
     if (!readOnly) {
       const tools = document.createElement('div');
       tools.className = 'md-block-tools';
+      const moveControls = document.createElement('div');
+      moveControls.className = 'md-block-move-controls';
+      const moveButton = (direction, label, icon) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'md-move-block';
+        button.dataset.direction = direction;
+        button.title = label;
+        button.setAttribute('aria-label', label);
+        button.innerHTML = `<span class="md-icon" aria-hidden="true">${icon}</span>`;
+        return button;
+      };
+      moveControls.append(
+        moveButton('up', 'Mover bloque arriba', 'arrow_upward'),
+        moveButton('down', 'Mover bloque abajo', 'arrow_downward'),
+      );
       const handle = document.createElement('button');
       handle.type = 'button';
       handle.className = 'md-drag-handle';
@@ -550,7 +586,7 @@ export default function ({ parentElement, data, setStateValue }) {
       handle.title = 'Arrastrar para reordenar';
       handle.setAttribute('aria-label', 'Arrastrar para reordenar bloque');
       handle.draggable = true;
-      tools.append(handle);
+      tools.append(moveControls, handle);
       article.append(tools);
     }
     return article;
@@ -593,7 +629,7 @@ export default function ({ parentElement, data, setStateValue }) {
       } catch (error) { showError(error); }
     } else {
       preview.textContent = 'Renderizando Mermaid…';
-      article.__renderPromise = MarkdownEditorRenderers.renderDiagram(editable.textContent).then((svg) => {
+      article.__renderPromise = MarkdownEditorRenderers.renderDiagram(editable.textContent, runtime.options.mermaidConfig).then((svg) => {
         if (article.__renderGeneration === generation && article.isConnected) preview.innerHTML = svg;
       }).catch(showError);
     }
@@ -647,6 +683,7 @@ export default function ({ parentElement, data, setStateValue }) {
       return;
     }
     runtime.lastPublished = serialized;
+    runtime.lastPublishedBlocks = documentFingerprint(value.blocks);
     runtime.savedFingerprint = serialized;
     runtime.savedBlocks = value.blocks.map(({ id, markdown }) => ({ id, markdown }));
     updateSaveControls();
@@ -655,13 +692,33 @@ export default function ({ parentElement, data, setStateValue }) {
   };
 
   const schedulePublish = () => {
+    console.log('Autosaving…');
     if (runtime.timer) clearTimeout(runtime.timer);
-    runtime.timer = setTimeout(() => publish(), 180);
+    runtime.timer = setTimeout(() => {
+      console.log('Saved!');
+      runtime.timer = null;
+      if (!runtime.onlyView) publish();
+    }, runtime.options.autosaveDelay);
     const dirty = updateSaveControls();
     if (runtime.saveMode === 'button') status.textContent = dirty ? 'Cambios sin guardar' : 'Guardado';
   };
 
+  runtime.flushPending = () => {
+    if (runtime.timer === null) return;
+    clearTimeout(runtime.timer);
+    runtime.timer = null;
+    publish();
+  };
+
   const snapshot = () => JSON.stringify(getBlocks().map(({ id, markdown }) => ({ id, markdown })));
+
+  const updateBlockMoveButtons = () => {
+    const blocks = Array.from(canvas.querySelectorAll(':scope > .md-block'));
+    blocks.forEach((block, index) => {
+      block.querySelector('.md-move-block[data-direction="up"]').disabled = index === 0;
+      block.querySelector('.md-move-block[data-direction="down"]').disabled = index === blocks.length - 1;
+    });
+  };
 
   const updateHistoryButtons = () => {
     const undo = toolbar.querySelector('[data-history="undo"]');
@@ -700,6 +757,7 @@ export default function ({ parentElement, data, setStateValue }) {
     runtime.menuBlock = null;
     const replacement = makeBlock({ id: block.dataset.blockId, markdown });
     block.replaceWith(replacement);
+    updateBlockMoveButtons();
     runtime.activeBlock = replacement;
     const editable = replacement.querySelector('.md-editable');
     if (caret !== null) setCaret(editable, caret);
@@ -712,6 +770,7 @@ export default function ({ parentElement, data, setStateValue }) {
     floatingMenu.hidden = true;
     runtime.menuBlock = null;
     canvas.replaceChildren(...blocks.map((item) => makeBlock(item)));
+    updateBlockMoveButtons();
     runtime.activeBlock = null;
     if (resetHistory) {
       runtime.history = [snapshot()];
@@ -784,7 +843,7 @@ export default function ({ parentElement, data, setStateValue }) {
     canvas.querySelectorAll('.md-block.is-active').forEach((item) => item.classList.remove('is-active'));
     block.classList.add('is-active');
     runtime.activeBlock = block;
-    typeSelector.value = blockType(blockSource(block));
+    syncTypeSelector(blockType(blockSource(block)));
   };
 
   const selectedLeaf = (block) => {
@@ -988,6 +1047,7 @@ export default function ({ parentElement, data, setStateValue }) {
       else afterBlock.after(block);
     }
     else canvas.append(block);
+    updateBlockMoveButtons();
     runtime.activeBlock = block;
     block.classList.add('is-active');
     activate(block);
@@ -996,6 +1056,41 @@ export default function ({ parentElement, data, setStateValue }) {
     flushHistory();
     schedulePublish();
     return block;
+  };
+
+  const moveBlock = (block, direction) => {
+    const blocks = Array.from(canvas.querySelectorAll(':scope > .md-block'));
+    const index = blocks.indexOf(block);
+    const neighbor = blocks[index + (direction === 'up' ? -1 : 1)];
+    if (!neighbor) return;
+    flushHistory();
+    if (direction === 'up') neighbor.before(block);
+    else neighbor.after(block);
+    activate(block);
+    updateBlockMoveButtons();
+    flushHistory();
+    schedulePublish();
+  };
+
+  const syncTypeSelector = (type = runtime.activeBlock
+    ? blockType(blockSource(runtime.activeBlock)) : runtime.options.allowedBlockTypes[0]) => {
+    typeSelector.replaceChildren(...runtime.options.allowedBlockTypes.map((value) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = typeLabel(value);
+      return option;
+    }));
+    typeSelector.value = runtime.options.allowedBlockTypes.includes(type) ? type : '';
+    toolbar.querySelector('.md-add-block').disabled = !typeSelector.value;
+  };
+
+  const applyTableStyles = (table) => {
+    for (const [tag, styles] of Object.entries(runtime.options.tableStyles)) {
+      const elements = tag === 'table' ? [table] : table.querySelectorAll(tag);
+      for (const element of elements) {
+        for (const [property, value] of Object.entries(styles)) element.style.setProperty(property, value);
+      }
+    }
   };
 
   const replaceBlocks = (blocks) => {
@@ -1039,6 +1134,9 @@ export default function ({ parentElement, data, setStateValue }) {
     flush();
     return blocks;
   };
+  const initialBlocks = data?.initial_markdown == null
+    ? data?.blocks ?? [] : markdownBlocks(data.initial_markdown);
+  runtime.inputBlocks = initialBlocks;
 
   const reviewSources = () => {
     if (runtime.reviewing) return runtime.reviewData;
@@ -1493,7 +1591,8 @@ export default function ({ parentElement, data, setStateValue }) {
       reviewToolbar.querySelector('.md-back-editor').hidden = !runtime.reviewing;
       reviewToolbar.querySelector('.md-review-caption').textContent =
         runtime.reviewing ? 'Última versión guardada frente al borrador; no se ha guardado.' : 'Comparación de versiones · solo lectura';
-      reviewToolbar.querySelector('.md-review-layouts').hidden = runtime.reviewMode === 'markdown';
+      reviewToolbar.querySelector('.md-review-layouts').hidden =
+        runtime.reviewMode === 'markdown' || runtime.options.reviewLayouts.length < 2;
       reviewToolbar.querySelectorAll('[data-review-mode]').forEach((button) => {
         button.hidden = !runtime.options.reviewModes.includes(button.dataset.reviewMode);
         button.dataset.single = String(runtime.options.reviewModes.length === 1);
@@ -1522,10 +1621,11 @@ export default function ({ parentElement, data, setStateValue }) {
     }
     const caption = reviewToolbar.querySelector('.md-review-caption');
     caption.title = caption.textContent;
-    reviewToolbar.querySelector('[aria-label="Formato de comparación"]').hidden = !sources || !viewAllowed;
+    reviewToolbar.querySelector('[aria-label="Formato de comparación"]').hidden =
+      !sources || !viewAllowed || runtime.options.reviewModes.length < 2;
     reviewToolbar.querySelector('.md-quickbar-end').hidden = !viewAllowed || (!sources && !runtime.options.showCopy);
     reviewToolbar.querySelector('.md-review-versions').hidden =
-      !sources || !viewAllowed || runtime.reviewMode === 'markdown';
+      !sources || !viewAllowed || runtime.reviewMode === 'markdown' || runtime.options.reviewLayouts.length < 2;
     syncRibbonPanel(reviewToolbar.querySelector('.md-ribbon-panel'));
     updateCopyButtons();
   };
@@ -1560,7 +1660,7 @@ export default function ({ parentElement, data, setStateValue }) {
     runtime.reviewing = true;
     runtime.onlyView = true;
     renderReadOnly();
-    const focus = runtime.options.toolbarSections.includes('view')
+    const focus = runtime.options.toolbarSections.includes('view') && runtime.options.reviewModes.length > 1
       ? reviewToolbar.querySelector('[data-review-mode]:not([hidden])')
       : reviewToolbar.querySelector('.md-back-editor');
     focus?.focus();
@@ -1600,8 +1700,31 @@ export default function ({ parentElement, data, setStateValue }) {
     const collapsed = Boolean(runtime[editing ? 'editorRibbonCollapsed' : 'reviewRibbonCollapsed']);
     const groups = panel.querySelector('.md-ribbon-groups');
     const button = panel.querySelector('.md-ribbon-toggle');
+    for (const element of [panel, groups]) {
+      element.style.maxWidth = collapsed ? '100%' : '';
+      element.style.boxSizing = collapsed ? 'border-box' : '';
+    }
+    panel.style.flexDirection = collapsed ? 'row' : '';
+    panel.style.alignItems = collapsed ? 'center' : '';
+    groups.style.width = collapsed ? 'auto' : '';
+    groups.style.flex = collapsed ? '1 1 auto' : '';
+    groups.style.minWidth = collapsed ? '0' : '';
+    button.style.alignSelf = collapsed ? 'center' : '';
+    button.style.flexShrink = collapsed ? '0' : '';
+    button.style.marginTop = collapsed ? '0' : '';
     groups.id ||= `md-ribbon-groups-${crypto.randomUUID()}`;
-    groups.hidden = collapsed;
+    groups.hidden = false;
+    groups.querySelectorAll('.md-toolbar-group').forEach((group) => {
+      group.querySelector('.md-toolbar-group-body').hidden = collapsed;
+      const summary = group.querySelector('summary');
+      if (collapsed) {
+        summary.tabIndex = -1;
+        summary.setAttribute('aria-disabled', 'true');
+      } else {
+        summary.removeAttribute('tabindex');
+        summary.removeAttribute('aria-disabled');
+      }
+    });
     panel.dataset.collapsed = String(collapsed);
     const label = `${collapsed ? 'Mostrar' : 'Ocultar'} ${editing ? 'herramientas de edición' : 'controles de versión'}`;
     button.title = label;
@@ -1872,7 +1995,7 @@ export default function ({ parentElement, data, setStateValue }) {
     return { items, path, ...location };
   };
 
-  const changeList = (block, action, split = null, pathOverride = null) => {
+  const changeList = (block, action, split = null, pathOverride = null, startNumber = null) => {
     const state = listState(block, pathOverride);
     const { items, path, item, siblings, index, parent } = state;
     if (!item) return;
@@ -1883,16 +2006,6 @@ export default function ({ parentElement, data, setStateValue }) {
     if (action === 'outdent' && !parent) {
       status.textContent = 'El ítem ya está en el nivel raíz.';
       return;
-    }
-    let startNumber;
-    if (action === 'start-number') {
-      const answer = window.prompt('Número inicial de esta sublista:', String(parseInt(siblings.find(numbered)?.marker ?? '1', 10)));
-      if (answer === null) return;
-      if (!/^[1-9]\d*$/.test(answer) || !Number.isSafeInteger(Number(answer))) {
-        status.textContent = 'El número inicial debe ser un entero positivo.';
-        return;
-      }
-      startNumber = Number(answer);
     }
     flushHistory();
     let focusItem = item;
@@ -2110,6 +2223,7 @@ export default function ({ parentElement, data, setStateValue }) {
     }
     const next = blocks[index + 1] ?? blocks[index - 1];
     block.remove();
+    updateBlockMoveButtons();
     floatingMenu.hidden = true;
     runtime.menuBlock = null;
     runtime.activeBlock = next;
@@ -2157,15 +2271,145 @@ export default function ({ parentElement, data, setStateValue }) {
     }
     floatingMenu.style.left = `${Math.max(4, Math.min(bounds.right - base.left - floatingMenu.offsetWidth,
       base.width - floatingMenu.offsetWidth - 4))}px`;
-    floatingMenu.style.top = `${Math.max(canvasBounds.top - base.top,
-      Math.min(bounds.top - base.top - floatingMenu.offsetHeight - 2,
-        base.height - floatingMenu.offsetHeight - 4))}px`;
+    const minTop = canvasBounds.top - base.top;
+    const maxTop = Math.max(minTop, canvasBounds.bottom - base.top - floatingMenu.offsetHeight);
+    const above = bounds.top - base.top - floatingMenu.offsetHeight - 2;
+    const below = bounds.bottom - base.top + 2;
+    floatingMenu.style.top = `${Math.max(minTop, Math.min(above >= minTop ? above : below, maxTop))}px`;
   };
 
   const updateMenuArrows = () => {
     floatingMenu.querySelector('[data-scroll="-1"]').disabled = floatingActions.scrollLeft <= 1;
     floatingMenu.querySelector('[data-scroll="1"]').disabled =
       floatingActions.scrollLeft + floatingActions.clientWidth >= floatingActions.scrollWidth - 1;
+  };
+
+  const openProperties = (title, fields, submit) => {
+    floatingMenu.hidden = true;
+    propertiesDialog.querySelector('.md-properties-title').textContent = title;
+    const error = propertiesDialog.querySelector('.md-properties-error');
+    error.hidden = true;
+    propertiesDialog.querySelector('.md-properties-fields').replaceChildren(...fields.map((field) => {
+      const label = document.createElement('label');
+      label.textContent = field.label;
+      const input = document.createElement('input');
+      input.name = field.name;
+      input.type = field.type ?? 'text';
+      input.value = field.value;
+      if (field.min !== undefined) input.min = String(field.min);
+      if (field.type === 'number') input.step = '1';
+      label.append(input);
+      return label;
+    }));
+    propertiesDialog.querySelector('form').onsubmit = (event) => {
+      event.preventDefault();
+      if (runtime.onlyView) { propertiesDialog.close(); return; }
+      const message = submit(Object.fromEntries(new FormData(event.currentTarget)));
+      error.textContent = message ?? '';
+      error.hidden = !message;
+      if (!message) propertiesDialog.close('apply');
+    };
+    propertiesDialog.returnValue = '';
+    propertiesDialog.showModal();
+  };
+
+  const linkAtCursor = (block, hovered = null) => {
+    if (runtime.onlyView || ['code', 'mermaid', 'math', 'image', 'rule'].includes(blockType(blockSource(block)))) return null;
+    if (runtime.mode === 'visual') {
+      const node = window.getSelection()?.anchorNode;
+      const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+      const anchor = hovered ?? element?.closest('a');
+      return anchor && block.querySelector('.md-editable').contains(anchor)
+        ? { block, anchor, label: Array.from(anchor.childNodes).map(inlineMarkdown).join(''), url: anchor.getAttribute('href') } : null;
+    }
+    const source = blockSource(block);
+    const { start } = selectionOffsets(block.querySelector('.md-editable'));
+    for (const match of source.matchAll(/(?<!!)\[((?:\\.|[^\]\\])*)\]\((https?:\/\/[^)\s]+|mailto:[^)\s]+)\)/g)) {
+      if (start < match.index || start > match.index + match[0].length) continue;
+      if (Array.from(source.matchAll(/`[^`\n]+`/g)).some((code) =>
+        code.index <= match.index && code.index + code[0].length >= match.index + match[0].length)) return null;
+      return { block, index: match.index, length: match[0].length, label: match[1], url: match[2] };
+    }
+    return null;
+  };
+
+  const syncLinkControl = (block, hovered = null) => {
+    runtime.linkContext = block ? linkAtCursor(block, hovered) : null;
+    const target = block ?? runtime.activeBlock;
+    const unsupported = target && ['code', 'image', 'link', 'math', 'mermaid', 'rule']
+      .includes(blockType(blockSource(target)));
+    linkButton.hidden = false;
+    linkButton.disabled = Boolean(unsupported && !runtime.linkContext);
+    const label = runtime.linkContext ? 'Editar enlace' : 'Añadir enlace';
+    linkButton.title = label;
+    linkButton.setAttribute('aria-label', label);
+    linkButton.querySelector('.md-icon').textContent = runtime.linkContext ? 'link' : 'add_link';
+  };
+
+  const editLinkOrImage = (block, image = false, addLink = false) => {
+    const source = blockSource(block);
+    const editable = block.querySelector('.md-editable');
+    const context = image
+      ? (() => {
+        const match = source.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+        return match ? { label: match[1], url: match[2] } : null;
+      })()
+      : addLink
+        ? (() => {
+          if (runtime.mode === 'visual') {
+            const selection = window.getSelection();
+            if (!selection?.rangeCount || !editable.contains(selection.anchorNode)) return null;
+            const range = selection.getRangeAt(0).cloneRange();
+            return {
+              block, range, label: range.toString() || 'Texto del enlace', url: 'https://example.com',
+            };
+          }
+          const { start, end } = selectionOffsets(editable);
+          return {
+            block, index: start, length: end - start,
+            label: source.slice(start, end) || 'Texto del enlace', url: 'https://example.com',
+          };
+        })()
+        : runtime.linkContext?.block === block ? runtime.linkContext : linkAtCursor(block);
+    if (!context) return;
+    openProperties(image ? 'Modificar imagen' : 'Editar enlace', [
+      { name: 'label', label: image ? 'Texto alternativo' : 'Texto del enlace', value: context.label },
+      { name: 'url', label: image ? 'URL (http o https)' : 'URL (http, https o mailto)', value: context.url },
+    ], ({ label, url }) => {
+      const normalizedUrl = url.trim().replace(/[()\s]/g, (char) => encodeURIComponent(char));
+      if (!(image ? /^https?:\/\/\S+$/i : /^(?:https?:\/\/|mailto:)\S+$/i).test(normalizedUrl)) {
+        return image ? 'La URL debe usar http o https.' : 'La URL debe usar http, https o mailto.';
+      }
+      if (!image && !label.trim()) return 'El texto del enlace no puede estar vacío.';
+      if (/[\r\n]/.test(label)) return 'El texto no puede incluir saltos de línea.';
+      flushHistory();
+      if (!image && context.range) {
+        const anchor = document.createElement('a');
+        anchor.setAttribute('href', normalizedUrl);
+        anchor.textContent = label;
+        context.range.deleteContents();
+        context.range.insertNode(anchor);
+        const caret = document.createRange();
+        caret.setStartAfter(anchor);
+        caret.collapse(true);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(caret);
+        anchor.focus();
+      } else if (!image && context.anchor) {
+        if (label !== context.label) context.anchor.textContent = label;
+        context.anchor.setAttribute('href', normalizedUrl);
+        context.anchor.focus();
+      } else {
+        const escapedLabel = label.replace(/([\\[\]])/g, '\\$1');
+        const replacement = `${image ? '!' : ''}[${escapedLabel}](${normalizedUrl})`;
+        setBlockMarkdown(block, image ? replacement
+          : source.slice(0, context.index) + replacement + source.slice(context.index + context.length));
+      }
+      flushHistory();
+      schedulePublish();
+      syncLinkControl(null);
+    });
   };
 
   const showMenu = (block) => {
@@ -2186,7 +2430,8 @@ export default function ({ parentElement, data, setStateValue }) {
     if (type === 'quote') actions.push(
       ['quote-add', '+ Cita debajo'], ['paragraph', 'A párrafo']);
     if (/^h[1-6]$/.test(type)) {
-      actions.push(...Array.from({ length: 6 }, (_, index) => [`h${index + 1}`, `H${index + 1}`]), ['paragraph', 'A párrafo']);
+      actions.push(...runtime.options.allowedBlockTypes.filter((value) => /^h[1-6]$/.test(value))
+        .map((value) => [value, value.toUpperCase()]), ['paragraph', 'A párrafo']);
     }
     if (type === 'table') actions.push(
       ['row-before', 'Fila arriba'], ['row-add', 'Fila abajo'], ['row-delete', 'Eliminar fila'],
@@ -2198,7 +2443,6 @@ export default function ({ parentElement, data, setStateValue }) {
       block.querySelector('.md-editable').hidden
         ? type === 'math' ? 'Editar fórmula' : 'Editar diagrama'
         : type === 'math' ? 'Ver fórmula' : 'Ver diagrama']);
-    if (type === 'link') actions.push(['edit-link', 'Editar enlace']);
     if (type === 'image') actions.push(['edit-image', 'Modificar imagen']);
     floatingActions.replaceChildren(...actions.flatMap(([action, label], index) => {
       const button = document.createElement('button');
@@ -2210,13 +2454,14 @@ export default function ({ parentElement, data, setStateValue }) {
       icon.className = 'md-icon';
       icon.setAttribute('aria-hidden', 'true');
       icon.textContent = ({
-        'add-before': 'vertical_align_top', 'add-below': 'vertical_align_bottom', delete: 'delete',
+        'add-before': 'tab_new_right', 'add-below': 'tab_new_right', delete: 'delete',
         'item-add': 'add', 'item-delete': 'remove', 'toggle-list': 'format_list_bulleted',
         'task-list': 'checklist', 'item-check': 'check_box',
         'start-number': 'format_list_numbered', 'quote-add': 'format_quote', paragraph: 'notes',
         'row-before': 'vertical_align_top', 'row-add': 'vertical_align_bottom', 'row-delete': 'remove',
         'column-before': 'align_horizontal_left', 'column-add': 'align_horizontal_right', 'column-delete': 'remove',
-        language: 'code', 'edit-link': 'link', 'edit-image': 'edit', 'edit-source': 'edit', copy: 'content_copy',
+        language: 'code',
+        'edit-image': 'edit', 'edit-source': 'edit', copy: 'content_copy',
       })[action] ?? (/^h[1-6]$/.test(action) ? `format_${action}` : 'edit');
       button.append(icon);
       if (index !== commonCount) return [button];
@@ -2253,6 +2498,19 @@ export default function ({ parentElement, data, setStateValue }) {
       addBlock('paragraph', block, actionName === 'add-before', '');
     } else if (actionName.startsWith('row-') || actionName.startsWith('column-')) {
       changeTable(block, actionName);
+    } else if (actionName === 'edit-image') {
+    editLinkOrImage(block, true);
+    } else if (actionName === 'start-number') {
+      const { siblings, path } = listState(block);
+      openProperties('Número inicial de esta sublista', [
+        { name: 'start', label: 'Número inicial', type: 'number', min: 1,
+          value: String(parseInt(siblings.find(numbered)?.marker ?? '1', 10)) },
+      ], ({ start }) => {
+        if (!/^[1-9]\d*$/.test(start) || !Number.isSafeInteger(Number(start))) {
+          return 'El número inicial debe ser un entero positivo.';
+        }
+        changeList(block, actionName, null, path, Number(start));
+      });
     } else if (isListType(type)) {
       changeList(block, actionName);
     } else if (actionName === 'indent' || actionName === 'outdent') {
@@ -2263,37 +2521,18 @@ export default function ({ parentElement, data, setStateValue }) {
       addBlock('quote', block, false, `${'> '.repeat(lines[line].depth)}`);
     } else if (actionName === 'language') {
       const parts = codeParts(blockSource(block));
-      const language = window.prompt('Lenguaje del bloque de código:', parts.language);
-      if (language === null) return;
-      if (!/^[a-zA-Z0-9_+#.-]*$/.test(language)) {
-        status.textContent = 'El lenguaje debe ser un identificador sin espacios ni saltos.';
-        return;
-      }
-      flushHistory();
-      setBlockMarkdown(block, `\`\`\`${language}\n${parts.body}\n\`\`\``);
-      flushHistory();
-      schedulePublish();
+      openProperties('Lenguaje del bloque de código', [
+        { name: 'language', label: 'Lenguaje', value: parts.language },
+      ], ({ language }) => {
+        if (!/^[a-zA-Z0-9_+#.-]*$/.test(language)) return 'El lenguaje debe ser un identificador sin espacios ni saltos.';
+        flushHistory();
+        setBlockMarkdown(block, `\`\`\`${language}\n${parts.body}\n\`\`\``);
+        flushHistory();
+        schedulePublish();
+      });
     } else if (actionName === 'paragraph' || /^h[1-6]$/.test(actionName)) {
       flushHistory();
       setBlockMarkdown(block, convertBlockMarkdown(actionName, blockSource(block)));
-      flushHistory();
-      schedulePublish();
-    } else if (actionName === 'edit-link' || actionName === 'edit-image') {
-      const markdown = blockSource(block);
-      const match = markdown.match(/^!?\[([^\]]*)\]\(([^)]+)\)$/);
-      const label = window.prompt(actionName === 'edit-link' ? 'Texto del enlace:' : 'Texto alternativo:', match?.[1] ?? '');
-      if (label === null) return;
-      const url = window.prompt('URL (http, https o mailto):', match?.[2] ?? '');
-      if (url === null) return;
-      const normalizedUrl = url.trim().replace(/[()\s]/g, (char) => encodeURIComponent(char));
-      if (!(actionName === 'edit-link'
-        ? /^(https?:\/\/|mailto:)/i.test(normalizedUrl) : /^https?:\/\//i.test(normalizedUrl))) {
-        status.textContent = 'La URL debe usar http, https o mailto.';
-        return;
-      }
-      flushHistory();
-      const escapedLabel = label.replace(/([\\[\]])/g, '\\$1');
-      setBlockMarkdown(block, `${actionName === 'edit-image' ? '!' : ''}[${escapedLabel}](${normalizedUrl})`);
       flushHistory();
       schedulePublish();
     }
@@ -2314,9 +2553,22 @@ export default function ({ parentElement, data, setStateValue }) {
     if (data?.only_view) {
       renderReadOnly();
     } else {
-      replaceBlocks(data?.blocks ?? []);
+      replaceBlocks(initialBlocks);
     }
 
+    propertiesDialog.querySelector('.md-properties-cancel').addEventListener('click', () => propertiesDialog.close());
+    root.addEventListener('click', (event) => {
+      const summary = event.target.closest('.md-toolbar-group summary');
+      if (summary?.closest('.md-ribbon-panel')?.dataset.collapsed === 'true') event.preventDefault();
+    }, true);
+    propertiesDialog.addEventListener('close', () => {
+      if (propertiesDialog.returnValue !== 'apply') restoreBookmark(runtime.bookmark);
+      else if (!runtime.onlyView && runtime.activeBlock?.isConnected) {
+        const editable = runtime.activeBlock.querySelector('.md-editable');
+        if (editable.hidden) runtime.activeBlock.focus();
+        else (runtime.activeBlock.querySelector('[contenteditable="true"]') ?? editable).focus();
+      }
+    });
     toolbar.addEventListener('mousedown', (event) => {
       if (event.target.closest('button')) event.preventDefault();
     });
@@ -2325,6 +2577,20 @@ export default function ({ parentElement, data, setStateValue }) {
       if (toggle) { toggleRibbonPanel(toggle); return; }
       const copy = event.target.closest('.md-copy-all');
       if (copy) { copyDocument(copy); return; }
+      if (event.target.closest('.md-edit-link')) {
+        const block = runtime.linkContext?.block ?? runtime.activeBlock ?? canvas.querySelector('.md-block');
+        if (!block?.isConnected) return;
+        restoreBookmark(runtime.bookmark);
+        if (!runtime.linkContext) {
+          if (['code', 'image', 'link', 'math', 'mermaid', 'rule'].includes(blockType(blockSource(block)))) return;
+          if (runtime.bookmark?.id !== block.dataset.blockId) {
+            activate(block);
+            setCaret(block.querySelector('.md-editable'), 0);
+          }
+        }
+        editLinkOrImage(block, false, !runtime.linkContext);
+        return;
+      }
       if (event.target.closest('.md-help-toggle')) {
         help.hidden = !help.hidden;
         helpToggle.setAttribute('aria-expanded', String(!help.hidden));
@@ -2365,10 +2631,12 @@ export default function ({ parentElement, data, setStateValue }) {
     });
     toolbar.querySelector('.md-add-block').addEventListener('click', () => {
       const type = toolbar.querySelector('.md-block-type').value;
+      if (!runtime.options.allowedBlockTypes.includes(type)) return;
       addBlock(type, runtime.activeBlock);
     });
     typeSelector.addEventListener('change', () => {
       const type = toolbar.querySelector('.md-block-type').value;
+      if (!runtime.options.allowedBlockTypes.includes(type)) return;
       if (runtime.bookmark?.id === runtime.activeBlock?.dataset.blockId) restoreBookmark(runtime.bookmark);
       if (!runtime.activeBlock) {
         addBlock(type, null);
@@ -2383,6 +2651,7 @@ export default function ({ parentElement, data, setStateValue }) {
     });
 
     root.addEventListener('keydown', (event) => {
+      if (event.target.closest('.md-properties-dialog')) return;
       if (event.key === 'Escape' && !help.hidden) {
         event.preventDefault();
         closeHelp();
@@ -2417,19 +2686,30 @@ export default function ({ parentElement, data, setStateValue }) {
         runtime.bookmark = { id: block.dataset.blockId, path: event.target.dataset.path, start: 0, end: 0 };
       }
       activate(block);
+      syncLinkControl(block);
       showMenu(block);
     });
     runtime.onSelectionChange = () => {
       const bookmark = captureBookmark();
-      if (bookmark) runtime.bookmark = bookmark;
+      if (bookmark) {
+        runtime.bookmark = bookmark;
+        const node = window.getSelection()?.anchorNode;
+        const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+        const block = element.closest('.md-block');
+        syncLinkControl(block);
+      }
     };
-    document.addEventListener('selectionchange', runtime.onSelectionChange);
     canvas.addEventListener('beforeinput', () => {
       if (runtime.onlyView) return;
       runtime.historySelections?.set(snapshot(), captureBookmark() ?? runtime.bookmark);
     });
     canvas.addEventListener('pointerover', (event) => {
       const block = event.target.closest('.md-block');
+      const link = event.target.closest('.md-editable a');
+      if (block && link) {
+        syncLinkControl(block, link);
+        showMenu(block);
+      }
       if (block && runtime.menuBlock !== block) showMenu(block);
     });
     root.addEventListener('pointerleave', () => {
@@ -2438,11 +2718,7 @@ export default function ({ parentElement, data, setStateValue }) {
     });
     canvas.addEventListener('scroll', positionMenu);
     runtime.onResize = () => { positionMenu(); positionHelp(); };
-    window.addEventListener('resize', runtime.onResize);
     runtime.toolbarResize = new ResizeObserver(runtime.onResize);
-    runtime.toolbarResize.observe(root);
-    runtime.toolbarResize.observe(toolbar);
-    runtime.toolbarResize.observe(reviewToolbar);
     root.querySelectorAll('.md-toolbar-group').forEach((group) => {
       const summary = group.querySelector('summary');
       const syncGroup = () => {
@@ -2455,7 +2731,6 @@ export default function ({ parentElement, data, setStateValue }) {
     runtime.onHelpDismiss = (event) => {
       if (!help.contains(event.target) && !helpToggle.contains(event.target)) closeHelp();
     };
-    document.addEventListener('pointerdown', runtime.onHelpDismiss);
     help.id = `md-help-${crypto.randomUUID()}`;
     helpToggle.setAttribute('aria-controls', help.id);
     floatingActions.addEventListener('scroll', updateMenuArrows);
@@ -2475,7 +2750,8 @@ export default function ({ parentElement, data, setStateValue }) {
       if (!runtime.onlyView && event.target.closest('.md-editable')) {
         const block = event.target.closest('.md-block');
         if (runtime.mode === 'visual') refreshRender(block, true);
-        if (block === runtime.activeBlock) typeSelector.value = blockType(blockSource(block));
+        if (block === runtime.activeBlock) syncTypeSelector(blockType(blockSource(block)));
+        syncLinkControl(block);
         if (runtime.menuBlock === block && runtime.menuType !== blockType(blockSource(block))) showMenu(block);
         scheduleHistory();
         schedulePublish();
@@ -2593,6 +2869,7 @@ export default function ({ parentElement, data, setStateValue }) {
         flushHistory();
         const previous = blocks[index - 1] ?? blocks[index + 1];
         block.remove();
+        updateBlockMoveButtons();
         runtime.activeBlock = previous;
         previous.querySelector('.md-editable').focus();
         flushHistory();
@@ -2639,9 +2916,15 @@ export default function ({ parentElement, data, setStateValue }) {
       }
       runtime.draggedBlock = null;
       runtime.dragSnapshot = '';
+      updateBlockMoveButtons();
     });
 
     canvas.addEventListener('click', (event) => {
+      const moveButton = event.target.closest('.md-move-block');
+      if (moveButton) {
+        moveBlock(moveButton.closest('.md-block'), moveButton.dataset.direction);
+        return;
+      }
       const block = event.target.closest('.md-block');
       if (block && !runtime.onlyView) {
         activate(block);
@@ -2654,8 +2937,10 @@ export default function ({ parentElement, data, setStateValue }) {
   } else {
     runtime.setStateValue = setStateValue;
     if (root.dataset.inputFingerprint !== inputFingerprint || root.dataset.revision !== revision) {
-      const blocksChanged = root.dataset.blocksFingerprint !== blocksFingerprint
-        || root.dataset.revision !== revision;
+      const revisionChanged = root.dataset.revision !== revision;
+      const blocksChanged = revisionChanged || (root.dataset.blocksFingerprint !== blocksFingerprint
+        && documentFingerprint(initialBlocks) !== runtime.lastPublishedBlocks
+        && documentFingerprint(initialBlocks) !== documentFingerprint(getBlocks()));
       const diffChanged = root.dataset.diffFingerprint !== diffFingerprint
         || root.dataset.onlyView !== String(Boolean(data?.only_view));
       const modeChanged = root.dataset.mode !== (data?.mode ?? 'raw_visual');
@@ -2672,9 +2957,11 @@ export default function ({ parentElement, data, setStateValue }) {
       if (modeChanged && !runtime.onlyView) setMode(data?.mode ?? 'raw_visual');
       else if (modeChanged && runtime.reviewing) runtime.requestedMode = data?.mode ?? 'raw_visual';
       if (data?.only_view) {
+        if (propertiesDialog.open) propertiesDialog.close();
+        syncLinkControl(null);
         runtime.reviewing = false;
         runtime.onlyView = true;
-        if (blocksChanged) runtime.pendingBlocks = data?.blocks ?? [];
+        if (blocksChanged) runtime.pendingBlocks = initialBlocks;
         if (diffChanged || blocksChanged) renderReadOnly();
       }
       else {
@@ -2682,14 +2969,13 @@ export default function ({ parentElement, data, setStateValue }) {
           || (diffChanged && !runtime.reviewing && !canvas.childElementCount)) {
           runtime.reviewing = false;
           runtime.onlyView = false;
-          replaceBlocks(blocksChanged ? data?.blocks ?? [] : runtime.pendingBlocks ?? data?.blocks ?? []);
+          replaceBlocks(blocksChanged ? initialBlocks : runtime.pendingBlocks ?? initialBlocks);
           runtime.pendingBlocks = null;
         }
         if (runtime.reviewing) renderReadOnly();
         else {
           runtime.onlyView = false;
           showEditor();
-          if (runtime.mode !== (data?.mode ?? 'raw_visual')) setMode(data?.mode ?? 'raw_visual');
           if (runtime.saveMode === 'auto' && saveModeChanged) schedulePublish();
         }
       }
@@ -2697,10 +2983,14 @@ export default function ({ parentElement, data, setStateValue }) {
   }
   if (optionsChanged) {
     root.dataset.optionsFingerprint = optionsFingerprint;
+    canvas.querySelectorAll('.md-block').forEach((block) => {
+      block.dataset.reorderMode = runtime.options.reorderMode;
+    });
     status.hidden = runtime.onlyView || !runtime.options.showStatus;
     updatePlaceholders();
     updateCopyButtons();
     syncModeButtons();
+    syncTypeSelector();
     syncToolbarSections();
     if (runtime.onlyView) renderReadOnly();
     else {
@@ -2708,13 +2998,39 @@ export default function ({ parentElement, data, setStateValue }) {
       if (!floatingMenu.hidden && runtime.menuBlock) showMenu(runtime.menuBlock);
     }
   }
+  const stylesFingerprint = JSON.stringify([runtime.options.tableStyles, runtime.options.mermaidConfig]);
+  if (root.dataset.stylesFingerprint !== stylesFingerprint) {
+    const previousStyles = root.dataset.stylesFingerprint;
+    root.dataset.stylesFingerprint = stylesFingerprint;
+    if (previousStyles !== undefined) canvas.querySelectorAll('.md-block[data-mode="visual"]').forEach((block) => {
+      if (block.dataset.type === 'mermaid') refreshRender(block);
+      if (block.dataset.type === 'table') {
+        const editable = block.querySelector('.md-editable');
+        const source = blockSource(block);
+        const bookmark = captureBookmark();
+        renderVisualContent(editable, source, 'table', block);
+        block.__source = source;
+        block.__visualInitial = editable.innerHTML;
+        restoreBookmark(bookmark);
+      }
+    });
+  }
+  document.removeEventListener('selectionchange', runtime.onSelectionChange);
+  document.addEventListener('selectionchange', runtime.onSelectionChange);
+  window.removeEventListener('resize', runtime.onResize);
+  window.addEventListener('resize', runtime.onResize);
+  document.removeEventListener('pointerdown', runtime.onHelpDismiss);
+  document.addEventListener('pointerdown', runtime.onHelpDismiss);
+  runtime.toolbarResize.observe(root);
+  runtime.toolbarResize.observe(toolbar);
+  runtime.toolbarResize.observe(reviewToolbar);
   return () => {
     document.removeEventListener('selectionchange', runtime.onSelectionChange);
     window.removeEventListener('resize', runtime.onResize);
     runtime.toolbarResize?.disconnect();
     document.removeEventListener('pointerdown', runtime.onHelpDismiss);
-    if (runtime.timer) clearTimeout(runtime.timer);
-    if (runtime.historyTimer) clearTimeout(runtime.historyTimer);
+    runtime.flushPending();
+    if (canvas.childElementCount) flushHistory();
     if (runtime.feedbackTimer) clearTimeout(runtime.feedbackTimer);
   };
 }

@@ -39,7 +39,23 @@ export function highlightCode(source, language) {
   };
 }
 
-export async function renderDiagram(source) {
-  const { svg } = await mermaid.render(`md-diagram-${crypto.randomUUID()}`, source);
-  return svg;
+let diagramQueue = Promise.resolve();
+
+export function renderDiagram(source, config = {}) {
+  const rendering = diagramQueue.then(async () => {
+    mermaid.initialize({
+      theme: config.theme ?? 'default',
+      themeVariables: config.themeVariables ?? {},
+      ...(config.fontFamily === undefined ? {} : { fontFamily: config.fontFamily }),
+      startOnLoad: false,
+      securityLevel: 'strict',
+      secure: ['secure', 'securityLevel', 'startOnLoad', 'maxTextSize', 'suppressErrorRendering'],
+      suppressErrorRendering: true,
+    });
+    const { svg } = await mermaid.render(`md-diagram-${crypto.randomUUID()}`, source);
+    return svg;
+  });
+  // Keep the shared Mermaid configuration stable until each render completes.
+  diagramQueue = rendering.then(() => undefined, () => undefined);
+  return rendering;
 }

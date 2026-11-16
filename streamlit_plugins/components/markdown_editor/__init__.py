@@ -1,11 +1,17 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
+import streamlit as st
 from streamlit.components.v2 import component as create_component
 from streamlit.elements.lib.layout_utils import Height
 
 _ASSET_DIR = Path(__file__).with_name("frontend") / "build"
+_BLOCK_TYPES = (
+    "paragraph", "h1", "h2", "h3", "h4", "h5", "h6", "quote", "list",
+    "ordered_list", "task_list", "code", "table", "image", "link", "mermaid",
+    "math", "rule",
+)
 
 
 def _normalize_blocks(
@@ -94,7 +100,7 @@ def _document_from_state(
 
 
 def st_markdown_block_editor(
-    initial_blocks: Sequence[Mapping[str, Any]],
+    initial_blocks: Sequence[Mapping[str, Any]] | str,
     *,
     key: str,
     revision: int = 0,
@@ -112,13 +118,24 @@ def st_markdown_block_editor(
     show_copy_button: bool = True,
     show_status_bar: bool = True,
     toolbar_sections: Sequence[str] = ("view", "format", "block", "history", "changes"),
+    allowed_block_types: Sequence[str] = _BLOCK_TYPES,
+    reorder_mode: Literal["drag", "drag_buttons", "buttons"] = "drag_buttons",
+    autosave_delay: int = 500,
+    mermaid_config: Mapping[str, Any] | None = None,
+    table_styles: Mapping[str, Mapping[str, str]] | None = None,
 ) -> dict[str, Any]:
-    """Edit Markdown blocks or review visual, source and block-level changes.
+    """Edit Markdown blocks or raw Markdown, or review document changes.
 
+    Raw Markdown is split into blocks in the frontend; use block mappings for stable IDs.
     With button saving, review compares the saved document with the local draft.
     External diffs accept before/after strings or paired before_blocks/after_blocks.
     Stable block IDs improve movement and content-change identification.
     toolbar_sections controls header visibility, not editing permissions.
+    allowed_block_types limits type controls, not Markdown entered directly.
+    reorder_mode selects drag, arrow buttons, or both for block movement.
+    autosave_delay is the client-side debounce in milliseconds.
+    mermaid_config accepts theme, themeVariables and fontFamily.
+    table_styles maps table/th/td to CSS property-value mappings.
     """
     if not key:
         raise ValueError("key no puede estar vacía")
@@ -143,6 +160,7 @@ def st_markdown_block_editor(
         "review_modes": (review_modes, {"visual", "markdown"}, True),
         "review_layouts": (review_layouts, {"before", "after", "split", "blocks"}, True),
         "toolbar_sections": (toolbar_sections, {"view", "format", "block", "history", "changes"}, False),
+        "allowed_block_types": (allowed_block_types, set(_BLOCK_TYPES), True),
     }
     for name, (values, allowed, required) in choices.items():
         if not isinstance(values, Sequence) or isinstance(values, (str, bytes)):
@@ -161,9 +179,51 @@ def st_markdown_block_editor(
         raise TypeError("show_copy_button debe ser bool")
     if not isinstance(show_status_bar, bool):
         raise TypeError("show_status_bar debe ser bool")
+    if not isinstance(reorder_mode, str):
+        raise TypeError("reorder_mode debe ser str")
+    if reorder_mode not in {"drag", "drag_buttons", "buttons"}:
+        raise ValueError("reorder_mode debe ser 'drag', 'drag_buttons' o 'buttons'")
+    if isinstance(autosave_delay, bool) or not isinstance(autosave_delay, int):
+        raise TypeError("autosave_delay debe ser un entero en milisegundos")
+    if not 0 <= autosave_delay <= 2_147_483_647:
+        raise ValueError("autosave_delay debe estar entre 0 y 2147483647")
+    if mermaid_config is not None:
+        if not isinstance(mermaid_config, Mapping):
+            raise TypeError("mermaid_config debe ser un mapping")
+        if set(mermaid_config) - {"theme", "themeVariables", "fontFamily"}:
+            raise ValueError("mermaid_config solo admite theme, themeVariables y fontFamily")
+        if "theme" in mermaid_config and mermaid_config["theme"] not in (
+            "default", "base", "dark", "forest", "neutral",
+        ):
+            raise ValueError("mermaid_config.theme no es un tema válido")
+        if "fontFamily" in mermaid_config and not isinstance(mermaid_config["fontFamily"], str):
+            raise TypeError("mermaid_config.fontFamily debe ser str")
+        if "themeVariables" in mermaid_config:
+            variables = mermaid_config["themeVariables"]
+            if not isinstance(variables, Mapping) or any(
+                not isinstance(name, str) or not isinstance(value, (str, int, float, bool))
+                for name, value in variables.items()
+            ):
+                raise TypeError("mermaid_config.themeVariables debe contener valores escalares")
+    if table_styles is not None:
+        if not isinstance(table_styles, Mapping):
+            raise TypeError("table_styles debe ser un mapping")
+        if set(table_styles) - {"table", "th", "td"}:
+            raise ValueError("table_styles solo admite table, th y td")
+        for styles in table_styles.values():
+            if not isinstance(styles, Mapping) or any(
+                not isinstance(name, str) or not isinstance(value, str)
+                for name, value in styles.items()
+            ):
+                raise TypeError("table_styles debe contener mappings de propiedades CSS a strings")
     normalized_diff = _normalize_diff(diff)
 
-    blocks = _normalize_blocks(initial_blocks)
+    if isinstance(initial_blocks, str):
+        initial_markdown = initial_blocks
+        blocks = [{"id": "block-0", "markdown": initial_markdown}]
+    else:
+        initial_markdown = None
+        blocks = _normalize_blocks(initial_blocks)
     renderer_bundle = _ASSET_DIR / "renderers.bundle.js"
     if not renderer_bundle.is_file():
         raise RuntimeError(
@@ -185,6 +245,7 @@ def st_markdown_block_editor(
         key=key,
         data={
             "blocks": blocks,
+            "initial_markdown": initial_markdown,
             "revision": revision,
             "mode": mode,
             "save_mode": save_mode,
@@ -200,6 +261,14 @@ def st_markdown_block_editor(
             "show_copy_button": show_copy_button,
             "show_status_bar": show_status_bar,
             "toolbar_sections": list(toolbar_sections),
+            "allowed_block_types": list(allowed_block_types),
+            "reorder_mode": reorder_mode,
+            "autosave_delay": autosave_delay,
+            "mermaid_config": {
+                name: dict(value) if isinstance(value, Mapping) else value
+                for name, value in (mermaid_config or {}).items()
+            },
+            "table_styles": {tag: dict(styles) for tag, styles in (table_styles or {}).items()},
         },
         width="stretch",
         height=height if height is not None else 760,
@@ -207,4 +276,109 @@ def st_markdown_block_editor(
     return _document_from_state(state, blocks, mode=mode, save_mode=save_mode)
 
 
-__all__ = ["st_markdown_block_editor"]
+def st_markdown_editor_with_preview(
+    initial_blocks: Sequence[Mapping[str, Any]] | str,
+    *,
+    key: str,
+    toggle_label: str = "Mostrar Markdown renderizado",
+    toggle_position: Literal["top_right", "top_left", "bottom_right", "bottom_left"] = "top_right",
+    revision: int = 0,
+    **editor_options: Any,
+) -> dict[str, Any]:
+    """Render the editor or native Markdown preview with one toggle.
+
+    All editor options are forwarded to st_markdown_block_editor. The revision
+    is managed internally when switching back from the preview.
+    """
+    if not key:
+        raise ValueError("key no puede estar vacía")
+    if isinstance(revision, bool) or not isinstance(revision, int) or revision < 0:
+        raise ValueError("revision debe ser un entero no negativo")
+    if not isinstance(toggle_label, str):
+        raise TypeError("toggle_label debe ser str")
+    if not isinstance(toggle_position, str) or toggle_position not in {
+        "top_right", "top_left", "bottom_right", "bottom_left"
+    }:
+        raise ValueError("toggle_position debe ser top_right, top_left, bottom_right o bottom_left")
+
+    mode = editor_options.get("mode", "raw_visual")
+    save_mode = editor_options.get("save_mode", "auto")
+
+    def initial_document(source: Sequence[Mapping[str, Any]] | str) -> dict[str, Any]:
+        blocks = (
+            [{"id": "block-0", "markdown": source}]
+            if isinstance(source, str)
+            else _normalize_blocks(source)
+        )
+        return _document_from_state(None, blocks, mode=mode, save_mode=save_mode)
+
+    state_key = f"_markdown_editor_preview:{key}"
+    toggle_key = f"{key}__preview_toggle"
+    state: dict[str, Any] | None = st.session_state.get(state_key)
+    if state is None:
+        state = {
+            "source": initial_blocks,
+            "requested_revision": revision,
+            "revision": revision,
+            "editor_input": initial_blocks,
+            "preview_active": False,
+            "document": initial_document(initial_blocks),
+        }
+    elif state["source"] != initial_blocks or state["requested_revision"] != revision:
+        state.update(
+            source=initial_blocks,
+            requested_revision=revision,
+            revision=state["revision"] + 1,
+            editor_input=initial_blocks,
+            preview_active=False,
+            document=initial_document(initial_blocks),
+        )
+    assert state is not None
+    preview_state: dict[str, Any] = state
+
+    def render(is_preview: bool) -> dict[str, Any]:
+        if is_preview:
+            preview_state["preview_active"] = True
+            st.markdown(preview_state["document"]["markdown"])
+        else:
+            if preview_state["preview_active"]:
+                preview_state["editor_input"] = (
+                    preview_state["document"]["markdown"]
+                    if isinstance(preview_state["source"], str)
+                    else preview_state["document"]["blocks"]
+                )
+                preview_state["revision"] += 1
+                preview_state["preview_active"] = False
+            preview_state["document"] = st_markdown_block_editor(
+                preview_state["editor_input"],
+                key=key,
+                revision=preview_state["revision"],
+                **editor_options,
+            )
+        st.session_state[state_key] = preview_state
+        return preview_state["document"]
+
+    def render_toggle(alignment: Literal["left", "right"]) -> bool:
+        with st.container(
+            horizontal=True,
+            horizontal_alignment=alignment,
+            vertical_alignment="center",
+        ):
+            preview_value = st.toggle(toggle_label, key=toggle_key)
+            if save_mode == "button" and not preview_value:
+                st.warning("Los cambios sin guardar se perderán al mostrar la vista previa.")
+        return preview_value
+
+    if toggle_position == "top_right":
+        return render(render_toggle("right"))
+    elif toggle_position == "top_left":
+        return render(render_toggle("left"))
+    else:
+        preview = st.session_state.get(toggle_key, False)
+        document = render(preview)
+        render_toggle("right" if toggle_position == "bottom_right" else "left")
+        return document
+
+
+
+__all__ = ["st_markdown_block_editor", "st_markdown_editor_with_preview"]

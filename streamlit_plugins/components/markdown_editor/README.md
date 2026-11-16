@@ -43,6 +43,30 @@ st.code(document["markdown"], language="markdown")
 
 La función devuelve un diccionario con `blocks`, `markdown`, `mode` y `save_mode`. Cada bloque contiene un `id` y su contenido Markdown; si se omite el ID en los datos iniciales, se genera uno por posición.
 
+También se puede pasar Markdown raw como `str`; el editor separa los bloques en el cliente. Usa una secuencia de bloques cuando necesites asignar IDs estables:
+
+```python
+document = st_markdown_block_editor(
+    "# Mi documento\n\nTexto **editable** en Markdown.",
+    key="document-editor",
+    save_mode="auto",
+)
+```
+
+Para alternar entre el editor y el renderizado nativo de Streamlit sin gestionar el estado de la vista, usa `st_markdown_editor_with_preview`. Acepta las mismas opciones del editor mediante `**editor_options`; `toggle_position` puede ser `"top_left"`, `"top_right"`, `"bottom_left"` o `"bottom_right"`. Con `save_mode="button"`, muestra junto al toggle un aviso de que los cambios sin guardar se perderán al mostrar la vista previa. La función gestiona la revisión al volver de la vista previa.
+
+```python
+from streamlit_plugins.components.markdown_editor import st_markdown_editor_with_preview
+
+document = st_markdown_editor_with_preview(
+    "# Mi documento\n\nTexto **editable**.",
+    key="document",
+    toggle_position="top_left",
+    height=600,
+    save_mode="auto",
+)
+```
+
 ## Opciones
 
 | Opción | Descripción |
@@ -51,7 +75,12 @@ La función devuelve un diccionario con `blocks`, `markdown`, `mode` y `save_mod
 | `revision` | Entero no negativo para reinicializar el documento desde `initial_blocks`. |
 | `height` | Altura en píxeles o `"stretch"`, `"content"` o `None`. |
 | `mode` | `"raw_visual"` para alternar entre sintaxis y vista visual, o `"visual"` para iniciar en visual. |
-| `save_mode` | `"auto"` publica cambios al editar; `"button"` espera a que se pulse Guardar. |
+| `save_mode` | `"auto"` publica cambios tras el debounce; `"button"` espera a que se pulse Guardar. |
+| `autosave_delay` | Debounce en milisegundos, definido en Python: `500` por defecto. `0` publica sin espera. |
+| `allowed_block_types` | Tipos ofrecidos en el selector y niveles de título del submenú. Por defecto, todos. No restringe el Markdown escrito ni elimina bloques existentes. |
+| `reorder_mode` | Controles de reordenamiento: `"drag"`, `"drag_buttons"` o `"buttons"`. Por defecto, `"drag_buttons"`. |
+| `mermaid_config` | Configuración visual Mermaid: `theme`, `themeVariables` y `fontFamily`. Mantiene `securityLevel="strict"`; sin controles adicionales en la interfaz. |
+| `table_styles` | Propiedades CSS por elemento: `{"table": {...}, "th": {...}, "td": {...}}`. Se aplican en visual y solo lectura, sin controles adicionales. |
 | `only_view` | Muestra el documento sin edición. Puede combinarse con `diff` para revisión. |
 | `diff` | Versiones anterior y nueva como strings o como pareja `before_blocks` / `after_blocks`. |
 | `editor_modes` | Modos de edición permitidos: `"raw_visual"` y/o `"visual"`. |
@@ -87,7 +116,7 @@ Ambos modos serializan al mismo Markdown. Se admiten párrafos, títulos, citas 
 
 `Ctrl+Enter` o `Cmd+Enter` añade un párrafo debajo del bloque. En listas, `Backspace` sobre un ítem vacío permite salir de él sin eliminar sus hijos. El historial deshace y rehace cambios de texto, formato, inserción, eliminación y reordenación (`Ctrl/Cmd+Z`, `Ctrl/Cmd+Shift+Z` o `Ctrl+Y`).
 
-Los bloques se reordenan arrastrando el tirador `⋮⋮`. El menú contextual aparece junto al bloque y ofrece acciones comunes y acciones según su tipo. `Shift+F10` lo abre desde el teclado y `Escape` lo cierra. Sus acciones se pueden recorrer horizontalmente cuando no caben en el espacio disponible.
+Los bloques se reordenan según `reorder_mode`: solo con el tirador para arrastrar, con el tirador y las flechas, o solo con las flechas. En `drag_buttons`, las flechas aparecen al pasar el cursor sobre el tirador; en `buttons`, aparecen al pasar el cursor sobre el bloque. El menú contextual aparece junto al bloque y ofrece acciones comunes y acciones según su tipo. `Shift+F10` lo abre desde el teclado y `Escape` lo cierra. Sus acciones se pueden recorrer horizontalmente cuando no caben en el espacio disponible.
 
 ### Renderizado local
 
@@ -101,7 +130,7 @@ Las fórmulas y los diagramas se muestran renderizados en modo Visual y permiten
 
 ### Guardado, copia y revisión
 
-`save_mode="auto"` devuelve los cambios conforme se editan. Con `save_mode="button"`, los cambios se publican al pulsar **Guardar**. **Ver cambios** abre una revisión del borrador frente a la última versión guardada sin guardar ni descartar cambios; volver al editor conserva el borrador y el historial.
+`save_mode="auto"` agrupa los cambios en JavaScript y los publica tras `autosave_delay` milisegundos sin escribir. Cambiar a solo lectura o desmontar el editor publica el cambio pendiente; los ecos del documento guardado no reconstruyen el borrador ni su historial. Con `save_mode="button"`, los cambios se publican al pulsar **Guardar**. **Ver cambios** abre una revisión del borrador frente a la última versión guardada sin guardar ni descartar cambios; volver al editor conserva el borrador y el historial.
 
 `only_view=True` muestra el documento sin edición. Si se proporciona `diff`, por defecto la revisión ofrece los modos **Visual** y **Diff Markdown**, además de las disposiciones permitidas por `review_layouts`: Antes, Después, Split o Bloques. El diff Markdown marca inserciones y eliminaciones por línea; la vista por bloques identifica contenido modificado, adiciones, eliminaciones y movimientos. En la vista Visual, `block_diff_style="content"` muestra el diff de contenido debajo de los bloques complejos; `"inline"` anota cambios dentro de los tipos compatibles.
 
@@ -123,6 +152,30 @@ El botón **Copiar todo** y la acción de copia por bloque copian Markdown en mo
 ### Controles y presentación configurables
 
 `editor_modes`, `review_modes` y `review_layouts` permiten limitar las opciones de edición y revisión visibles. Sus valores deben pertenecer a las opciones admitidas y no pueden repetirse; el modo inicial debe estar incluido en `editor_modes`. `toolbar_sections` controla la visibilidad de las secciones de la barra, no las acciones de edición disponibles. Para impedir la edición, usa `only_view=True`.
+
+Cuando solo se permite una opción, su selector desaparece. Los tipos admitidos por `allowed_block_types` son `paragraph`, `h1` a `h6`, `quote`, `list`, `ordered_list`, `task_list`, `code`, `table`, `image`, `link`, `mermaid`, `math` y `rule`.
+
+```python
+document = st_markdown_block_editor(
+    blocks,
+    key="custom-editor",
+    mode="visual",
+    editor_modes=("visual",),
+    allowed_block_types=("paragraph", "h2", "h3", "list", "table", "mermaid"),
+    autosave_delay=800,
+    mermaid_config={
+        "theme": "base",
+        "themeVariables": {"primaryColor": "#e6f4ff", "primaryTextColor": "#123456"},
+        "fontFamily": "Arial",
+    },
+    table_styles={
+        "th": {"background-color": "#e6f4ff"},
+        "td": {"padding": "12px"},
+    },
+)
+```
+
+El botón **Enlace** de Formato permite añadir un enlace al texto seleccionado (o escribir el texto si no hay selección) y editar un enlace inline cuando el cursor está dentro de él. Su edición conserva el resto del párrafo, título, cita, lista o celda. Las propiedades de enlaces, imágenes, numeración de listas y lenguaje del código se editan en un diálogo con Aplicar, Cancelar y Escape.
 
 La barra superior agrupa las acciones principales —historial, guardado, modos, copia y ayuda— y mantiene los grupos de herramientas separados. Los grupos de Formato y Bloque se pueden plegar; la ayuda incluye atajos de teclado. La barra inferior con el recuento de bloques y caracteres y el estado de guardado se puede ocultar con `show_status_bar=False`. `debug_blocks=True` añade información de tipo e ID para inspeccionar la estructura.
 

@@ -50,6 +50,8 @@
                                 class="md-icon" aria-hidden="true">format_strikethrough</span></button>
                         <button type="button" data-format="`" title="Código en línea" aria-label="Código en línea">
                             <span class="md-icon" aria-hidden="true">code</span></button>
+                        <button type="button" class="md-edit-link" title="Añadir enlace" aria-label="Añadir enlace">
+                            <span class="md-icon" aria-hidden="true">add_link</span></button>
                     </div>
                 </details>
                 <details class="md-toolbar-group" data-toolbar-section="block" open>
@@ -166,7 +168,7 @@
             <dt>Shift+F10 / Escape</dt>
             <dd>Abrir el menú del bloque / cerrar menú o ayuda.</dd>
             <dt>Arrastrar ⋮⋮</dt>
-            <dd>Reordenar bloques.</dd>
+            <dd>Reordenar bloques con las flechas o arrastrando ⋮⋮.</dd>
         </dl>
     </div>
     <div class="md-canvas" role="list" aria-label="Bloques del documento"></div>
@@ -180,4 +182,15 @@
     <div class="md-review-content" hidden></div>
     <div class="md-status" aria-live="polite"></div>
     <div class="md-feedback" role="status" aria-live="polite" hidden></div>
+    <dialog class="md-properties-dialog" aria-label="Propiedades del bloque">
+        <form>
+            <h3 class="md-properties-title"></h3>
+            <div class="md-properties-fields"></div>
+            <p class="md-properties-error" role="alert" hidden></p>
+            <div class="md-properties-actions">
+                <button type="button" class="md-properties-cancel">Cancelar</button>
+                <button type="submit">Aplicar</button>
+            </div>
+        </form>
+    </dialog>
 </div>
