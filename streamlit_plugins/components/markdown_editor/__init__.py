@@ -283,12 +283,14 @@ def st_markdown_editor_with_preview(
     toggle_label: str = "Mostrar Markdown renderizado",
     toggle_position: Literal["top_right", "top_left", "bottom_right", "bottom_left"] = "top_right",
     revision: int = 0,
+    show_toggle: bool = True,
     **editor_options: Any,
 ) -> dict[str, Any]:
     """Render the editor or native Markdown preview with one toggle.
 
     All editor options are forwarded to st_markdown_block_editor. The revision
-    is managed internally when switching back from the preview.
+    is managed internally when switching back from the preview. show_toggle=False
+    renders the editor alone, without the preview switch.
     """
     if not key:
         raise ValueError("key no puede estar vacía")
@@ -300,6 +302,8 @@ def st_markdown_editor_with_preview(
         "top_right", "top_left", "bottom_right", "bottom_left"
     }:
         raise ValueError("toggle_position debe ser top_right, top_left, bottom_right o bottom_left")
+    if not isinstance(show_toggle, bool):
+        raise TypeError("show_toggle debe ser bool")
 
     mode = editor_options.get("mode", "raw_visual")
     save_mode = editor_options.get("save_mode", "auto")
@@ -349,12 +353,18 @@ def st_markdown_editor_with_preview(
                 )
                 preview_state["revision"] += 1
                 preview_state["preview_active"] = False
+            elif preview_state.get("editor_rendered") and key not in st.session_state:
+                # El llamante dejó de renderizar el editor (lo desmontó) y Streamlit podó el estado de su
+                # widget: al volver hay que arrancar de lo que había en pantalla, no de la fuente externa, o
+                # se pierde lo editado sin guardar. En el primer montaje no hay documento que recuperar.
+                preview_state["editor_input"] = preview_state["document"]["blocks"]
             preview_state["document"] = st_markdown_block_editor(
                 preview_state["editor_input"],
                 key=key,
                 revision=preview_state["revision"],
                 **editor_options,
             )
+            preview_state["editor_rendered"] = True
         st.session_state[state_key] = preview_state
         return preview_state["document"]
 
@@ -369,6 +379,8 @@ def st_markdown_editor_with_preview(
                 st.warning("Los cambios sin guardar se perderán al mostrar la vista previa.")
         return preview_value
 
+    if not show_toggle:
+        return render(False)
     if toggle_position == "top_right":
         return render(render_toggle("right"))
     elif toggle_position == "top_left":

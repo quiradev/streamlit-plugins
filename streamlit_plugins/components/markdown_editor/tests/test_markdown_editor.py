@@ -233,3 +233,90 @@ def test_invalid_customization_is_rejected(editor_module, options, error):
     with pytest.raises(error):
         module.st_markdown_block_editor([], key="test", **options)
     component.assert_not_called()
+
+
+def test_preview_wrapper_resumes_from_the_last_document_after_an_unmount(editor_module, monkeypatch):
+    """Si el llamante desmonta el editor, al volver se recupera lo que había en pantalla."""
+
+    module, _ = editor_module
+
+    class FakeUI:
+        def __init__(self):
+            self.session_state = {}
+            self.containers = []
+
+        def container(self, **kwargs):
+            self.containers.append(kwargs)
+            return nullcontext()
+
+        def toggle(self, label, *, key):
+            return self.session_state.get(key, False)
+
+        def markdown(self, markdown):
+            pass
+
+    ui = FakeUI()
+    monkeypatch.setattr(module, "st", ui)
+    document = {
+        "blocks": [{"id": "block-0", "markdown": "Edited"}],
+        "markdown": "Edited",
+        "mode": "visual",
+        "save_mode": "auto",
+    }
+    editor = Mock(return_value=document)
+    monkeypatch.setattr(module, "st_markdown_block_editor", editor)
+
+    module.st_markdown_editor_with_preview("Original", key="test")
+    assert editor.call_args.args[0] == "Original"
+
+    # Montado: manda la fuente externa (sus props no cambian entre runs, así el componente no repinta el canvas).
+    ui.session_state["test"] = {"value": {"blocks": document["blocks"]}}
+    module.st_markdown_editor_with_preview("Original", key="test")
+    assert editor.call_args.args[0] == "Original"
+
+    # El llamante dejó de renderizarlo y Streamlit podó el estado del widget: se arranca del último documento.
+    ui.session_state.pop("test")
+    module.st_markdown_editor_with_preview("Original", key="test")
+    assert editor.call_args.args[0] == [{"id": "block-0", "markdown": "Edited"}]
+
+
+def test_preview_wrapper_can_render_the_editor_without_the_toggle(editor_module, monkeypatch):
+    module, _ = editor_module
+
+    class FakeUI:
+        def __init__(self):
+            self.session_state = {"hidden__preview_toggle": True}
+            self.containers = []
+            self.rendered_markdown = []
+
+        def container(self, **kwargs):
+            self.containers.append(kwargs)
+            return nullcontext()
+
+        def toggle(self, label, *, key):
+            raise AssertionError("con show_toggle=False no se pinta el toggle")
+
+        def markdown(self, markdown):
+            self.rendered_markdown.append(markdown)
+
+    ui = FakeUI()
+    monkeypatch.setattr(module, "st", ui)
+    editor = Mock(return_value={
+        "blocks": [], "markdown": "Edited", "mode": "visual", "save_mode": "auto",
+    })
+    monkeypatch.setattr(module, "st_markdown_block_editor", editor)
+
+    result = module.st_markdown_editor_with_preview("Original", key="hidden", show_toggle=False)
+
+    assert ui.containers == []
+    assert ui.rendered_markdown == []
+    assert editor.called
+    assert result["markdown"] == "Edited"
+
+
+@pytest.mark.parametrize("value", [None, 1, "false"])
+def test_show_toggle_requires_a_boolean(editor_module, value):
+    module, _ = editor_module
+
+    with pytest.raises(TypeError, match="show_toggle"):
+        module.st_markdown_editor_with_preview("Original", key="test", show_toggle=value)
